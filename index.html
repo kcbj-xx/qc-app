@@ -14,7 +14,7 @@
     <link rel="manifest" href='data:application/manifest+json,{"name":"QC Toolset Pro","short_name":"QCTools","start_url":"./","display":"standalone","background_color":"#f3f4f6","theme_color":"#2563eb","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1162/1162456.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}'>
 
     <style>
-        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937; --border: #e5e7eb; }
+        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937; --border: #e5e7eb; --accent: #d97706; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 50px; }
         .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
@@ -29,6 +29,7 @@
         button.secondary { background-color: #ef4444; width: 100%; margin-top: 10px; }
         
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
+        .glaze-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
         .error-text { color: #ef4444; font-size: 0.9rem; font-weight: 600; }
         
         .drag-container { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; }
@@ -75,7 +76,7 @@
     <div class="card">
         <h2>Averaging & Sum</h2>
         <div class="input-group">
-            <label>Add Number (Newest at Top)</label>
+            <label>Add Number (Adds to Bottom)</label>
             <div style="display: flex; gap: 10px;">
                 <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" onkeypress="if(event.key==='Enter')addNumber()">
                 <button onmousedown="event.preventDefault()" onclick="addNumber()" style="width: auto;">Add</button>
@@ -127,7 +128,7 @@
         if(!g||!d) return;
         const dec=(g-d)/g;
         res.style.display="block";
-        res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <strong>${(dec * 100).toFixed(2)}%</strong>`;
+        res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
     }
 
     let numbers = [];
@@ -135,8 +136,13 @@
         const inp=document.getElementById('numberInput');
         const val=parseFloat(inp.value); if(isNaN(val)) return;
         document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
-        numbers.unshift(val); inp.value=''; renderList();
-        document.getElementById('numberList').scrollTop=0;
+        numbers.push(val); // Switched to .push to add to bottom
+        inp.value=''; renderList();
+        
+        // Auto-scroll to bottom to see new entry
+        const container = document.getElementById('numberList');
+        container.scrollTop = container.scrollHeight;
+        
         clearTimeout(window.lastAddedTimeout);
         window.lastAddedTimeout=setTimeout(()=>{document.getElementById('lastAddedDisplay').innerText='';},3000);
     }
@@ -209,4 +215,5 @@
     }
 </script>
 </body>
-</html>
+    </html>
+    
