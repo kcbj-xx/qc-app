@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
     
     <style>
-        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937; --border: #e5e7eb; --accent: #d97706; --drop-zone: #dbeafe; }
+        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937; --border: #e5e7eb; --accent: #d97706; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 50px; }
         .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
@@ -28,21 +28,19 @@
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
         .glaze-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
         
-        /* Averaging Section Layout */
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 15px 0; text-align: center; }
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
 
-        /* Drag container hidden when empty */
         .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
         
-        /* Drag and Drop UX - Solid Highlight */
-        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; touch-action: manipulation; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .number-item.dragging { opacity: 0.3; transform: scale(0.98); }
-        .number-item.drag-over { background-color: var(--drop-zone); border-color: var(--primary); transform: translateY(2px); }
+        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1); }
+        .number-item.dragging { opacity: 0.4; }
 
-        .drag-handle { color: #94a3b8; font-size: 1.4rem; cursor: grab; user-select: none; padding: 5px 10px; touch-action: none; -webkit-touch-callout: none; }
+        /* FIX FOR FOLD: Prevent system gestures on the handle */
+        .drag-handle { color: #94a3b8; font-size: 1.4rem; cursor: grab; user-select: none; padding: 5px 15px; touch-action: none; -webkit-touch-callout: none; }
+        
         .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; padding: 4px; font-size: 1rem; }
         .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
@@ -84,13 +82,11 @@
 
     <div class="card">
         <h2>Averaging & Sum</h2>
-        
         <div class="stats-grid">
             <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
             <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
             <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
         </div>
-
         <div class="input-group">
             <label>Add Number (Adds to Bottom)</label>
             <div style="display: flex; gap: 10px;">
@@ -99,7 +95,6 @@
             </div>
             <div class="last-added-text" id="lastAddedDisplay"></div>
         </div>
-
         <div id="numberList" class="drag-container"></div>
         <button id="clearAllBtn" class="secondary" style="display:none;" onclick="clearNumbers()">Clear All</button>
     </div>
@@ -182,17 +177,8 @@
             div.addEventListener('dragstart', () => div.classList.add('dragging'));
             div.addEventListener('dragend', () => {
                 div.classList.remove('dragging');
-                container.querySelectorAll('.number-item').forEach(el => el.classList.remove('drag-over'));
                 numbers = [...container.querySelectorAll('.edit-input')].map(input => parseFloat(input.value) || 0);
                 updateStats();
-            });
-
-            div.addEventListener('dragenter', () => {
-                if (!div.classList.contains('dragging')) div.classList.add('drag-over');
-            });
-
-            div.addEventListener('dragleave', () => {
-                div.classList.remove('drag-over');
             });
 
             container.appendChild(div);
