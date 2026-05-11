@@ -30,26 +30,16 @@
         
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
         .glaze-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
+        .error-text { color: #ef4444; font-size: 0.9rem; font-weight: 600; }
         
-        .drag-container { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border); padding: 5px; background: #fdfdfd; }
-        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; touch-action: none; position: relative; }
-        .dragging { opacity: 0.5; background: #eff6ff; border: 2px dashed var(--primary); }
-        
-        .drag-handle { 
-            color: #94a3b8; 
-            font-size: 1.4rem; 
-            cursor: grab; 
-            user-select: none; 
-            -webkit-user-select: none;
-            padding: 5px 15px; 
-            touch-action: none; /* Prevents scrolling/selection when grabbing handle */
-        }
-        
-        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; padding: 4px; font-size: 1rem; touch-action: auto; }
+        .drag-container { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; }
+        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; touch-action: manipulation; }
+        .drag-handle { color: #94a3b8; font-size: 1.4rem; cursor: grab; user-select: none; padding: 5px 10px; touch-action: none; }
+        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; padding: 4px; font-size: 1rem; }
         .edit-input:focus { border-bottom: 1px solid var(--primary); outline: none; }
-        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; touch-action: auto; }
+        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
         
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; text-align: center; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; text-align: center; }
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
@@ -85,11 +75,6 @@
 
     <div class="card">
         <h2>Averaging & Sum</h2>
-        <div class="stats-grid">
-            <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
-            <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
-            <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
-        </div>
         <div class="input-group">
             <label>Add Number (Adds to Bottom)</label>
             <div style="display: flex; gap: 10px;">
@@ -99,6 +84,11 @@
             <div class="last-added-text" id="lastAddedDisplay"></div>
         </div>
         <div id="numberList" class="drag-container"></div>
+        <div class="stats-grid">
+            <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
+            <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
+            <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
+        </div>
         <button class="secondary" onclick="clearNumbers()">Clear All</button>
     </div>
 
@@ -143,20 +133,28 @@
 
     let numbers = [];
     function addNumber() {
-        const inp = document.getElementById('numberInput');
-        const val = parseFloat(inp.value); if (isNaN(val)) return;
-        document.getElementById('lastAddedDisplay').innerText = `Last added: ${val}`;
-        numbers.push(val);
-        inp.value = ''; renderList();
+        const inp=document.getElementById('numberInput');
+        const val=parseFloat(inp.value); if(isNaN(val)) return;
+        document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
+        numbers.push(val); // Switched to .push to add to bottom
+        inp.value=''; renderList();
+        
+        // Auto-scroll to bottom to see new entry
         const container = document.getElementById('numberList');
         container.scrollTop = container.scrollHeight;
+        
         clearTimeout(window.lastAddedTimeout);
-        window.lastAddedTimeout = setTimeout(() => { document.getElementById('lastAddedDisplay').innerText = ''; }, 3000);
+        window.lastAddedTimeout=setTimeout(()=>{document.getElementById('lastAddedDisplay').innerText='';},3000);
     }
+    function removeNumber(i){numbers.splice(i,1); renderList();}
     
-    function removeNumber(i) { numbers.splice(i, 1); renderList(); }
-    function clearNumbers() { numbers = []; document.getElementById('lastAddedDisplay').innerText = ''; renderList(); }
-    function updateVal(i, v) { numbers[i] = parseFloat(v) || 0; updateStats(); }
+    function clearNumbers(){
+        numbers=[];
+        document.getElementById('lastAddedDisplay').innerText='';
+        renderList();
+    }
+
+    function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
         const container = document.getElementById('numberList');
@@ -165,54 +163,26 @@
             const div = document.createElement('div');
             div.className = 'number-item';
             div.draggable = true;
-            div.innerHTML = `
-                <span class="drag-handle" oncontextmenu="return false;">☰</span>
-                <input type="number" class="edit-input" value="${n}" onchange="updateVal(${i}, this.value)" inputmode="decimal">
-                <button class="remove-btn" onclick="removeNumber(${i})">&times;</button>
-            `;
-            
+            div.innerHTML = `<span class="drag-handle">☰</span><input type="number" class="edit-input" value="${n}" onchange="updateVal(${i}, this.value)" inputmode="decimal"><button class="remove-btn" onclick="removeNumber(${i})">&times;</button>`;
             div.addEventListener('dragstart', () => div.classList.add('dragging'));
             div.addEventListener('dragend', () => {
                 div.classList.remove('dragging');
                 numbers = [...container.querySelectorAll('.edit-input')].map(input => parseFloat(input.value) || 0);
                 updateStats();
             });
-            
-            // Touch support for mobile dragging
-            div.addEventListener('touchstart', (e) => {
-                if(e.target.classList.contains('drag-handle')) {
-                    div.classList.add('dragging');
-                }
-            }, {passive: true});
-
             container.appendChild(div);
         });
-
         container.addEventListener('dragover', e => {
             e.preventDefault();
             const dragging = document.querySelector('.dragging');
-            if (!dragging) return;
-            const afterElement = getDragAfterElement(container, e.clientY);
-            if (afterElement == null) {
-                container.appendChild(dragging);
-            } else {
-                container.insertBefore(dragging, afterElement);
-            }
+            const afterElement = [...container.querySelectorAll('.number-item:not(.dragging)')].reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = e.clientY - box.top - box.height / 2;
+                return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+            afterElement ? container.insertBefore(dragging, afterElement) : container.appendChild(dragging);
         });
         updateStats();
-    }
-
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.number-item:not(.dragging)')];
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
     function updateStats() {
@@ -235,7 +205,10 @@
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            const swCode = `self.addEventListener('install', (e) => self.skipWaiting()); self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => {})));`;
+            const swCode = `
+                self.addEventListener('install', (e) => self.skipWaiting());
+                self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => {})));
+            `;
             const blob = new Blob([swCode], { type: 'application/javascript' });
             navigator.serviceWorker.register(URL.createObjectURL(blob));
         });
