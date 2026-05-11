@@ -39,7 +39,7 @@
             display: flex; align-items: center; background: #fff; border: 1px solid var(--border); 
             padding: 8px 12px; border-radius: 8px; gap: 10px; 
             transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-            -webkit-user-select: none; user-select: none; /* Block selection entirely */
+            -webkit-user-select: none; user-select: none;
         }
         .number-item.dragging { opacity: 0.4; }
 
@@ -159,7 +159,13 @@
     }
 
     function removeNumber(i){numbers.splice(i,1); renderList();}
-    function clearNumbers(){ if(confirm("Clear all numbers?")){numbers=[]; renderList();} }
+    
+    // Removed the prompt as requested
+    function clearNumbers(){ 
+        numbers = []; 
+        renderList(); 
+    }
+    
     function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
@@ -175,7 +181,6 @@
             clearBtn.style.display = "block";
         }
 
-        // The SVG replaces the text ☰
         const svgIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
 
         numbers.forEach((n, i) => {
@@ -184,7 +189,6 @@
             div.draggable = true;
             div.innerHTML = `<span class="drag-handle">${svgIcon}</span><input type="number" class="edit-input" value="${n}" onchange="updateVal(${i}, this.value)" inputmode="decimal"><button class="remove-btn" onclick="removeNumber(${i})">&times;</button>`;
             
-            // Explicitly kill the context menu when long pressing the item
             div.addEventListener('contextmenu', (e) => e.preventDefault());
 
             div.addEventListener('dragstart', () => div.classList.add('dragging'));
