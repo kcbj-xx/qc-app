@@ -278,7 +278,7 @@
 
         if (Notification.permission === "granted") {
             navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification("QC Alert", { body: "Sample Time Reached!", requireInteraction: true, vibrate: [200, 100, 200] });
+                reg.showNotification("QC Alert", { body: "Time to collect samples!", requireInteraction: true, vibrate: [200, 100, 200] });
             });
         }
     }
