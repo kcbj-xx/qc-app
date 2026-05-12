@@ -104,7 +104,7 @@
 </div>
 
 <script>
-    /* PWA IMPLEMENTATION */
+    /* PWA Logic */
     const manifest = {
         "name": "QC Toolset Pro",
         "short_name": "QC Tool",
@@ -112,32 +112,20 @@
         "display": "standalone",
         "background_color": "#f3f4f6",
         "theme_color": "#2563eb",
-        "icons": [{
-            "src": "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        }]
+        "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/1162/1162456.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }]
     };
-    const stringManifest = JSON.stringify(manifest);
-    const blob = new Blob([stringManifest], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blob);
-    document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
+    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+    document.querySelector('#pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
 
-    // Register Service Worker for Offline/Install support
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            const swCode = `
-                self.addEventListener('install', (e) => { self.skipWaiting(); });
-                self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
-            `;
-            const blob = new Blob([swCode], {type: 'text/javascript'});
-            const url = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(url);
+            const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
+            const swBlob = new Blob([swCode], {type: 'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob));
         });
     }
 
-    /* APP LOGIC */
+    /* Sampling Logic */
     let lastGeneratedTimeStr = "";
     function generateTime(isRecursive) {
         const minStr = document.getElementById('minMinutes').value || "40";
@@ -146,103 +134,3 @@
         const res = document.getElementById('timeResult');
         if (isRecursive) { startStr = lastGeneratedTimeStr; } 
         else if (!startStr) { res.style.display="block"; res.innerHTML='<span style="color:red">Select Start Time</span>'; return; }
-        const min=parseInt(minStr); const max=parseInt(maxStr);
-        const rand=Math.floor(Math.random()*(max-min+1))+min;
-        const [h,m]=startStr.split(':').map(Number);
-        const total=(h*60+m+rand)%1440;
-        lastGeneratedTimeStr=`${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
-        res.style.display="block";
-        res.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div><div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div><button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>`;
-    }
-
-    function calculateGlaze() {
-        const g=parseFloat(document.getElementById('glazedVal').value);
-        const d=parseFloat(document.getElementById('deglazeVal').value);
-        if(!g||!d) return;
-        const dec=(g-d)/g;
-        const res=document.getElementById('glazeResult');
-        res.style.display="block";
-        res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
-    }
-
-    let numbers = [];
-    function addNumber() {
-        const inp=document.getElementById('numberInput');
-        const val=parseFloat(inp.value); if(isNaN(val)) return;
-        document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
-        numbers.push(val);
-        inp.value=''; renderList();
-        const container = document.getElementById('numberList');
-        container.scrollTop = container.scrollHeight;
-        clearTimeout(window.lastAddedTimeout);
-        window.lastAddedTimeout=setTimeout(()=>{document.getElementById('lastAddedDisplay').innerText='';},3000);
-    }
-
-    function removeNumber(i){numbers.splice(i,1); renderList();}
-    function clearNumbers(){ numbers=[]; renderList(); }
-    function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
-
-    function renderList() {
-        const container = document.getElementById('numberList');
-        const clearBtn = document.getElementById('clearAllBtn');
-        container.innerHTML = '';
-        if(numbers.length === 0) { container.style.display = "none"; clearBtn.style.display = "none"; } 
-        else { container.style.display = "flex"; clearBtn.style.display = "block"; }
-
-        const svgIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
-
-        numbers.forEach((n, i) => {
-            const div = document.createElement('div');
-            div.className = 'number-item';
-            div.draggable = true;
-            div.innerHTML = `<span class="drag-handle">${svgIcon}</span><input type="number" class="edit-input" value="${n}" onchange="updateVal(${i}, this.value)" inputmode="decimal"><button class="remove-btn" onclick="removeNumber(${i})">&times;</button>`;
-            div.addEventListener('contextmenu', (e) => e.preventDefault());
-            div.addEventListener('dragstart', () => div.classList.add('dragging'));
-            div.addEventListener('dragend', () => {
-                div.classList.remove('dragging');
-                numbers = [...container.querySelectorAll('.edit-input')].map(input => parseFloat(input.value) || 0);
-                updateStats();
-            });
-            container.appendChild(div);
-        });
-
-        container.addEventListener('dragover', e => {
-            e.preventDefault();
-            const dragging = document.querySelector('.dragging');
-            if(!dragging) return;
-            const afterElement = getDragAfterElement(container, e.clientY);
-            if (afterElement == null) container.appendChild(dragging);
-            else container.insertBefore(dragging, afterElement);
-        });
-        updateStats();
-    }
-
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.number-item:not(.dragging)')];
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
-            else return closest;
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    function updateStats() {
-        const sum = numbers.reduce((a, b) => a + b, 0);
-        document.getElementById('statCount').innerText = numbers.length;
-        document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
-        const avg = numbers.length ? (sum / numbers.length) : 0;
-        document.getElementById('statAvg').innerText = avg.toFixed(2).replace(/\.00$/, '');
-    }
-
-    function calculateSalinity() {
-        const brix = parseFloat(document.getElementById('brixVal').value);
-        if (isNaN(brix)) return;
-        const salinity = (brix / 26.4) * 100;
-        const res = document.getElementById('salinityResult');
-        res.style.display = "block";
-        res.innerHTML = `Salinity: <strong>${salinity.toFixed(2)}%</strong>`;
-    }
-</script>
-</body>
-</html>
