@@ -71,6 +71,7 @@
             <div class="input-group"><label>Deglazed</label><input type="number" step="any" id="deglazeVal" inputmode="decimal"></div>
         </div>
         <button onclick="calculateGlaze()">Calculate Glaze</button>
+        <button class="secondary" onclick="resetGlaze()">Reset Glaze</button>
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
@@ -100,6 +101,7 @@
             <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
         </div>
         <button onclick="calculateSalinity()">Calculate Salinity</button>
+        <button class="secondary" onclick="resetSalinity()">Reset Salinity</button>
         <div class="result" id="salinityResult" style="display: none;"></div>
     </div>
 </div>
@@ -193,6 +195,12 @@
         res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
     }
 
+    function resetGlaze() {
+        document.getElementById('glazedVal').value = '';
+        document.getElementById('deglazeVal').value = '';
+        document.getElementById('glazeResult').style.display = 'none';
+    }
+
     let numbers = [];
     function addNumber() {
         const inp=document.getElementById('numberInput');
@@ -272,6 +280,11 @@
         const res = document.getElementById('salinityResult');
         res.style.display = "block";
         res.innerHTML = `Salinity: <strong>${salinity.toFixed(2)}%</strong>`;
+    }
+
+    function resetSalinity() {
+        document.getElementById('brixVal').value = '';
+        document.getElementById('salinityResult').style.display = 'none';
     }
 </script>
 </body>
