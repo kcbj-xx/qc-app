@@ -2,178 +2,205 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QC Toolset</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QC Toolset Pro</title>
+    
+    <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
-    <link rel="manifest" href='data:application/manifest+json,{"name":"QC Toolset","short_name":"QCTools","start_url":".","display":"standalone","background_color":"#f3f4f6","theme_color":"#2563eb","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1162/1162456.png","sizes":"512x512","type":"image/png"}]}'>
+    
+    <link rel="manifest" id="pwa-manifest">
 
     <style>
-        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937; --border: #e5e7eb; }
+        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937; --border: #e5e7eb; --accent: #d97706; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 50px; }
         .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         h2 { margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
         input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; }
-        
-        /* Mobile-friendly inputs */
-        input[type="number"], input[type="time"] { -webkit-appearance: none; }
-        
-        button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; }
+        button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
         button:hover { background-color: var(--primary-hover); }
-        button.secondary { background-color: #ef4444; margin-top: 10px; }
+        button.secondary { background-color: #ef4444; width: 100%; margin-top: 10px; }
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
-        .error-text { color: #ef4444; font-size: 0.9rem; font-weight: 600; }
-        
-        /* Drag & Drop Styles */
-        .drag-container { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 300px; overflow-y: auto; }
-        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; cursor: grab; gap: 10px; }
-        .drag-handle { color: #94a3b8; font-size: 1.2rem; user-select: none; }
-        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; padding: 4px; font-size: 1rem; }
-        .edit-input:focus { border-bottom: 1px solid var(--primary); outline: none; }
-        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: bold; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; text-align: center; }
+        .glaze-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 15px 0; text-align: center; }
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
+        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
+        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1); -webkit-user-select: none; user-select: none; }
+        .number-item.dragging { opacity: 0.4; }
+        .drag-handle { color: #94a3b8; cursor: grab; display: flex; align-items: center; justify-content: center; padding: 5px 10px; touch-action: none; -webkit-touch-callout: none; }
+        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; padding: 4px; font-size: 1rem; }
+        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .last-added-text { font-size: 0.85rem; color: #10b981; font-weight: 600; margin-top: 5px; height: 1.2em; }
+        .btn-recursive { background-color: #10b981; margin-top: 12px; font-size: 0.95rem; padding: 10px; }
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Time Generator -->
     <div class="card">
-        <h2>Random Time Generator</h2>
+        <h2>Sampling Time</h2>
         <div class="row">
-            <div class="input-group"><label>Min Mins</label><input type="number" id="minMinutes" value="40" inputmode="numeric"></div>
-            <div class="input-group"><label>Max Mins</label><input type="number" id="maxMinutes" value="60" inputmode="numeric"></div>
+            <div class="input-group">
+                <label>Min Mins</label>
+                <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <label>Max Mins</label>
+                <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
+            </div>
         </div>
         <div class="input-group"><label>Start Time</label><input type="time" id="startTime"></div>
-        <button onclick="generateTime()">Generate Random Time</button>
+        <button onclick="generateTime(false)">Generate Sampling Time</button>
         <div class="result" id="timeResult" style="display: none;"></div>
     </div>
 
-    <!-- Glaze Calculator -->
     <div class="card">
         <h2>Glaze Calculator</h2>
         <div class="row">
             <div class="input-group"><label>Glazed</label><input type="number" step="any" id="glazedVal" inputmode="decimal"></div>
             <div class="input-group"><label>Deglazed</label><input type="number" step="any" id="deglazeVal" inputmode="decimal"></div>
         </div>
-        <!-- Added explicit button for mobile reliability -->
         <button onclick="calculateGlaze()">Calculate Glaze</button>
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
-    <!-- Averaging & Sum -->
     <div class="card">
         <h2>Averaging & Sum</h2>
-        <div class="input-group">
-            <label>Add Number</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="number" step="any" id="numberInput" inputmode="decimal" onkeypress="if(event.key==='Enter')addNumber()">
-                <button onclick="addNumber()" style="width: auto;">Add</button>
-            </div>
-        </div>
-        <div id="numberList" class="drag-container"></div>
         <div class="stats-grid">
             <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
             <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
             <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
         </div>
-        <button class="secondary" onclick="clearNumbers()">Clear All</button>
+        <div class="input-group">
+            <label>Add Number (Adds to Bottom)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" onkeypress="if(event.key==='Enter')addNumber()">
+                <button onmousedown="event.preventDefault()" onclick="addNumber()" style="width: auto;">Add</button>
+            </div>
+            <div class="last-added-text" id="lastAddedDisplay"></div>
+        </div>
+        <div id="numberList" class="drag-container"></div>
+        <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear All</button>
+    </div>
+
+    <div class="card">
+        <h2>Salinity Calculator</h2>
+        <div class="input-group">
+            <label>Brix Value</label>
+            <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
+        </div>
+        <button onclick="calculateSalinity()">Calculate Salinity</button>
+        <div class="result" id="salinityResult" style="display: none;"></div>
     </div>
 </div>
 
 <script>
-    // Feature 1
-    function generateTime() {
-        const minStr = document.getElementById('minMinutes').value;
-        const maxStr = document.getElementById('maxMinutes').value;
-        const startStr = document.getElementById('startTime').value;
+    /* PWA IMPLEMENTATION */
+    const manifest = {
+        "name": "QC Toolset Pro",
+        "short_name": "QC Tool",
+        "start_url": ".",
+        "display": "standalone",
+        "background_color": "#f3f4f6",
+        "theme_color": "#2563eb",
+        "icons": [{
+            "src": "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }]
+    };
+    const stringManifest = JSON.stringify(manifest);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
+
+    // Register Service Worker for Offline/Install support
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const swCode = `
+                self.addEventListener('install', (e) => { self.skipWaiting(); });
+                self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+            `;
+            const blob = new Blob([swCode], {type: 'text/javascript'});
+            const url = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(url);
+        });
+    }
+
+    /* APP LOGIC */
+    let lastGeneratedTimeStr = "";
+    function generateTime(isRecursive) {
+        const minStr = document.getElementById('minMinutes').value || "40";
+        const maxStr = document.getElementById('maxMinutes').value || "60";
+        let startStr = document.getElementById('startTime').value;
         const res = document.getElementById('timeResult');
-
-        if (!startStr) {
-            res.style.display = "block";
-            res.innerHTML = '<span class="error-text">Please select a Start Time. (Make sure to press "Done" on the time picker).</span>';
-            return;
-        }
-
-        const min = parseInt(minStr) || 40;
-        const max = parseInt(maxStr) || 60;
-        const randomDuration = Math.floor(Math.random() * (max - min + 1)) + min;
-        const [h, m] = startStr.split(':').map(Number);
-        
-        const total = (h * 60 + m + randomDuration) % 1440;
-        const resH = String(Math.floor(total / 60)).padStart(2, '0');
-        const resM = String(total % 60).padStart(2, '0');
-        
-        res.style.display = "block";
-        res.innerHTML = `Time: <strong style="font-size: 1.3em; color: var(--primary);">${resH}:${resM}</strong><br><span style="font-size: 0.85em; color: #64748b;">(Added ${randomDuration}m)</span>`;
+        if (isRecursive) { startStr = lastGeneratedTimeStr; } 
+        else if (!startStr) { res.style.display="block"; res.innerHTML='<span style="color:red">Select Start Time</span>'; return; }
+        const min=parseInt(minStr); const max=parseInt(maxStr);
+        const rand=Math.floor(Math.random()*(max-min+1))+min;
+        const [h,m]=startStr.split(':').map(Number);
+        const total=(h*60+m+rand)%1440;
+        lastGeneratedTimeStr=`${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+        res.style.display="block";
+        res.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div><div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div><button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>`;
     }
 
-    // Feature 2
     function calculateGlaze() {
-        const gStr = document.getElementById('glazedVal').value;
-        const dStr = document.getElementById('deglazeVal').value;
-        const res = document.getElementById('glazeResult');
-
-        if (gStr === '' || dStr === '') {
-            res.style.display = "block";
-            res.innerHTML = '<span class="error-text">Please enter both values.</span>';
-            return;
-        }
-
-        const g = parseFloat(gStr);
-        const d = parseFloat(dStr);
-
-        if (isNaN(g) || isNaN(d) || g === 0) {
-            res.style.display = "block";
-            res.innerHTML = '<span class="error-text">Invalid input. Glazed value cannot be zero.</span>';
-            return;
-        }
-
-        const dec = (g - d) / g;
-        res.style.display = "block";
-        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <strong>${(dec * 100).toFixed(2)}%</strong>`;
+        const g=parseFloat(document.getElementById('glazedVal').value);
+        const d=parseFloat(document.getElementById('deglazeVal').value);
+        if(!g||!d) return;
+        const dec=(g-d)/g;
+        const res=document.getElementById('glazeResult');
+        res.style.display="block";
+        res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
     }
 
-    // Feature 3
     let numbers = [];
     function addNumber() {
-        const inp = document.getElementById('numberInput');
-        const val = parseFloat(inp.value);
-        if (isNaN(val)) return;
+        const inp=document.getElementById('numberInput');
+        const val=parseFloat(inp.value); if(isNaN(val)) return;
+        document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
         numbers.push(val);
-        inp.value = '';
-        renderList();
+        inp.value=''; renderList();
+        const container = document.getElementById('numberList');
+        container.scrollTop = container.scrollHeight;
+        clearTimeout(window.lastAddedTimeout);
+        window.lastAddedTimeout=setTimeout(()=>{document.getElementById('lastAddedDisplay').innerText='';},3000);
     }
-    function removeNumber(i) { numbers.splice(i, 1); renderList(); }
-    function clearNumbers() { numbers = []; renderList(); }
-    function updateVal(i, v) { numbers[i] = parseFloat(v) || 0; updateStats(); }
+
+    function removeNumber(i){numbers.splice(i,1); renderList();}
+    function clearNumbers(){ numbers=[]; renderList(); }
+    function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
         const container = document.getElementById('numberList');
+        const clearBtn = document.getElementById('clearAllBtn');
         container.innerHTML = '';
+        if(numbers.length === 0) { container.style.display = "none"; clearBtn.style.display = "none"; } 
+        else { container.style.display = "flex"; clearBtn.style.display = "block"; }
+
+        const svgIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+
         numbers.forEach((n, i) => {
             const div = document.createElement('div');
             div.className = 'number-item';
             div.draggable = true;
-            div.innerHTML = `<span class="drag-handle">☰</span>
-                <input type="number" class="edit-input" value="${n}" onchange="updateVal(${i}, this.value)" inputmode="decimal">
-                <button class="remove-btn" onclick="removeNumber(${i})">×</button>`;
-            
+            div.innerHTML = `<span class="drag-handle">${svgIcon}</span><input type="number" class="edit-input" value="${n}" onchange="updateVal(${i}, this.value)" inputmode="decimal"><button class="remove-btn" onclick="removeNumber(${i})">&times;</button>`;
+            div.addEventListener('contextmenu', (e) => e.preventDefault());
             div.addEventListener('dragstart', () => div.classList.add('dragging'));
             div.addEventListener('dragend', () => {
                 div.classList.remove('dragging');
-                const items = [...container.querySelectorAll('.edit-input')];
-                numbers = items.map(input => parseFloat(input.value) || 0);
+                numbers = [...container.querySelectorAll('.edit-input')].map(input => parseFloat(input.value) || 0);
                 updateStats();
             });
             container.appendChild(div);
@@ -182,28 +209,39 @@
         container.addEventListener('dragover', e => {
             e.preventDefault();
             const dragging = document.querySelector('.dragging');
-            if (!dragging) return;
-            const afterElement = [...container.querySelectorAll('.number-item:not(.dragging)')].reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = e.clientY - box.top - box.height / 2;
-                return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-            afterElement ? container.insertBefore(dragging, afterElement) : container.appendChild(dragging);
+            if(!dragging) return;
+            const afterElement = getDragAfterElement(container, e.clientY);
+            if (afterElement == null) container.appendChild(dragging);
+            else container.insertBefore(dragging, afterElement);
         });
         updateStats();
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.number-item:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+            else return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
     function updateStats() {
         const sum = numbers.reduce((a, b) => a + b, 0);
         document.getElementById('statCount').innerText = numbers.length;
         document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
-        document.getElementById('statAvg').innerText = numbers.length ? (sum / numbers.length).toFixed(2).replace(/\.00$/, '') : 0;
+        const avg = numbers.length ? (sum / numbers.length) : 0;
+        document.getElementById('statAvg').innerText = avg.toFixed(2).replace(/\.00$/, '');
     }
 
-    // PWA Support
-    if ('serviceWorker' in navigator) {
-        const sw = 'data:application/javascript;base64,' + btoa('self.addEventListener("fetch", (event) => { event.respondWith(fetch(event.request)); });');
-        navigator.serviceWorker.register(sw);
+    function calculateSalinity() {
+        const brix = parseFloat(document.getElementById('brixVal').value);
+        if (isNaN(brix)) return;
+        const salinity = (brix / 26.4) * 100;
+        const res = document.getElementById('salinityResult');
+        res.style.display = "block";
+        res.innerHTML = `Salinity: <strong>${salinity.toFixed(2)}%</strong>`;
     }
 </script>
 </body>
