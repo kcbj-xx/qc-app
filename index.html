@@ -124,7 +124,6 @@
     const manifestURL = URL.createObjectURL(blob);
     document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
 
-    // Register Service Worker for Offline/Install support
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
@@ -169,17 +168,24 @@
     function addNumber() {
         const inp=document.getElementById('numberInput');
         const val=parseFloat(inp.value); if(isNaN(val)) return;
+        
+        // Update detail text (Timer Logic Removed)
         document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
+        
         numbers.push(val);
         inp.value=''; renderList();
         const container = document.getElementById('numberList');
         container.scrollTop = container.scrollHeight;
-        clearTimeout(window.lastAddedTimeout);
-        window.lastAddedTimeout=setTimeout(()=>{document.getElementById('lastAddedDisplay').innerText='';},3000);
     }
 
     function removeNumber(i){numbers.splice(i,1); renderList();}
-    function clearNumbers(){ numbers=[]; renderList(); }
+    
+    function clearNumbers(){ 
+        numbers=[]; 
+        document.getElementById('lastAddedDisplay').innerText=''; // Clears detail when resetting
+        renderList(); 
+    }
+
     function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
