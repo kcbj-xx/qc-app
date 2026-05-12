@@ -55,7 +55,7 @@
         .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; }
         .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
         
-        /* Updated remove button styling to center the 'X' */
+        /* Centered X */
         .remove-btn { 
             background: #fee2e2; 
             color: #ef4444; 
@@ -322,7 +322,13 @@
         updateStats();
     }
 
-    function clearNumbers() { if (confirm("Clear all numbers?")) { numbers = []; renderList(); } }
+    function clearNumbers() { 
+        if (confirm("Clear all numbers?")) { 
+            numbers = []; 
+            document.getElementById('lastAddedDisplay').innerText = ''; // Clears the last added text
+            renderList(); 
+        } 
+    }
 
     function updateStats() {
         const sum = numbers.reduce((a, b) => a + b, 0);
