@@ -7,10 +7,7 @@
     
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
     
-    <link rel="manifest" id="pwa-manifest">
-
     <style>
         :root { 
             --primary: #2563eb; 
@@ -32,126 +29,82 @@
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
         input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; }
-        input.input-error { border: 2px solid var(--error); background-color: #fff1f2; }
         
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 8px; }
         button:hover { background-color: var(--primary-hover); }
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
         
-        .btn-timer-start { background-color: #8b5cf6; }
-        .btn-timer-start:hover { background-color: #7c3aed; }
-        
-        .timer-display { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 2rem; font-weight: bold; margin-top: 10px; text-align: center; border: 2px solid #334155; transition: all 0.3s; }
+        .timer-display { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 2rem; font-weight: bold; margin-top: 10px; text-align: center; border: 2px solid #334155; }
         .timer-active { border-color: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
-        .timer-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
         
-        .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
-        .glaze-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 15px 0; text-align: center; }
-        .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
-        .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
-        .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
-        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
-        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; }
-        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
+        .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
         
-        .remove-btn { 
-            background: #fee2e2; 
-            color: #ef4444; 
-            border: none; 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 50%; 
-            cursor: pointer; 
+        /* Drag and Drop Styles */
+        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; }
+        .number-item { 
             display: flex; 
             align-items: center; 
-            justify-content: center; 
-            font-size: 1.2rem; 
-            padding: 0;
-            line-height: 1;
+            background: #fff; 
+            border: 1px solid var(--border); 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            gap: 10px; 
+            cursor: grab;
+            transition: transform 0.1s;
         }
+        .number-item.dragging { opacity: 0.5; background: #e0f2fe; border: 1px dashed var(--primary); }
+        .edit-input { flex: 1; border: none; background: transparent; font-weight: 600; font-size: 1rem; }
         
-        .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; height: 1.2em; }
-        .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
-        @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
+        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; text-align: center; }
+        .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Timer Section -->
     <div class="card">
         <h2>Sampling Time</h2>
         <div class="row">
-            <div class="input-group">
-                <label>Min Mins</label>
-                <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
-            </div>
-            <div class="input-group">
-                <label>Max Mins</label>
-                <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
-            </div>
+            <div class="input-group"><label>Min Mins</label><input type="number" id="minMinutes" placeholder="40"></div>
+            <div class="input-group"><label>Max Mins</label><input type="number" id="maxMinutes" placeholder="60"></div>
         </div>
-        <div class="input-group">
-            <label>Start Time</label>
-            <input type="time" id="startTime">
-        </div>
-        
+        <div class="input-group"><label>Start Time</label><input type="time" id="startTime"></div>
         <button onclick="generateTime(false)">Generate Time</button>
         <div id="timeResult" class="result" style="display: none;"></div>
-
-        <div id="timerControls" style="display: none; margin-top: 15px;">
-            <button class="btn-timer-start" onclick="handleStartTimer()">Start Countdown</button>
-        </div>
-
         <div id="activeTimer" style="display: none; margin-top: 15px;">
-            <div class="timer-label">Time Remaining</div>
             <div class="timer-display" id="countdown">00:00:00</div>
             <button class="secondary" id="stopAlarmBtn" onclick="stopTimer()" style="display: none;">Stop Alarm</button>
             <button class="secondary" id="cancelTimerBtn" onclick="stopTimer()">Cancel Timer</button>
         </div>
-
-        <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
     </div>
 
+    <!-- Glaze Calculator -->
     <div class="card">
         <h2>Glaze Calculator</h2>
         <div class="row">
-            <div class="input-group"><label>Glazed</label><input type="number" step="any" id="glazedVal" inputmode="decimal"></div>
-            <div class="input-group"><label>Deglazed</label><input type="number" step="any" id="deglazeVal" inputmode="decimal"></div>
+            <div class="input-group"><label>Glazed</label><input type="number" step="any" id="glazedVal"></div>
+            <div class="input-group"><label>Deglazed</label><input type="number" step="any" id="deglazeVal"></div>
         </div>
         <button onclick="calculateGlaze()">Calculate Glaze</button>
-        <button id="clearGlazeBtn" class="secondary" onclick="resetGlaze()" style="display: none;">Clear</button>
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
+    <!-- Averaging & Drag/Drop Section -->
     <div class="card">
         <h2>Averaging & Sum</h2>
         <div class="stats-grid">
-            <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
-            <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
-            <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
+            <div class="stat-box"><small>Count</small><div id="statCount">0</div></div>
+            <div class="stat-box"><small>Sum</small><div id="statSum">0</div></div>
+            <div class="stat-box"><small>Avg</small><div id="statAvg">0</div></div>
         </div>
-        <div class="input-group">
-            <label>Add Number</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" onkeypress="if(event.key==='Enter')addNumber()">
-                <button onclick="addNumber()" style="width: auto;">Add</button>
-            </div>
-            <div class="last-added-text" id="lastAddedDisplay"></div>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" step="any" id="numberInput" placeholder="0.00">
+            <button onclick="addNumber()" style="width: auto;">Add</button>
         </div>
         <div id="numberList" class="drag-container"></div>
-        <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear All List</button>
-    </div>
-
-    <div class="card">
-        <h2>Salinity Calculator</h2>
-        <div class="input-group">
-            <label>Brix Value</label>
-            <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
-        </div>
-        <button onclick="calculateSalinity()">Calculate Salinity</button>
-        <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none;">Clear</button>
-        <div class="result" id="salinityResult" style="display: none;"></div>
+        <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear List</button>
     </div>
 </div>
 
@@ -160,16 +113,9 @@
 </audio>
 
 <script>
-    // --- SETUP & PERMISSIONS ---
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered"));
-    }
-
-    if ("Notification" in window) {
-        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
-    }
+    // --- SERVICE WORKER & NOTIFICATIONS ---
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+    if ("Notification" in window && Notification.permission === "default") { Notification.requestPermission(); }
 
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
@@ -177,202 +123,150 @@
     let wakeLock = null;
     const alarm = document.getElementById('alarmSound');
 
-    async function requestWakeLock() {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-            }
-        } catch (err) { console.error(err.message); }
-    }
-
-    // --- SAMPLING TIME LOGIC ---
+    // --- TIMER LOGIC ---
     function generateTime(isRecursive) {
-        const minInput = document.getElementById('minMinutes');
-        const maxInput = document.getElementById('maxMinutes');
-        const startTimeInput = document.getElementById('startTime');
-        const res = document.getElementById('timeResult');
+        const min = parseInt(document.getElementById('minMinutes').value);
+        const max = parseInt(document.getElementById('maxMinutes').value);
+        let startStr = isRecursive ? lastGeneratedTimeStr : document.getElementById('startTime').value;
+        if (!min || !max || !startStr) return;
 
-        [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
-
-        if (!isRecursive) {
-            let errors = [];
-            if (!minInput.value) { errors.push("Min"); minInput.classList.add('input-error'); }
-            if (!maxInput.value) { errors.push("Max"); maxInput.classList.add('input-error'); }
-            if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
-            if (errors.length > 0) {
-                res.style.display = "block";
-                res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
-                return;
-            }
-        }
-
-        const min = parseInt(minInput.value); 
-        const max = parseInt(maxInput.value);
-        let startStr = isRecursive ? lastGeneratedTimeStr : startTimeInput.value;
         const rand = Math.floor(Math.random() * (max - min + 1)) + min;
         const [h, m] = startStr.split(':').map(Number);
-        
         let target = new Date();
         target.setHours(h, m + rand, 0, 0);
-        if (target < new Date()) { target.setDate(target.getDate() + 1); }
+        if (target < new Date()) target.setDate(target.getDate() + 1);
 
         targetTimeObject = target;
         lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
         
+        const res = document.getElementById('timeResult');
         res.style.display = "block";
-        res.innerHTML = `
-            <div style="font-size:0.85rem;color:#64748b;">Reference: ${startStr} (+${rand}m)</div>
-            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Target: ${lastGeneratedTimeStr}</div>
-            <button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>
-        `;
-        document.getElementById('timerControls').style.display = 'block';
-        document.getElementById('clearTimeBtn').style.display = 'block';
+        res.innerHTML = `<strong>Target: ${lastGeneratedTimeStr}</strong><br><button onclick="startTimerUI()" style="margin-top:10px; background:#8b5cf6;">Start Timer</button>`;
     }
 
-    function handleStartTimer() {
-        if (timerInterval && !confirm("Override existing timer?")) return;
-        if (targetTimeObject) {
-            requestWakeLock();
-            startTimer(targetTimeObject);
-        }
-    }
-
-    function startTimer(targetDate) {
-        stopTimer();
-        const display = document.getElementById('countdown');
+    async function startTimerUI() {
+        if (timerInterval) clearInterval(timerInterval);
+        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+        
         document.getElementById('activeTimer').style.display = 'block';
-        display.classList.add('timer-active');
-        document.getElementById('cancelTimerBtn').style.display = 'block';
         document.getElementById('stopAlarmBtn').style.display = 'none';
+        document.getElementById('cancelTimerBtn').style.display = 'block';
 
         timerInterval = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = targetDate.getTime() - now;
-
+            const distance = targetTimeObject.getTime() - new Date().getTime();
             if (distance < 0) {
-                triggerFinalAlarm();
+                triggerAlarm();
                 return;
             }
-
             const h = Math.floor((distance % 86400000) / 3600000);
             const m = Math.floor((distance % 3600000) / 60000);
             const s = Math.floor((distance % 60000) / 1000);
-            display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            document.getElementById('countdown').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
 
-    function triggerFinalAlarm() {
+    function triggerAlarm() {
         clearInterval(timerInterval);
-        const display = document.getElementById('countdown');
-        display.innerText = "00:00:00";
-        display.style.color = "var(--error)";
-        document.getElementById('cancelTimerBtn').style.display = 'none';
+        document.getElementById('countdown').innerText = "TIME UP!";
         document.getElementById('stopAlarmBtn').style.display = 'block';
+        document.getElementById('cancelTimerBtn').style.display = 'none';
+        
+        // Force volume to max and play
+        alarm.volume = 1.0; 
+        alarm.play();
+
+        // Device Vibration pulse
+        if ("vibrate" in navigator) { navigator.vibrate([500, 200, 500, 200, 500]); }
 
         if (Notification.permission === "granted") {
             navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification("QC Timer Finished", {
-                    body: "Time to take the sample!",
-                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-                    tag: "timer-alert",
-                    renotify: true,
-                    requireInteraction: true
-                });
+                reg.showNotification("QC Alert", { body: "Sample Time Reached!", requireInteraction: true });
             });
         }
-        alarm.play().catch(() => console.log("Tap screen for audio."));
     }
 
     function stopTimer() {
         clearInterval(timerInterval);
-        timerInterval = null;
-        alarm.pause();
-        alarm.currentTime = 0;
-        if (wakeLock) { wakeLock.release().then(() => wakeLock = null); }
+        alarm.pause(); alarm.currentTime = 0;
+        if (wakeLock) { wakeLock.release(); wakeLock = null; }
         document.getElementById('activeTimer').style.display = 'none';
-        document.getElementById('countdown').style.color = "#38bdf8";
-        document.getElementById('countdown').classList.remove('timer-active');
     }
 
-    function resetSamplingTime() {
-        if (timerInterval && !confirm("Reset timer?")) return;
-        stopTimer();
-        document.getElementById('minMinutes').value = '';
-        document.getElementById('maxMinutes').value = '';
-        document.getElementById('startTime').value = '';
-        document.getElementById('timeResult').style.display = 'none';
-        document.getElementById('timerControls').style.display = 'none';
-        document.getElementById('clearTimeBtn').style.display = 'none';
-        lastGeneratedTimeStr = "";
-        targetTimeObject = null;
-    }
-
-    // --- CALCULATION LOGIC ---
+    // --- GLAZE CALC ---
     function calculateGlaze() {
         const g = parseFloat(document.getElementById('glazedVal').value);
         const d = parseFloat(document.getElementById('deglazeVal').value);
         if (!g || !d) return;
-        const dec = (g - d) / g;
-        const res = document.getElementById('glazeResult');
-        res.style.display = "block";
-        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
-        document.getElementById('clearGlazeBtn').style.display = 'block';
+        const res = ((g - d) / g) * 100;
+        const out = document.getElementById('glazeResult');
+        out.style.display = "block";
+        out.innerHTML = `Glaze: <strong>${res.toFixed(2)}%</strong>`;
     }
 
-    function resetGlaze() {
-        document.getElementById('glazedVal').value = ''; document.getElementById('deglazeVal').value = '';
-        document.getElementById('glazeResult').style.display = 'none'; document.getElementById('clearGlazeBtn').style.display = 'none';
-    }
-
+    // --- AVERAGING & DRAG/DROP LOGIC ---
     let numbers = [];
+
     function addNumber() {
         const inp = document.getElementById('numberInput');
-        const val = parseFloat(inp.value); if (isNaN(val)) return;
-        document.getElementById('lastAddedDisplay').innerText = `Last added: ${val}`;
-        numbers.push(val); 
-        inp.value = ''; 
+        const val = parseFloat(inp.value);
+        if (isNaN(val)) return;
+        numbers.push(val);
+        inp.value = "";
         renderList();
-        inp.focus(); 
     }
 
     function renderList() {
         const container = document.getElementById('numberList');
-        container.innerHTML = '';
+        container.innerHTML = "";
         container.style.display = numbers.length ? "flex" : "none";
         document.getElementById('clearAllBtn').style.display = numbers.length ? "block" : "none";
-        numbers.forEach((n, i) => {
-            const div = document.createElement('div');
-            div.className = 'number-item';
-            div.innerHTML = `<input type="number" class="edit-input" value="${n}" onchange="numbers[${i}]=parseFloat(this.value);updateStats();" inputmode="decimal">
-                             <button class="remove-btn" onclick="numbers.splice(${i},1);renderList();">&times;</button>`;
-            container.appendChild(div);
+
+        numbers.forEach((num, index) => {
+            const item = document.createElement('div');
+            item.className = 'number-item';
+            item.draggable = true;
+            item.dataset.index = index;
+            item.innerHTML = `
+                <span style="color:#94a3b8">☰</span>
+                <input type="number" class="edit-input" value="${num}" onchange="updateNum(${index}, this.value)">
+                <button class="remove-btn" onclick="removeNum(${index})">&times;</button>
+            `;
+
+            // Drag Events
+            item.addEventListener('dragstart', () => item.classList.add('dragging'));
+            item.addEventListener('dragend', () => item.classList.remove('dragging'));
+            container.appendChild(item);
         });
+
+        // Drop Logic
+        container.addEventListener('dragover', e => {
+            e.preventDefault();
+            const draggingItem = document.querySelector('.dragging');
+            const siblings = [...container.querySelectorAll('.number-item:not(.dragging)')];
+            let nextSibling = siblings.find(sibling => e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2);
+            container.insertBefore(draggingItem, nextSibling);
+        });
+
+        container.addEventListener('drop', e => {
+            e.preventDefault();
+            const newOrder = [...container.querySelectorAll('.number-item')].map(el => parseFloat(el.querySelector('input').value));
+            numbers = newOrder;
+            updateStats();
+        });
+
         updateStats();
     }
 
-    function clearNumbers() { 
-        if (confirm("Clear all?")) { numbers = []; document.getElementById('lastAddedDisplay').innerText = ''; renderList(); } 
-    }
+    function updateNum(i, v) { numbers[i] = parseFloat(v); updateStats(); }
+    function removeNum(i) { numbers.splice(i, 1); renderList(); }
+    function clearNumbers() { numbers = []; renderList(); }
 
     function updateStats() {
         const sum = numbers.reduce((a, b) => a + b, 0);
         document.getElementById('statCount').innerText = numbers.length;
-        document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
-        document.getElementById('statAvg').innerText = (numbers.length ? (sum / numbers.length) : 0).toFixed(2).replace(/\.00$/, '');
-    }
-
-    function calculateSalinity() {
-        const brix = parseFloat(document.getElementById('brixVal').value); if (isNaN(brix)) return;
-        const res = document.getElementById('salinityResult'); res.style.display = "block";
-        res.innerHTML = `Salinity: <strong>${((brix / 26.4) * 100).toFixed(2)}%</strong>`;
-        document.getElementById('clearSalinityBtn').style.display = 'block';
-    }
-
-    function resetSalinity() {
-        document.getElementById('brixVal').value = ''; document.getElementById('salinityResult').style.display = 'none';
-        document.getElementById('clearSalinityBtn').style.display = 'none';
+        document.getElementById('statSum').innerText = sum.toFixed(2);
+        document.getElementById('statAvg').innerText = numbers.length ? (sum / numbers.length).toFixed(3) : 0;
     }
 </script>
 </body>
-    </html>
-    
+</html>
