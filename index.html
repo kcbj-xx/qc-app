@@ -207,26 +207,26 @@
     }
 
     function setSystemAlarm(timeStr) {
-        const [hour, minute] = timeStr.split(':');
-        const message = "Sampling Time";
-        const intentUrl = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${parseInt(hour)};i.android.intent.extra.alarm.MINUTES=${parseInt(minute)};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(message)};i.android.intent.extra.alarm.SKIP_UI=false;package=com.google.android.deskclock;end`;
-        
-        const anchor = document.createElement('a');
-        anchor.href = intentUrl;
-        
-        try {
-            anchor.click();
-            setTimeout(() => {
-                if (!document.hidden) {
-                    navigator.clipboard.writeText(timeStr);
-                    alert(`Redirect blocked. Time (${timeStr}) copied to clipboard.`);
-                }
-            }, 1000);
-        } catch (e) {
-            navigator.clipboard.writeText(timeStr);
-            alert(`Time ${timeStr} copied to clipboard.`);
-        }
-    }
+    const [hour, minute] = timeStr.split(':');
+    const message = "Sampling Time";
+    
+    // Using the 'intent://' syntax specifically optimized for Chrome on Android
+    const intentUrl = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${parseInt(hour)};i.android.intent.extra.alarm.MINUTES=${parseInt(minute)};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(message)};i.android.intent.extra.alarm.SKIP_UI=false;end`;
+
+    // We create a hidden link and simulate a direct click. 
+    // This is the most "official" way to trigger an app hand-off.
+    const link = document.createElement('a');
+    link.href = intentUrl;
+    link.rel = 'external'; 
+    
+    // Attempt to open the clock
+    link.click();
+
+    // Background fallback: Always copy to clipboard regardless
+    navigator.clipboard.writeText(timeStr).then(() => {
+        console.log("Time copied to clipboard as backup.");
+    });
+}
 
     function resetSamplingTime() {
         document.getElementById('startTime').value = '';
