@@ -107,7 +107,7 @@
 </div>
 
 <script>
-    /* PWA IMPLEMENTATION WITH CACHE-FIRST LOGIC */
+    /* IMPROVED PWA & SERVICE WORKER LOGIC */
     const manifest = {
         "name": "QC Toolset Pro",
         "short_name": "QC Tool",
@@ -122,39 +122,52 @@
             "purpose": "any maskable"
         }]
     };
-    const stringManifest = JSON.stringify(manifest);
-    const blob = new Blob([stringManifest], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blob);
-    document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
+    document.querySelector('#pwa-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'qc-tool-cache-v1';
-                const FILES_TO_CACHE = ['./', location.pathname];
+                const CACHE_NAME = 'qc-tool-v2';
+                const APP_URL = location.origin + location.pathname;
 
-                self.addEventListener('install', (e) => {
-                    e.waitUntil(
-                        caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
+                self.addEventListener('install', (event) => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME).then((cache) => {
+                            return cache.addAll(['./', APP_URL]);
+                        })
                     );
                     self.skipWaiting();
                 });
 
-                self.addEventListener('activate', (e) => {
-                    e.waitUntil(clients.claim());
+                self.addEventListener('activate', (event) => {
+                    event.waitUntil(
+                        caches.keys().then((keys) => {
+                            return Promise.all(keys.map((key) => {
+                                if (key !== CACHE_NAME) return caches.delete(key);
+                            }));
+                        }).then(() => self.clients.claim())
+                    );
                 });
 
-                self.addEventListener('fetch', (e) => {
-                    e.respondWith(
-                        caches.match(e.request).then((response) => {
-                            return response || fetch(e.request);
+                self.addEventListener('fetch', (event) => {
+                    event.respondWith(
+                        caches.match(event.request).then((cachedResponse) => {
+                            if (cachedResponse) return cachedResponse;
+                            return fetch(event.request).then((networkResponse) => {
+                                return networkResponse;
+                            }).catch(() => {
+                                // Fallback if network fails and not in cache
+                                return caches.match('./') || caches.match(APP_URL);
+                            });
                         })
                     );
                 });
             `;
             const blob = new Blob([swCode], {type: 'text/javascript'});
-            const url = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(url);
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).then(reg => {
+                // Force update check on load
+                reg.update();
+            });
         });
     }
 
@@ -217,11 +230,7 @@
     }
 
     function removeNumber(i){numbers.splice(i,1); renderList();}
-    function clearNumbers(){ 
-        numbers=[]; 
-        document.getElementById('lastAddedDisplay').innerText=''; 
-        renderList(); 
-    }
+    function clearNumbers(){ numbers=[]; document.getElementById('lastAddedDisplay').innerText=''; renderList(); }
     function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
@@ -238,7 +247,6 @@
             div.className = 'number-item';
             div.draggable = true;
             div.innerHTML = `<span class="drag-handle">${svgIcon}</span><input type="number" class="edit-input" value="${n}" onchange="updateVal(${i}, this.value)" inputmode="decimal"><button class="remove-btn" onclick="removeNumber(${i})">&times;</button>`;
-            div.addEventListener('contextmenu', (e) => e.preventDefault());
             div.addEventListener('dragstart', () => div.classList.add('dragging'));
             div.addEventListener('dragend', () => {
                 div.classList.remove('dragging');
@@ -280,10 +288,9 @@
     function calculateSalinity() {
         const brix = parseFloat(document.getElementById('brixVal').value);
         if (isNaN(brix)) return;
-        const salinity = (brix / 26.4) * 100;
         const res = document.getElementById('salinityResult');
         res.style.display = "block";
-        res.innerHTML = `Salinity: <strong>${salinity.toFixed(2)}%</strong>`;
+        res.innerHTML = `Salinity: <strong>${((brix / 26.4) * 100).toFixed(2)}%</strong>`;
         document.getElementById('clearSalinityBtn').style.display = 'block';
     }
 
