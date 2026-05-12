@@ -292,7 +292,7 @@ function triggerFinalAlarm() {
     if (Notification.permission === "granted") {
         navigator.serviceWorker.ready.then(registration => {
             registration.showNotification("QC Timer Finished", {
-                body: "Time to take the sample!",
+                body: "Time to take samples!",
                 icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
                 tag: "timer-alert",
                 renotify: true,
