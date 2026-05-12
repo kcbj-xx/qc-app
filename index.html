@@ -48,7 +48,6 @@
         button:hover { background-color: var(--primary-hover); }
         button.secondary { background-color: #ef4444; width: 100%; margin-top: 10px; }
         
-        /* New Alarm Button Style */
         .btn-alarm { background-color: #8b5cf6; margin-top: 8px; font-size: 0.9rem; }
         .btn-alarm:hover { background-color: #7c3aed; }
         
@@ -157,7 +156,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'qc-tool-v4';
+                const CACHE_NAME = 'qc-tool-v5';
                 const APP_URL = location.origin + location.pathname;
                 self.addEventListener('install', (event) => {
                     event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['./', APP_URL])));
@@ -210,19 +209,19 @@
     function setSystemAlarm(timeStr) {
         const [hour, minute] = timeStr.split(':');
         const message = "Sampling Time";
+        const intentUrl = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${parseInt(hour)};i.android.intent.extra.alarm.MINUTES=${parseInt(minute)};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(message)};i.android.intent.extra.alarm.SKIP_UI=false;package=com.google.android.deskclock;end`;
         
-        // Android Intent for Alarm Clock
-        const intentUrl = `intent://android.intent.action.SET_ALARM#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${parseInt(hour)};i.android.intent.extra.alarm.MINUTES=${parseInt(minute)};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(message)};i.android.intent.extra.alarm.SKIP_UI=false;end`;
+        const anchor = document.createElement('a');
+        anchor.href = intentUrl;
         
         try {
-            window.location.href = intentUrl;
-            // Fallback for non-Android: Copy to clipboard
+            anchor.click();
             setTimeout(() => {
-                if (document.hasFocus()) {
+                if (!document.hidden) {
                     navigator.clipboard.writeText(timeStr);
-                    alert(`Alarm screen requested. Time ${timeStr} also copied to clipboard.`);
+                    alert(`Redirect blocked. Time (${timeStr}) copied to clipboard.`);
                 }
-            }, 500);
+            }, 1000);
         } catch (e) {
             navigator.clipboard.writeText(timeStr);
             alert(`Time ${timeStr} copied to clipboard.`);
@@ -268,7 +267,16 @@
     }
 
     function removeNumber(i){numbers.splice(i,1); renderList();}
-    function clearNumbers(){ numbers=[]; document.getElementById('lastAddedDisplay').innerText=''; renderList(); }
+    
+    /* MODIFIED CLEAR FUNCTION WITH PROMPT */
+    function clearNumbers() {
+        if (confirm("Are you sure you want to clear all numbers? This cannot be undone.")) {
+            numbers = []; 
+            document.getElementById('lastAddedDisplay').innerText = ''; 
+            renderList(); 
+        }
+    }
+
     function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
