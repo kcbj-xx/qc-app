@@ -60,7 +60,7 @@
         </div>
         <div class="input-group"><label>Start Time</label><input type="time" id="startTime"></div>
         <button onclick="generateTime(false)">Generate Sampling Time</button>
-        <button class="secondary" onclick="resetSamplingTime()">Reset Start Time</button>
+        <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear</button>
         <div class="result" id="timeResult" style="display: none;"></div>
     </div>
 
@@ -71,7 +71,7 @@
             <div class="input-group"><label>Deglazed</label><input type="number" step="any" id="deglazeVal" inputmode="decimal"></div>
         </div>
         <button onclick="calculateGlaze()">Calculate Glaze</button>
-        <button class="secondary" onclick="resetGlaze()">Clear</button>
+        <button id="clearGlazeBtn" class="secondary" onclick="resetGlaze()" style="display: none;">Clear</button>
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
@@ -101,7 +101,7 @@
             <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
         </div>
         <button onclick="calculateSalinity()">Calculate Salinity</button>
-        <button class="secondary" onclick="resetSalinity()">Clear</button>
+        <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none;">Clear</button>
         <div class="result" id="salinityResult" style="display: none;"></div>
     </div>
 </div>
@@ -175,6 +175,7 @@
         lastGeneratedTimeStr=`${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
         res.style.display="block";
         res.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div><div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div><button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>`;
+        document.getElementById('clearTimeBtn').style.display = 'block';
     }
 
     function resetSamplingTime() {
@@ -183,6 +184,7 @@
         res.style.display = 'none';
         res.innerHTML = '';
         lastGeneratedTimeStr = "";
+        document.getElementById('clearTimeBtn').style.display = 'none';
     }
 
     function calculateGlaze() {
@@ -193,12 +195,14 @@
         const res=document.getElementById('glazeResult');
         res.style.display="block";
         res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
+        document.getElementById('clearGlazeBtn').style.display = 'block';
     }
 
     function resetGlaze() {
         document.getElementById('glazedVal').value = '';
         document.getElementById('deglazeVal').value = '';
         document.getElementById('glazeResult').style.display = 'none';
+        document.getElementById('clearGlazeBtn').style.display = 'none';
     }
 
     let numbers = [];
@@ -280,11 +284,13 @@
         const res = document.getElementById('salinityResult');
         res.style.display = "block";
         res.innerHTML = `Salinity: <strong>${salinity.toFixed(2)}%</strong>`;
+        document.getElementById('clearSalinityBtn').style.display = 'block';
     }
 
     function resetSalinity() {
         document.getElementById('brixVal').value = '';
         document.getElementById('salinityResult').style.display = 'none';
+        document.getElementById('clearSalinityBtn').style.display = 'none';
     }
 </script>
 </body>
