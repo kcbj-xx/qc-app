@@ -22,9 +22,9 @@
             --text: #1f2937; 
             --border: #e5e7eb; 
             --accent: #d97706; 
+            --success: #10b981;
         }
         
-        /* This line disables the pull-to-refresh gesture */
         body { 
             overscroll-behavior-y: contain; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -47,6 +47,11 @@
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
         button:hover { background-color: var(--primary-hover); }
         button.secondary { background-color: #ef4444; width: 100%; margin-top: 10px; }
+        
+        /* New Alarm Button Style */
+        .btn-alarm { background-color: #8b5cf6; margin-top: 8px; font-size: 0.9rem; }
+        .btn-alarm:hover { background-color: #7c3aed; }
+        
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
         .glaze-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 15px 0; text-align: center; }
@@ -59,24 +64,25 @@
         .drag-handle { color: #94a3b8; cursor: grab; display: flex; align-items: center; justify-content: center; padding: 5px 10px; touch-action: none; -webkit-touch-callout: none; }
         .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; padding: 4px; font-size: 1rem; }
         .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .last-added-text { font-size: 0.85rem; color: #10b981; font-weight: 600; margin-top: 5px; height: 1.2em; }
-        .btn-recursive { background-color: #10b981; margin-top: 12px; font-size: 0.95rem; padding: 10px; }
+        .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; height: 1.2em; }
+        .btn-recursive { background-color: var(--success); margin-top: 12px; font-size: 0.95rem; padding: 10px; }
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Sampling Time Card -->
     <div class="card">
         <h2>Sampling Time</h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
-                <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
+                <input type="number" id="minMinutes" value="40" inputmode="numeric">
             </div>
             <div class="input-group">
                 <label>Max Mins</label>
-                <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
+                <input type="number" id="maxMinutes" value="60" inputmode="numeric">
             </div>
         </div>
         <div class="input-group"><label>Start Time</label><input type="time" id="startTime"></div>
@@ -85,6 +91,7 @@
         <div class="result" id="timeResult" style="display: none;"></div>
     </div>
 
+    <!-- Glaze Calculator Card -->
     <div class="card">
         <h2>Glaze Calculator</h2>
         <div class="row">
@@ -96,6 +103,7 @@
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
+    <!-- Averaging Card -->
     <div class="card">
         <h2>Averaging & Sum</h2>
         <div class="stats-grid">
@@ -104,7 +112,7 @@
             <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
         </div>
         <div class="input-group">
-            <label>Add Number (Adds to Bottom)</label>
+            <label>Add Number</label>
             <div style="display: flex; gap: 10px;">
                 <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" onkeypress="if(event.key==='Enter')addNumber()">
                 <button onmousedown="event.preventDefault()" onclick="addNumber()" style="width: auto;">Add</button>
@@ -115,6 +123,7 @@
         <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear All</button>
     </div>
 
+    <!-- Salinity Card -->
     <div class="card">
         <h2>Salinity Calculator</h2>
         <div class="input-group">
@@ -148,28 +157,19 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'qc-tool-v3';
+                const CACHE_NAME = 'qc-tool-v4';
                 const APP_URL = location.origin + location.pathname;
-
                 self.addEventListener('install', (event) => {
-                    event.waitUntil(
-                        caches.open(CACHE_NAME).then((cache) => cache.addAll(['./', APP_URL]))
-                    );
+                    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['./', APP_URL])));
                     self.skipWaiting();
                 });
-
                 self.addEventListener('activate', (event) => {
-                    event.waitUntil(
-                        caches.keys().then((keys) => Promise.all(
-                            keys.map((key) => { if (key !== CACHE_NAME) return caches.delete(key); })
-                        )).then(() => self.clients.claim())
-                    );
+                    event.waitUntil(caches.keys().then((keys) => Promise.all(
+                        keys.map((key) => { if (key !== CACHE_NAME) return caches.delete(key); })
+                    )).then(() => self.clients.claim()));
                 });
-
                 self.addEventListener('fetch', (event) => {
-                    event.respondWith(
-                        caches.match(event.request).then((cached) => cached || fetch(event.request))
-                    );
+                    event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
                 });
             `;
             const blob = new Blob([swCode], {type: 'text/javascript'});
@@ -185,16 +185,48 @@
         const maxStr = document.getElementById('maxMinutes').value || "60";
         let startStr = document.getElementById('startTime').value;
         const res = document.getElementById('timeResult');
+        
         if (isRecursive) { startStr = lastGeneratedTimeStr; } 
         else if (!startStr) { res.style.display="block"; res.innerHTML='<span style="color:red">Select Start Time</span>'; return; }
+        
         const min=parseInt(minStr); const max=parseInt(maxStr);
         const rand=Math.floor(Math.random()*(max-min+1))+min;
         const [h,m]=startStr.split(':').map(Number);
         const total=(h*60+m+rand)%1440;
         lastGeneratedTimeStr=`${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+        
         res.style.display="block";
-        res.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div><div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div><button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>`;
+        res.innerHTML = `
+            <div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div>
+            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div>
+            <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
+                <button class="btn-alarm" onclick="setSystemAlarm('${lastGeneratedTimeStr}')">⏰ Set Alarm</button>
+                <button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>
+            </div>
+        `;
         document.getElementById('clearTimeBtn').style.display = 'block';
+    }
+
+    function setSystemAlarm(timeStr) {
+        const [hour, minute] = timeStr.split(':');
+        const message = "Sampling Time";
+        
+        // Android Intent for Alarm Clock
+        const intentUrl = `intent://android.intent.action.SET_ALARM#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${parseInt(hour)};i.android.intent.extra.alarm.MINUTES=${parseInt(minute)};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(message)};i.android.intent.extra.alarm.SKIP_UI=false;end`;
+        
+        try {
+            window.location.href = intentUrl;
+            // Fallback for non-Android: Copy to clipboard
+            setTimeout(() => {
+                if (document.hasFocus()) {
+                    navigator.clipboard.writeText(timeStr);
+                    alert(`Alarm screen requested. Time ${timeStr} also copied to clipboard.`);
+                }
+            }, 500);
+        } catch (e) {
+            navigator.clipboard.writeText(timeStr);
+            alert(`Time ${timeStr} copied to clipboard.`);
+        }
     }
 
     function resetSamplingTime() {
