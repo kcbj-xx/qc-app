@@ -54,7 +54,24 @@
         .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
         .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; }
         .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
-        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
+        
+        /* Updated remove button styling to center the 'X' */
+        .remove-btn { 
+            background: #fee2e2; 
+            color: #ef4444; 
+            border: none; 
+            width: 36px; 
+            height: 36px; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.2rem; 
+            padding: 0;
+            line-height: 1;
+        }
+        
         .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; height: 1.2em; }
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
@@ -63,6 +80,7 @@
 <body>
 
 <div class="container">
+    <!-- Sampling Time Card -->
     <div class="card">
         <h2>Sampling Time</h2>
         <div class="row">
@@ -98,7 +116,7 @@
         <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
     </div>
 
-    <!-- Other tools remain same -->
+    <!-- Glaze Calculator Card -->
     <div class="card">
         <h2>Glaze Calculator</h2>
         <div class="row">
@@ -110,6 +128,7 @@
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
+    <!-- Averaging Card -->
     <div class="card">
         <h2>Averaging & Sum</h2>
         <div class="stats-grid">
@@ -129,6 +148,7 @@
         <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear All List</button>
     </div>
 
+    <!-- Salinity Card -->
     <div class="card">
         <h2>Salinity Calculator</h2>
         <div class="input-group">
@@ -258,7 +278,6 @@
         targetTimeObject = null;
     }
 
-    /* REUSED CALC LOGIC */
     function calculateGlaze() {
         const g=parseFloat(document.getElementById('glazedVal').value);
         const d=parseFloat(document.getElementById('deglazeVal').value);
@@ -280,7 +299,12 @@
         const inp=document.getElementById('numberInput');
         const val=parseFloat(inp.value); if(isNaN(val)) return;
         document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
-        numbers.push(val); inp.value=''; renderList();
+        numbers.push(val); 
+        inp.value=''; 
+        renderList();
+        
+        // This keeps the keyboard up on mobile devices
+        inp.focus(); 
     }
 
     function renderList() {
