@@ -105,7 +105,7 @@
 </div>
 
 <script>
-    /* PWA IMPLEMENTATION */
+    /* PWA IMPLEMENTATION WITH CACHE-FIRST LOGIC */
     const manifest = {
         "name": "QC Toolset Pro",
         "short_name": "QC Tool",
@@ -128,8 +128,27 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                self.addEventListener('install', (e) => { self.skipWaiting(); });
-                self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+                const CACHE_NAME = 'qc-tool-cache-v1';
+                const FILES_TO_CACHE = ['./', location.pathname];
+
+                self.addEventListener('install', (e) => {
+                    e.waitUntil(
+                        caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
+                    );
+                    self.skipWaiting();
+                });
+
+                self.addEventListener('activate', (e) => {
+                    e.waitUntil(clients.claim());
+                });
+
+                self.addEventListener('fetch', (e) => {
+                    e.respondWith(
+                        caches.match(e.request).then((response) => {
+                            return response || fetch(e.request);
+                        })
+                    );
+                });
             `;
             const blob = new Blob([swCode], {type: 'text/javascript'});
             const url = URL.createObjectURL(blob);
@@ -156,7 +175,6 @@
         res.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div><div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div><button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>`;
     }
 
-    // New Reset Function
     function resetSamplingTime() {
         document.getElementById('startTime').value = '';
         const res = document.getElementById('timeResult');
@@ -257,5 +275,4 @@
     }
 </script>
 </body>
-    </html>
-    
+</html>
