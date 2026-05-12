@@ -104,7 +104,7 @@
 </div>
 
 <script>
-    /* PWA Logic */
+    /* PWA IMPLEMENTATION */
     const manifest = {
         "name": "QC Toolset Pro",
         "short_name": "QC Tool",
@@ -112,20 +112,32 @@
         "display": "standalone",
         "background_color": "#f3f4f6",
         "theme_color": "#2563eb",
-        "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/1162/1162456.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }]
+        "icons": [{
+            "src": "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }]
     };
-    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-    document.querySelector('#pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
+    const stringManifest = JSON.stringify(manifest);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
 
+    // Register Service Worker for Offline/Install support
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
-            const swBlob = new Blob([swCode], {type: 'text/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(swBlob));
+            const swCode = `
+                self.addEventListener('install', (e) => { self.skipWaiting(); });
+                self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+            `;
+            const blob = new Blob([swCode], {type: 'text/javascript'});
+            const url = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(url);
         });
     }
 
-    /* Sampling Logic */
+    /* APP LOGIC */
     let lastGeneratedTimeStr = "";
     function generateTime(isRecursive) {
         const minStr = document.getElementById('minMinutes').value || "40";
@@ -143,7 +155,6 @@
         res.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div><div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div><button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>`;
     }
 
-    /* Glaze Logic */
     function calculateGlaze() {
         const g=parseFloat(document.getElementById('glazedVal').value);
         const d=parseFloat(document.getElementById('deglazeVal').value);
@@ -154,29 +165,21 @@
         res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
     }
 
-    /* Averaging Logic */
     let numbers = [];
     function addNumber() {
         const inp=document.getElementById('numberInput');
         const val=parseFloat(inp.value); if(isNaN(val)) return;
-        
-        // Update detail text (timer removed so it persists)
-        document.getElementById('lastAddedDisplay').innerText = `Last added: ${val}`;
-        
+        document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
         numbers.push(val);
         inp.value=''; renderList();
         const container = document.getElementById('numberList');
         container.scrollTop = container.scrollHeight;
+        clearTimeout(window.lastAddedTimeout);
+        window.lastAddedTimeout=setTimeout(()=>{document.getElementById('lastAddedDisplay').innerText='';},3000);
     }
 
     function removeNumber(i){numbers.splice(i,1); renderList();}
-    
-    function clearNumbers(){ 
-        numbers = []; 
-        document.getElementById('lastAddedDisplay').innerText = ''; // Clear detail on Reset
-        renderList(); 
-    }
-
+    function clearNumbers(){ numbers=[]; renderList(); }
     function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
