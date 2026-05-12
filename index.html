@@ -60,6 +60,7 @@
         </div>
         <div class="input-group"><label>Start Time</label><input type="time" id="startTime"></div>
         <button onclick="generateTime(false)">Generate Sampling Time</button>
+        <button class="secondary" onclick="resetSamplingTime()">Reset Start Time</button>
         <div class="result" id="timeResult" style="display: none;"></div>
     </div>
 
@@ -138,6 +139,7 @@
 
     /* APP LOGIC */
     let lastGeneratedTimeStr = "";
+
     function generateTime(isRecursive) {
         const minStr = document.getElementById('minMinutes').value || "40";
         const maxStr = document.getElementById('maxMinutes').value || "60";
@@ -154,6 +156,15 @@
         res.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Start: ${startStr} (+${rand}m)</div><div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Result: ${lastGeneratedTimeStr}</div><button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>`;
     }
 
+    // New Reset Function
+    function resetSamplingTime() {
+        document.getElementById('startTime').value = '';
+        const res = document.getElementById('timeResult');
+        res.style.display = 'none';
+        res.innerHTML = '';
+        lastGeneratedTimeStr = "";
+    }
+
     function calculateGlaze() {
         const g=parseFloat(document.getElementById('glazedVal').value);
         const d=parseFloat(document.getElementById('deglazeVal').value);
@@ -168,10 +179,7 @@
     function addNumber() {
         const inp=document.getElementById('numberInput');
         const val=parseFloat(inp.value); if(isNaN(val)) return;
-        
-        // Update detail text (Timer Logic Removed)
         document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
-        
         numbers.push(val);
         inp.value=''; renderList();
         const container = document.getElementById('numberList');
@@ -179,13 +187,11 @@
     }
 
     function removeNumber(i){numbers.splice(i,1); renderList();}
-    
     function clearNumbers(){ 
         numbers=[]; 
-        document.getElementById('lastAddedDisplay').innerText=''; // Clears detail when resetting
+        document.getElementById('lastAddedDisplay').innerText=''; 
         renderList(); 
     }
-
     function updateVal(i,v){numbers[i]=parseFloat(v)||0; updateStats();}
 
     function renderList() {
@@ -251,4 +257,5 @@
     }
 </script>
 </body>
-</html>
+    </html>
+    
