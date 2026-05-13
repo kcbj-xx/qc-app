@@ -272,12 +272,8 @@
             const distance = targetDate.getTime() - now;
 
             if (distance < 0) {
-                clearInterval(timerInterval);
-                display.innerText = "00:00:00";
-                display.style.color = "var(--error)";
-                cancelBtn.style.display = 'none';
-                stopBtn.style.display = 'block';
-                alarm.play().catch(e => console.log("Audio block: Tap screen once."));
+                // Calls the separate function when time is up
+                triggerFinalAlarm();
                 return;
             }
 
@@ -287,6 +283,55 @@
             display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
+
+    async function triggerFinalAlarm() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        
+        const display = document.getElementById('countdown');
+        display.innerText = "TIME UP!";
+        display.style.color = "var(--error)";
+        document.getElementById('cancelTimerBtn').style.display = 'none';
+        document.getElementById('stopAlarmBtn').style.display = 'block';
+
+        // Play the alarm sound
+        alarm.play().catch(e => console.log("Audio block: Tap screen once."));
+
+        // Vibrate
+        if ("vibrate" in navigator) {
+            navigator.vibrate([500, 200, 500, 200, 500]);
+        }
+
+        // 1. Check if the system actually has permission
+        if (Notification.permission !== "granted") {
+            alert("Notifications blocked! Please enable them in your phone's App Settings.");
+            return;
+        }
+
+        // 2. Try to trigger the Service Worker Notification
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.showNotification("QC Alert", { 
+                body: "Time to collect samples!", 
+                requireInteraction: true, 
+                vibrate: [200, 100, 200],
+                icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+                tag: 'qc-alert-' + Date.now() 
+            });
+        } catch (error) {
+            // 3. If the Service Worker fails, tell us why, and try the fallback method
+            console.error("SW Notification failed:", error);
+            try {
+                new Notification("QC Alert (Fallback)", { 
+                    body: "Time to collect samples!",
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png"
+                });
+            } catch (fallbackError) {
+                alert("Both notification methods failed to trigger.");
+            }
+        }
+    }
+    
 
     function stopTimer() {
         clearInterval(timerInterval);
