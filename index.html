@@ -287,21 +287,27 @@
         alarm.loop = true;
         alarm.play().catch(e => console.log("Audio blocked: ", e));
 
-        // 2. Trigger the notification for background reliability
+        // 2. Trigger the notification
         if (Notification.permission === "granted") {
             navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification("QC Alert", { 
-                    body: "Time to collect samples!", 
-                    requireInteraction: true,
-                    silent: true, // <--- THE FIX: Stops the system "ping" from fighting your alarm
-                    vibrate: [500, 200, 500, 200, 500, 200, 800], // Handles vibration even if app is in pocket
-                    tag: 'qc-sampling-alarm',
-                    renotify: true
+                // FORCE CLEAR: Get all active notifications and close them
+                // This ensures the next one is treated as "brand new" by the OS
+                reg.getNotifications().then(notifications => {
+                    notifications.forEach(notification => notification.close());
+                    
+                    // Now show the new one
+                    reg.showNotification("QC Alert", { 
+                        body: "Time to collect samples!", 
+                        requireInteraction: true,
+                        silent: true, 
+                        vibrate: [500, 200, 500, 200, 500],
+                        tag: 'qc-sampling-alarm', // Reusing the tag is fine if we close the old one first
+                        renotify: true 
+                    });
                 });
             });
         }
     }
-
     
     function stopTimer() {
         if (timerInterval) {
