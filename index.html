@@ -9,6 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
     
+    <!-- This links to the dynamic manifest generated in the script below -->
     <link rel="manifest" id="pwa-manifest">
 
     <style>
@@ -55,7 +56,6 @@
         .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; }
         .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
         
-        /* Centered X */
         .remove-btn { 
             background: #fee2e2; 
             color: #ef4444; 
@@ -167,121 +167,7 @@
 </audio>
 
 <script>
-    let lastGeneratedTimeStr = "";
-    let targetTimeObject = null;
-    let timerInterval = null;
-    const alarm = document.getElementById('alarmSound');
-
-    function generateTime(isRecursive) {
-        const minInput = document.getElementById('minMinutes');
-        const maxInput = document.getElementById('maxMinutes');
-        const startTimeInput = document.getElementById('startTime');
-        const res = document.getElementById('timeResult');
-
-        [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
-
-        if (!isRecursive) {
-            let errors = [];
-            if (!minInput.value) { errors.push("Min Minutes"); minInput.classList.add('input-error'); }
-            if (!maxInput.value) { errors.push("Max Minutes"); maxInput.classList.add('input-error'); }
-            if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
-
-            if (errors.length > 0) {
-                res.style.display = "block";
-                res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
-                return;
-            }
-        }
-
-        const min = parseInt(minInput.value); 
-        const max = parseInt(maxInput.value);
-        let startStr = isRecursive ? lastGeneratedTimeStr : startTimeInput.value;
-        
-        const rand = Math.floor(Math.random() * (max - min + 1)) + min;
-        const [h, m] = startStr.split(':').map(Number);
-        
-        let target = new Date();
-        target.setHours(h, m + rand, 0, 0);
-        if (target < new Date()) { target.setDate(target.getDate() + 1); }
-
-        targetTimeObject = target;
-        lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
-        
-        res.style.display = "block";
-        res.innerHTML = `
-            <div style="font-size:0.85rem;color:#64748b;">Reference: ${startStr} (+${rand}m)</div>
-            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Target: ${lastGeneratedTimeStr}</div>
-            <button class="btn-recursive" onclick="generateTime(true)">Next window from ${lastGeneratedTimeStr}</button>
-        `;
-        
-        document.getElementById('timerControls').style.display = 'block';
-        document.getElementById('clearTimeBtn').style.display = 'block';
-    }
-
-    function handleStartTimer() {
-        if (timerInterval && !confirm("An active timer is already running. Override it?")) return;
-        if (targetTimeObject) startTimer(targetTimeObject);
-    }
-
-    function startTimer(targetDate) {
-        stopTimer();
-        const display = document.getElementById('countdown');
-        const cancelBtn = document.getElementById('cancelTimerBtn');
-        const stopBtn = document.getElementById('stopAlarmBtn');
-        
-        document.getElementById('activeTimer').style.display = 'block';
-        display.classList.add('timer-active');
-        cancelBtn.style.display = 'block';
-        stopBtn.style.display = 'none';
-
-        timerInterval = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = targetDate.getTime() - now;
-
-            if (distance < 0) {
-                clearInterval(timerInterval);
-                display.innerText = "00:00:00";
-                display.style.color = "var(--error)";
-                cancelBtn.style.display = 'none';
-                stopBtn.style.display = 'block';
-                alarm.play().catch(e => console.log("Audio block: Tap screen once."));
-                return;
-            }
-
-            const h = Math.floor((distance % 86400000) / 3600000);
-            const m = Math.floor((distance % 3600000) / 60000);
-            const s = Math.floor((distance % 60000) / 1000);
-            display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        }, 1000);
-    }
-
-    function stopTimer() {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        alarm.pause();
-        alarm.currentTime = 0;
-        document.getElementById('activeTimer').style.display = 'none';
-        document.getElementById('countdown').style.color = "#38bdf8";
-        document.getElementById('countdown').classList.remove('timer-active');
-    }
-
-    function resetSamplingTime() {
-        if (timerInterval && !confirm("Cancel current timer and clear data?")) return;
-        stopTimer();
-        document.getElementById('minMinutes').value = '';
-        document.getElementById('maxMinutes').value = '';
-        document.getElementById('startTime').value = '';
-        document.getElementById('timeResult').style.display = 'none';
-        document.getElementById('timerControls').style.display = 'none';
-        document.getElementById('clearTimeBtn').style.display = 'none';
-        lastGeneratedTimeStr = "";
-        targetTimeObject = null;
-    }
-
-    function calculateGlaze() {
-<script>
     // --- PWA BLOB MANIFEST ---
-    // This dynamically creates the manifest file Chrome needs to show the Install prompt
     const manifest = {
         "name": "QC Toolset Pro",
         "short_name": "QC Tool",
@@ -297,7 +183,6 @@
         }]
     };
     
-    // Inject the manifest into the HTML head
     const stringManifest = JSON.stringify(manifest);
     const blob = new Blob([stringManifest], {type: 'application/json'});
     const manifestURL = URL.createObjectURL(blob);
@@ -496,6 +381,5 @@
         document.getElementById('clearSalinityBtn').style.display = 'none';
     }
 </script>
-    
 </body>
 </html>
