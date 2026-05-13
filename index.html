@@ -187,13 +187,14 @@
     let wakeLock = null;
     const alarm = document.getElementById('alarmSound');
 
-    // --- SAMPLING TIMER LOGIC ---
+        // --- SAMPLING TIMER LOGIC (UPDATED WITH AUTO-CLEARING ERRORS) ---
     function generateTime(isRecursive) {
         const minInput = document.getElementById('minMinutes');
         const maxInput = document.getElementById('maxMinutes');
         const startTimeInput = document.getElementById('startTime');
         const res = document.getElementById('timeResult');
 
+        // Clear any old error states immediately
         [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
 
         if (!isRecursive) {
@@ -201,9 +202,16 @@
             if (!minInput.value) { errors.push("Min"); minInput.classList.add('input-error'); }
             if (!maxInput.value) { errors.push("Max"); maxInput.classList.add('input-error'); }
             if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
+            
             if (errors.length > 0) {
                 res.style.display = "block";
                 res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
+                
+                // NEW: Auto-clear errors after 3 seconds
+                setTimeout(() => {
+                    res.style.display = "none";
+                    [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
+                }, 3000);
                 return;
             }
         }
@@ -310,11 +318,12 @@
         document.getElementById('countdown').style.color = "#38bdf8";
     }
 
+    // --- RESET SAMPLING (UPDATED TO ALWAYS PROMPT) ---
     function resetSamplingTime() {
-        // Tweak 2: Updated prompt text
-        if (timerInterval && !confirm("Clear sampling time fields?")) return;
+        // Removed the timerInterval check so it prompts EVERY time you click it
+        if (!confirm("Clear sampling time fields?")) return;
         
-        stopTimer();
+        stopTimer(); // Ensure any running alarm/vibration is killed
         document.getElementById('minMinutes').value = '';
         document.getElementById('maxMinutes').value = '';
         document.getElementById('startTime').value = '';
