@@ -287,21 +287,21 @@
         alarm.loop = true;
         alarm.play().catch(e => console.log("Audio blocked: ", e));
 
-        // 2. Trigger the notification
+        // 2. The Pop-Up Fix: Clear old notifications then fire the new one
         if (Notification.permission === "granted") {
             navigator.serviceWorker.ready.then(reg => {
-                // FORCE CLEAR: Get all active notifications and close them
-                // This ensures the next one is treated as "brand new" by the OS
+                // Get all active notifications from this app
                 reg.getNotifications().then(notifications => {
-                    notifications.forEach(notification => notification.close());
+                    // Kill every single one of them to "reset" the system
+                    notifications.forEach(n => n.close());
                     
-                    // Now show the new one
+                    // Fire the new one with a unique timestamp
                     reg.showNotification("QC Alert", { 
                         body: "Time to collect samples!", 
                         requireInteraction: true,
-                        silent: true, 
+                        silent: true, // Let your alarm .ogg handle the sound
                         vibrate: [500, 200, 500, 200, 500],
-                        tag: 'qc-sampling-alarm', // Reusing the tag is fine if we close the old one first
+                        tag: 'qc-alert-' + Date.now(), // Unique ID
                         renotify: true 
                     });
                 });
