@@ -283,33 +283,35 @@
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
         // 1. Play the high-priority alarm sound immediately
+        // Setting loop to true ensures it continues until stopped
         alarm.currentTime = 0;
         alarm.loop = true;
         alarm.play().catch(e => console.log("Audio blocked: ", e));
 
-        // 2. Force the Notification Pop-up
+        // 2. Trigger the notification
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
                 
-                // Close any existing notifications so the new one MUST pop up
-                const existing = await reg.getNotifications();
-                existing.forEach(n => n.close());
+                // Clear any existing notifications first to ensure a fresh pop
+                const active = await reg.getNotifications();
+                active.forEach(n => n.close());
 
-                // Show notification with a unique tag
+                // Show notification with a unique tag and 'silent' enabled
                 await reg.showNotification("QC Alert", { 
                     body: "Time to collect samples!", 
                     requireInteraction: true,
-                    silent: true, // Let the alarm sound handle the audio
+                    silent: true, // THE FIX: Stops the system "ping" from fighting your alarm
                     vibrate: [500, 200, 500, 200, 500],
-                    tag: 'qc-alert-' + Date.now(), // Unique ID forces a fresh banner
+                    tag: 'qc-alert-' + Date.now(), // Unique ID forces it to pop every time
                     renotify: true 
                 });
             } catch (err) {
-                console.error("Notification trigger failed:", err);
+                console.error("Notification failed:", err);
             }
         }
     }
+
     
     function stopTimer() {
         if (timerInterval) {
