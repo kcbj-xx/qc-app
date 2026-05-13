@@ -282,8 +282,7 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // 1. Play the high-priority alarm sound immediately
-        // Setting loop to true ensures it continues until stopped
+        // 1. Play the high-priority alarm sound
         alarm.currentTime = 0;
         alarm.loop = true;
         alarm.play().catch(e => console.log("Audio blocked: ", e));
@@ -293,25 +292,21 @@
             try {
                 const reg = await navigator.serviceWorker.ready;
                 
-                // Clear any existing notifications first to ensure a fresh pop
-                const active = await reg.getNotifications();
-                active.forEach(n => n.close());
-
-                // Show notification with a unique tag and 'silent' enabled
+                // Show notification with HIGH priority settings
                 await reg.showNotification("QC Alert", { 
                     body: "Time to collect samples!", 
                     requireInteraction: true,
-                    silent: true, // THE FIX: Stops the system "ping" from fighting your alarm
-                    vibrate: [500, 200, 500, 200, 500],
-                    tag: 'qc-alert-' + Date.now(), // Unique ID forces it to pop every time
-                    renotify: true 
+                    // Remove 'silent: true' to allow it to "Pop"
+                    vibrate: [200, 100, 200], // Short vibration signals high priority to Android
+                    tag: 'qc-alert-' + Date.now(),
+                    renotify: true,
+                    data: { url: window.location.href }
                 });
             } catch (err) {
                 console.error("Notification failed:", err);
             }
         }
     }
-
     
     function stopTimer() {
         if (timerInterval) {
