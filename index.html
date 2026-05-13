@@ -39,8 +39,6 @@
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
         
         .btn-timer-start { background-color: #8b5cf6; }
-        .btn-timer-start:hover { background-color: #7c3aed; }
-        
         .timer-display { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 2rem; font-weight: bold; margin-top: 10px; text-align: center; border: 2px solid #334155; transition: all 0.3s; }
         .timer-active { border-color: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
         .timer-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
@@ -51,11 +49,24 @@
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
+
         .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
-        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; }
-        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
+        .number-item { 
+            display: flex; 
+            align-items: center; 
+            background: #fff; 
+            border: 1px solid var(--border); 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            gap: 10px; 
+            cursor: grab;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .number-item.dragging { opacity: 0.5; background: #e0f2fe; border: 2px dashed var(--primary); transform: scale(1.02); z-index: 10; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .edit-input { flex: 1; border: none; background: transparent; font-weight: 600; font-size: 1rem; }
         
-        /* Centered X */
+        .handle { color: #94a3b8; font-size: 1.2rem; cursor: grab; padding: 0 5px; user-select: none; }
+        
         .remove-btn { 
             background: #fee2e2; 
             color: #ef4444; 
@@ -80,7 +91,7 @@
 <body>
 
 <div class="container">
-    <!-- Sampling Time Card -->
+    <!-- Sampling Timer -->
     <div class="card">
         <h2>Sampling Time</h2>
         <div class="row">
@@ -99,12 +110,7 @@
         </div>
         
         <button onclick="generateTime(false)">Generate Time</button>
-        
         <div id="timeResult" class="result" style="display: none;"></div>
-
-        <div id="timerControls" style="display: none; margin-top: 15px;">
-            <button class="btn-timer-start" onclick="handleStartTimer()">Start Countdown</button>
-        </div>
 
         <div id="activeTimer" style="display: none; margin-top: 15px;">
             <div class="timer-label">Time Remaining</div>
@@ -116,7 +122,7 @@
         <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
     </div>
 
-    <!-- Glaze Calculator Card -->
+    <!-- Glaze Calculator -->
     <div class="card">
         <h2>Glaze Calculator</h2>
         <div class="row">
@@ -128,7 +134,7 @@
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
-    <!-- Averaging Card -->
+    <!-- Averaging & Sum -->
     <div class="card">
         <h2>Averaging & Sum</h2>
         <div class="stats-grid">
@@ -145,10 +151,10 @@
             <div class="last-added-text" id="lastAddedDisplay"></div>
         </div>
         <div id="numberList" class="drag-container"></div>
-        <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear All List</button>
+        <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear List</button>
     </div>
 
-    <!-- Salinity Card -->
+    <!-- Salinity Calculator -->
     <div class="card">
         <h2>Salinity Calculator</h2>
         <div class="input-group">
@@ -161,168 +167,250 @@
     </div>
 </div>
 
-<!-- Audio element for alarm -->
 <audio id="alarmSound" loop preload="auto">
     <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
 </audio>
 
 <script>
-    // --- SERVICE WORKER REGISTRATION ---
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(() => {
-        console.log("Service Worker Registered");
-    });
-}
-
-// --- NOTIFICATION PERMISSION ---
-if ("Notification" in window) {
-    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    // --- SERVICE WORKER & PERMISSIONS ---
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').then(() => console.log("SW Active"));
+    }
+    if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
     }
-}
 
-let lastGeneratedTimeStr = "";
-let targetTimeObject = null;
-let timerInterval = null;
-let wakeLock = null; // To keep the screen/CPU active
-const alarm = document.getElementById('alarmSound');
+    let lastGeneratedTimeStr = "";
+    let targetTimeObject = null;
+    let timerInterval = null;
+    let vibrationInterval = null;
+    let wakeLock = null;
+    const alarm = document.getElementById('alarmSound');
 
-// Request Wake Lock to keep the app running in background
-async function requestWakeLock() {
-    try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-            console.log("Wake Lock active");
-        }
-    } catch (err) {
-        console.error(`${err.name}, ${err.message}`);
-    }
-}
+        // --- SAMPLING TIMER LOGIC (UPDATED WITH AUTO-CLEARING ERRORS) ---
+    function generateTime(isRecursive) {
+        const minInput = document.getElementById('minMinutes');
+        const maxInput = document.getElementById('maxMinutes');
+        const startTimeInput = document.getElementById('startTime');
+        const res = document.getElementById('timeResult');
 
-function generateTime(isRecursive) {
-    const minInput = document.getElementById('minMinutes');
-    const maxInput = document.getElementById('maxMinutes');
-    const startTimeInput = document.getElementById('startTime');
-    const res = document.getElementById('timeResult');
+        // Clear any old error states immediately
+        [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
 
-    [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
-
-    if (!isRecursive) {
-        let errors = [];
-        if (!minInput.value) { errors.push("Min Minutes"); minInput.classList.add('input-error'); }
-        if (!maxInput.value) { errors.push("Max Minutes"); maxInput.classList.add('input-error'); }
-        if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
-
-        if (errors.length > 0) {
-            res.style.display = "block";
-            res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
-            return;
-        }
-    }
-
-    const min = parseInt(minInput.value); 
-    const max = parseInt(maxInput.value);
-    let startStr = isRecursive ? lastGeneratedTimeStr : startTimeInput.value;
-    
-    const rand = Math.floor(Math.random() * (max - min + 1)) + min;
-    const [h, m] = startStr.split(':').map(Number);
-    
-    let target = new Date();
-    target.setHours(h, m + rand, 0, 0);
-    if (target < new Date()) { target.setDate(target.getDate() + 1); }
-
-    targetTimeObject = target;
-    lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
-    
-    res.style.display = "block";
-    res.innerHTML = `
-        <div style="font-size:0.85rem;color:#64748b;">Reference: ${startStr} (+${rand}m)</div>
-        <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Target: ${lastGeneratedTimeStr}</div>
-        <button class="btn-recursive" onclick="generateTime(true)">Next window from ${lastGeneratedTimeStr}</button>
-    `;
-    
-    document.getElementById('timerControls').style.display = 'block';
-    document.getElementById('clearTimeBtn').style.display = 'block';
-}
-
-function handleStartTimer() {
-    if (timerInterval && !confirm("An active timer is already running. Override it?")) return;
-    if (targetTimeObject) {
-        requestWakeLock(); // Activate wake lock
-        startTimer(targetTimeObject);
-    }
-}
-
-function startTimer(targetDate) {
-    stopTimer();
-    const display = document.getElementById('countdown');
-    const cancelBtn = document.getElementById('cancelTimerBtn');
-    const stopBtn = document.getElementById('stopAlarmBtn');
-    
-    document.getElementById('activeTimer').style.display = 'block';
-    display.classList.add('timer-active');
-    cancelBtn.style.display = 'block';
-    stopBtn.style.display = 'none';
-
-    timerInterval = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = targetDate.getTime() - now;
-
-        if (distance < 0) {
-            triggerFinalAlarm();
-            return;
+        if (!isRecursive) {
+            let errors = [];
+            if (!minInput.value) { errors.push("Min"); minInput.classList.add('input-error'); }
+            if (!maxInput.value) { errors.push("Max"); maxInput.classList.add('input-error'); }
+            if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
+            
+            if (errors.length > 0) {
+                res.style.display = "block";
+                res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
+                
+                // NEW: Auto-clear errors after 3 seconds
+                setTimeout(() => {
+                    res.style.display = "none";
+                    [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
+                }, 3000);
+                return;
+            }
         }
 
-        const h = Math.floor((distance % 86400000) / 3600000);
-        const m = Math.floor((distance % 3600000) / 60000);
-        const s = Math.floor((distance % 60000) / 1000);
-        display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    }, 1000);
-}
+        const min = parseInt(minInput.value); 
+        const max = parseInt(maxInput.value);
+        let startStr = isRecursive ? lastGeneratedTimeStr : startTimeInput.value;
+        const rand = Math.floor(Math.random() * (max - min + 1)) + min;
+        const [h, m] = startStr.split(':').map(Number);
+        
+        let target = new Date();
+        target.setHours(h, m + rand, 0, 0);
+        if (target < new Date()) { target.setDate(target.getDate() + 1); }
 
-function triggerFinalAlarm() {
-    clearInterval(timerInterval);
-    const display = document.getElementById('countdown');
-    display.innerText = "00:00:00";
-    display.style.color = "var(--error)";
-    document.getElementById('cancelTimerBtn').style.display = 'none';
-    document.getElementById('stopAlarmBtn').style.display = 'block';
+        targetTimeObject = target;
+        lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
+        
+        res.style.display = "block";
+        res.innerHTML = `
+            <div style="font-size:0.85rem;color:#64748b;">Reference: ${startStr} (+${rand}m)</div>
+            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Target: ${lastGeneratedTimeStr}</div>
+            <button class="btn-timer-start" onclick="handleStartTimer()" style="margin-top:10px;">Start Countdown</button><br>
+            <button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>
+        `;
+        document.getElementById('clearTimeBtn').style.display = 'block';
+    }
 
-    // Trigger Notification via Service Worker for background support
-    if (Notification.permission === "granted") {
-        navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification("QC Timer Finished", {
-                body: "Time to take the sample!",
-                icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-                tag: "timer-alert",
-                renotify: true,
-                requireInteraction: true
+    async function handleStartTimer() {
+        // Tweak 1: Only confirm if timerInterval is actually set
+        if (timerInterval && !confirm("Override existing timer?")) return;
+        
+        if (targetTimeObject) {
+            if ('wakeLock' in navigator) {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+            }
+            startTimer(targetTimeObject);
+        }
+    }
+
+    function startTimer(targetDate) {
+        stopTimer();
+        const display = document.getElementById('countdown');
+        document.getElementById('activeTimer').style.display = 'block';
+        display.classList.add('timer-active');
+        document.getElementById('cancelTimerBtn').style.display = 'block';
+        document.getElementById('stopAlarmBtn').style.display = 'none';
+
+        timerInterval = setInterval(() => {
+            const distance = targetDate.getTime() - new Date().getTime();
+            if (distance < 0) {
+                triggerFinalAlarm();
+                return;
+            }
+            const h = Math.floor((distance % 86400000) / 3600000);
+            const m = Math.floor((distance % 3600000) / 60000);
+            const s = Math.floor((distance % 60000) / 1000);
+            display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }, 1000);
+    }
+
+        function triggerFinalAlarm() {
+        // Fix: We MUST clear the interval here so it doesn't trigger every second!
+        clearInterval(timerInterval);
+        
+        const display = document.getElementById('countdown');
+        display.innerText = "TIME UP!";
+        display.style.color = "var(--error)";
+        document.getElementById('cancelTimerBtn').style.display = 'none';
+        document.getElementById('stopAlarmBtn').style.display = 'block';
+
+        alarm.volume = 1.0; 
+        alarm.play().catch(() => console.log("Audio interaction required."));
+
+        if ("vibrate" in navigator) {
+            navigator.vibrate([500, 200, 500, 200, 500]);
+            // Clear any existing vibration loop just to be safe
+            if (vibrationInterval) clearInterval(vibrationInterval); 
+            vibrationInterval = setInterval(() => { navigator.vibrate([500, 200]); }, 700);
+        }
+
+        if (Notification.permission === "granted") {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification("QC Alert", { body: "Time to collect samples!", requireInteraction: true, vibrate: [200, 100, 200] });
             });
+        }
+    }
+
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null; // Tweak 1 Fix: Nullify to clear state
+        }
+        if (vibrationInterval) {
+            clearInterval(vibrationInterval);
+            vibrationInterval = null;
+        }
+        if ("vibrate" in navigator) navigator.vibrate(0);
+        
+        alarm.pause(); alarm.currentTime = 0;
+        if (wakeLock) { wakeLock.release().then(() => wakeLock = null); }
+        
+        document.getElementById('activeTimer').style.display = 'none';
+        document.getElementById('countdown').style.color = "#38bdf8";
+    }
+
+    // --- RESET SAMPLING (UPDATED TO ALWAYS PROMPT) ---
+    function resetSamplingTime() {
+        // Removed the timerInterval check so it prompts EVERY time you click it
+        if (!confirm("Clear sampling time fields?")) return;
+        
+        stopTimer(); // Ensure any running alarm/vibration is killed
+        document.getElementById('minMinutes').value = '';
+        document.getElementById('maxMinutes').value = '';
+        document.getElementById('startTime').value = '';
+        document.getElementById('timeResult').style.display = 'none';
+        document.getElementById('clearTimeBtn').style.display = 'none';
+        lastGeneratedTimeStr = "";
+        targetTimeObject = null;
+    }
+
+    // --- CALCULATOR LOGIC ---
+    function calculateGlaze() {
+        const g = parseFloat(document.getElementById('glazedVal').value);
+        const d = parseFloat(document.getElementById('deglazeVal').value);
+        if (!g || !d) return;
+        const dec = (g - d) / g;
+        const res = document.getElementById('glazeResult');
+        res.style.display = "block";
+        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
+        document.getElementById('clearGlazeBtn').style.display = 'block';
+    }
+
+    function resetGlaze() {
+        document.getElementById('glazedVal').value = ''; document.getElementById('deglazeVal').value = '';
+        document.getElementById('glazeResult').style.display = 'none'; document.getElementById('clearGlazeBtn').style.display = 'none';
+    }
+
+    function calculateSalinity() {
+        const brix = parseFloat(document.getElementById('brixVal').value); if (isNaN(brix)) return;
+        const res = document.getElementById('salinityResult'); res.style.display = "block";
+        res.innerHTML = `Salinity: <strong>${((brix / 26.4) * 100).toFixed(2)}%</strong>`;
+        document.getElementById('clearSalinityBtn').style.display = 'block';
+    }
+
+    function resetSalinity() {
+        document.getElementById('brixVal').value = ''; document.getElementById('salinityResult').style.display = 'none';
+        document.getElementById('clearSalinityBtn').style.display = 'none';
+    }
+
+    // --- AVERAGING & DRAG-AND-DROP ---
+    let numbers = [];
+
+    function addNumber() {
+        const inp = document.getElementById('numberInput');
+        const val = parseFloat(inp.value); if (isNaN(val)) return;
+        document.getElementById('lastAddedDisplay').innerText = `Last added: ${val}`;
+        numbers.push(val); 
+        inp.value = ''; 
+        renderList();
+        inp.focus(); 
+    }
+
+    function renderList() {
+        const container = document.getElementById('numberList');
+        container.innerHTML = '';
+        container.style.display = numbers.length ? "flex" : "none";
+        document.getElementById('clearAllBtn').style.display = numbers.length ? "block" : "none";
+
+        numbers.forEach((num, index) => {
+            const item = document.createElement('div');
+            item.className = 'number-item';
+            item.draggable = true;
+            item.dataset.index = index;
+            item.innerHTML = `
+                <span class="handle">☰</span>
+                <input type="number" class="edit-input" value="${num}" onchange="numbers[${index}]=parseFloat(this.value);updateStats();">
+                <button class="remove-btn" onclick="numbers.splice(${index},1);renderList();">&times;</button>
+            `;
+
+            // Tweak 3: Better drag events
+            item.addEventListener('dragstart', () => {
+                setTimeout(() => item.classList.add('dragging'), 0);
+            });
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                // Sync data after visual drop
+                numbers = [...container.querySelectorAll('.edit-input')].map(el => parseFloat(el.value));
+                updateStats();
+            });
+            
+            container.appendChild(item);
         });
-    }
 
-    alarm.play().catch(e => console.log("Audio block: Audio requires initial user tap."));
-}
-
-function stopTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    alarm.pause();
-    alarm.currentTime = 0;
-    
-    // Release Wake Lock
-    if (wakeLock !== null) {
-        wakeLock.release().then(() => wakeLock = null);
-    }
-
-    document.getElementById('activeTimer').style.display = 'none';
-    document.getElementById('countdown').style.color = "#38bdf8";
-    document.getElementById('countdown').classList.remove('timer-active');
-}
-
-// ... (Rest of your calculateGlaze, addNumber, etc. functions remain the same)
-    
-</script>
-</body>
-    </html>
-    
+        // Reorder logic using position calculation
+        container.addEventListener('dragover', e => {
+            e.preventDefault();
+            const draggingItem = document.querySelector('.dragging');
+            if (!draggingItem) return;
+            
+            const afterElement = getDragAfterElement(container, e.clientY);
+            if (afterElem
