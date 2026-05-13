@@ -272,7 +272,7 @@
         }, 1000);
     }
 
-    function triggerFinalAlarm() {
+    async function triggerFinalAlarm() {
         clearInterval(timerInterval);
         timerInterval = null;
         
@@ -282,29 +282,27 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // 1. Play the high-priority alarm sound
+        // 1. Keep the alarm sound playing
         alarm.currentTime = 0;
         alarm.loop = true;
         alarm.play().catch(e => console.log("Audio blocked: ", e));
 
-        // 2. The Pop-Up Fix: Clear old notifications then fire the new one
+        // 2. The Pop-Up Fix
         if (Notification.permission === "granted") {
-            navigator.serviceWorker.ready.then(reg => {
-                // Get all active notifications from this app
-                reg.getNotifications().then(notifications => {
-                    // Kill every single one of them to "reset" the system
-                    notifications.forEach(n => n.close());
-                    
-                    // Fire the new one with a unique timestamp
-                    reg.showNotification("QC Alert", { 
-                        body: "Time to collect samples!", 
-                        requireInteraction: true,
-                        silent: true, // Let your alarm .ogg handle the sound
-                        vibrate: [500, 200, 500, 200, 500],
-                        tag: 'qc-alert-' + Date.now(), // Unique ID
-                        renotify: true 
-                    });
-                });
+            const reg = await navigator.serviceWorker.ready;
+            
+            // This is the missing piece: close everything first so the next one HAS to pop
+            const activeNotifications = await reg.getNotifications();
+            activeNotifications.forEach(n => n.close());
+
+            // Fire the notification with a unique ID
+            reg.showNotification("QC Alert", { 
+                body: "Time to collect samples!", 
+                requireInteraction: true,
+                silent: true, // Use your alarmSound for the noise
+                vibrate: [500, 200, 500],
+                tag: 'qc-alert-' + Date.now(), // Unique ID forces a new banner
+                renotify: true 
             });
         }
     }
