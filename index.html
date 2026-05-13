@@ -272,9 +272,9 @@
         }, 1000);
     }
 
-        function triggerFinalAlarm() {
-        // Fix: We MUST clear the interval here so it doesn't trigger every second!
+    function triggerFinalAlarm() {
         clearInterval(timerInterval);
+        timerInterval = null;
         
         const display = document.getElementById('countdown');
         display.innerText = "TIME UP!";
@@ -282,24 +282,33 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        alarm.volume = 1.0; 
-        alarm.play().catch(() => console.log("Audio interaction required."));
-
-        if ("vibrate" in navigator) {
-            navigator.vibrate([500, 200, 500, 200, 500]);
-            // Clear any existing vibration loop just to be safe
-            if (vibrationInterval) clearInterval(vibrationInterval); 
-            vibrationInterval = setInterval(() => { navigator.vibrate([500, 200]); }, 700);
-        }
+        // Play the alarm - ensure it loops
+        alarm.currentTime = 0;
+        alarm.loop = true;
+        alarm.play().catch(e => console.log("Audio blocked: ", e));
 
         if (Notification.permission === "granted") {
             navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification("QC Alert", { body: "Time to collect samples!", requireInteraction: true, vibrate: [200, 100, 200] });
+                reg.showNotification("QC Alert", { 
+                    body: "Time to collect samples!", 
+                    requireInteraction: true,
+                    // Stronger vibration pattern: [vibrate, pause, vibrate...]
+                    vibrate: [500, 200, 500, 200, 500, 200, 800],
+                    tag: 'qc-sampling-alarm',
+                    renotify: true
+                });
             });
         }
+        
+        // Background vibration fallback for when app is active/foreground
+        if ("vibrate" in navigator) {
+            if (vibrationInterval) clearInterval(vibrationInterval);
+            vibrationInterval = setInterval(() => { 
+                navigator.vibrate([500, 200]); 
+            }, 1000);
+        }
     }
-
-
+    
     function stopTimer() {
         if (timerInterval) {
             clearInterval(timerInterval);
