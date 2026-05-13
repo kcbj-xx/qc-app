@@ -264,8 +264,10 @@
         }, 1000);
     }
 
-    function triggerFinalAlarm() {
-        // We don't nullify timerInterval here yet so the "Stop Alarm" screen persists
+        function triggerFinalAlarm() {
+        // Fix: We MUST clear the interval here so it doesn't trigger every second!
+        clearInterval(timerInterval);
+        
         const display = document.getElementById('countdown');
         display.innerText = "TIME UP!";
         display.style.color = "var(--error)";
@@ -277,6 +279,8 @@
 
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
+            // Clear any existing vibration loop just to be safe
+            if (vibrationInterval) clearInterval(vibrationInterval); 
             vibrationInterval = setInterval(() => { navigator.vibrate([500, 200]); }, 700);
         }
 
@@ -286,6 +290,7 @@
             });
         }
     }
+
 
     function stopTimer() {
         if (timerInterval) {
