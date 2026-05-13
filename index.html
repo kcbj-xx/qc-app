@@ -417,4 +417,21 @@
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;
             if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, el
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function updateStats() {
+        const sum = numbers.reduce((a, b) => a + b, 0);
+        document.getElementById('statCount').innerText = numbers.length;
+        document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
+        document.getElementById('statAvg').innerText = (numbers.length ? (sum / numbers.length) : 0).toFixed(3).replace(/\.00$/, '');
+    }
+
+    function clearNumbers() { if (confirm("Clear list?")) { numbers = []; document.getElementById('lastAddedDisplay').innerText = ''; renderList(); } }
+</script>
+</body>
+</html>
