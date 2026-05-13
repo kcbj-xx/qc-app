@@ -1,13 +1,19 @@
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(
-        clients.matchAll({type: 'window'}).then(windowClients => {
-            for (var i = 0; i < windowClients.length; i++) {
-                var client = windowClients[i];
-                // Focus the app if it's already open
-                if ('focus' in client) return client.focus();
+        clients.matchAll({ type: 'window' }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url === '/' && 'focus' in client) return client.focus();
             }
-            // Open the app if it's closed
             if (clients.openWindow) return clients.openWindow('/');
         })
     );
