@@ -271,7 +271,7 @@
             display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
-
+    
     async function triggerFinalAlarm() {
         clearInterval(timerInterval);
         timerInterval = null;
@@ -282,28 +282,32 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // 1. Keep the alarm sound playing
+        // 1. Play the high-priority alarm sound immediately
         alarm.currentTime = 0;
         alarm.loop = true;
         alarm.play().catch(e => console.log("Audio blocked: ", e));
 
-        // 2. The Pop-Up Fix
+        // 2. Force the Notification Pop-up
         if (Notification.permission === "granted") {
-            const reg = await navigator.serviceWorker.ready;
-            
-            // This is the missing piece: close everything first so the next one HAS to pop
-            const activeNotifications = await reg.getNotifications();
-            activeNotifications.forEach(n => n.close());
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                
+                // Close any existing notifications so the new one MUST pop up
+                const existing = await reg.getNotifications();
+                existing.forEach(n => n.close());
 
-            // Fire the notification with a unique ID
-            reg.showNotification("QC Alert", { 
-                body: "Time to collect samples!", 
-                requireInteraction: true,
-                silent: true, // Use your alarmSound for the noise
-                vibrate: [500, 200, 500],
-                tag: 'qc-alert-' + Date.now(), // Unique ID forces a new banner
-                renotify: true 
-            });
+                // Show notification with a unique tag
+                await reg.showNotification("QC Alert", { 
+                    body: "Time to collect samples!", 
+                    requireInteraction: true,
+                    silent: true, // Let the alarm sound handle the audio
+                    vibrate: [500, 200, 500, 200, 500],
+                    tag: 'qc-alert-' + Date.now(), // Unique ID forces a fresh banner
+                    renotify: true 
+                });
+            } catch (err) {
+                console.error("Notification trigger failed:", err);
+            }
         }
     }
     
