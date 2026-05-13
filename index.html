@@ -9,7 +9,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
     
-    <!-- This links to the dynamic manifest generated in the script below -->
     <link rel="manifest" id="pwa-manifest">
 
     <style>
@@ -52,25 +51,17 @@
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
-        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
-        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; }
-        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
         
-        .remove-btn { 
-            background: #fee2e2; 
-            color: #ef4444; 
-            border: none; 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 50%; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.2rem; 
-            padding: 0;
-            line-height: 1;
-        }
+        /* Drag and Drop Styles */
+        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
+        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; transition: all 0.2s; }
+        .number-item.dragging { opacity: 0.5; background-color: #f1f5f9; transform: scale(0.98); }
+        .number-item.over { border: 2px dashed var(--primary); background-color: #eff6ff; }
+        .drag-handle { color: #94a3b8; font-size: 1.2rem; cursor: grab; padding: 0 5px; display: flex; align-items: center; }
+        .drag-handle:active { cursor: grabbing; }
+        
+        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
+        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; line-height: 1; }
         
         .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; height: 1.2em; }
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
@@ -161,13 +152,12 @@
     </div>
 </div>
 
-<!-- Audio element for alarm -->
 <audio id="alarmSound" loop preload="auto">
     <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
 </audio>
 
 <script>
-    // --- PWA BLOB MANIFEST ---
+    // PWA Manifest
     const manifest = {
         "name": "QC Toolset Pro",
         "short_name": "QC Tool",
@@ -188,18 +178,13 @@
     const manifestURL = URL.createObjectURL(blob);
     document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
 
-    // --- SERVICE WORKER REGISTRATION ---
+    // Service Worker Registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').then((reg) => {
-                console.log("Service Worker Active");
-            }).catch((err) => {
-                console.error("Service Worker Failed:", err);
-            });
+            navigator.serviceWorker.register('sw.js').catch((err) => console.error("SW Failed:", err));
         });
     }
 
-    // --- EXISTING QC LOGIC ---
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
     let timerInterval = null;
@@ -222,6 +207,14 @@
             if (errors.length > 0) {
                 res.style.display = "block";
                 res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
+                
+                // Hide prompt automatically after 3.5 seconds
+                setTimeout(() => {
+                    if (res.innerHTML.includes("Missing:")) {
+                        res.style.display = "none";
+                        res.innerHTML = "";
+                    }
+                }, 3500);
                 return;
             }
         }
@@ -252,6 +245,7 @@
     }
 
     function handleStartTimer() {
+        if (Notification.permission === "default") Notification.requestPermission();
         if (timerInterval && !confirm("An active timer is already running. Override it?")) return;
         if (targetTimeObject) startTimer(targetTimeObject);
     }
@@ -272,7 +266,6 @@
             const distance = targetDate.getTime() - now;
 
             if (distance < 0) {
-                // Calls the separate function when time is up
                 triggerFinalAlarm();
                 return;
             }
@@ -294,44 +287,27 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // Play the alarm sound
-        alarm.play().catch(e => console.log("Audio block: Tap screen once."));
+        alarm.play().catch(e => console.log("Audio block."));
+        if ("vibrate" in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
 
-        // Vibrate
-        if ("vibrate" in navigator) {
-            navigator.vibrate([500, 200, 500, 200, 500]);
-        }
-
-        // 1. Check if the system actually has permission
-        if (Notification.permission !== "granted") {
-            alert("Notifications blocked! Please enable them in your phone's App Settings.");
-            return;
-        }
-
-        // 2. Try to trigger the Service Worker Notification
-        try {
-            const reg = await navigator.serviceWorker.ready;
-            await reg.showNotification("QC Alert", { 
-                body: "Time to collect samples!", 
-                requireInteraction: true, 
-                vibrate: [200, 100, 200],
-                icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-                tag: 'qc-alert-' + Date.now() 
-            });
-        } catch (error) {
-            // 3. If the Service Worker fails, tell us why, and try the fallback method
-            console.error("SW Notification failed:", error);
+        if (Notification.permission === "granted") {
             try {
+                const reg = await navigator.serviceWorker.ready;
+                await reg.showNotification("QC Alert", { 
+                    body: "Time to collect samples!", 
+                    requireInteraction: true, 
+                    vibrate: [200, 100, 200],
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+                    tag: 'qc-alert-' + Date.now() 
+                });
+            } catch (err) {
                 new Notification("QC Alert (Fallback)", { 
                     body: "Time to collect samples!",
                     icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png"
                 });
-            } catch (fallbackError) {
-                alert("Both notification methods failed to trigger.");
             }
         }
     }
-    
 
     function stopTimer() {
         clearInterval(timerInterval);
@@ -373,6 +349,8 @@
     }
 
     let numbers = [];
+    let dragStartIndex = null;
+
     function addNumber() {
         const inp=document.getElementById('numberInput');
         const val=parseFloat(inp.value); if(isNaN(val)) return;
@@ -380,7 +358,6 @@
         numbers.push(val); 
         inp.value=''; 
         renderList();
-        
         inp.focus(); 
     }
 
@@ -390,10 +367,55 @@
         container.innerHTML = '';
         container.style.display = numbers.length ? "flex" : "none";
         clearBtn.style.display = numbers.length ? "block" : "none";
+        
         numbers.forEach((n, i) => {
             const div = document.createElement('div');
             div.className = 'number-item';
-            div.innerHTML = `<input type="number" class="edit-input" value="${n}" onchange="numbers[${i}]=parseFloat(this.value);updateStats();" inputmode="decimal"><button class="remove-btn" onclick="numbers.splice(${i},1);renderList();">&times;</button>`;
+            div.draggable = true;
+            
+            div.innerHTML = `
+                <div class="drag-handle" title="Drag to reorder">&#x2261;</div>
+                <input type="number" class="edit-input" value="${n}" onchange="numbers[${i}]=parseFloat(this.value);updateStats();" inputmode="decimal">
+                <button class="remove-btn" onclick="numbers.splice(${i},1);renderList();" title="Remove">&times;</button>
+            `;
+
+            // Drag and Drop Events
+            div.addEventListener('dragstart', function(e) {
+                dragStartIndex = i;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            div.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            });
+
+            div.addEventListener('dragenter', function(e) {
+                this.classList.add('over');
+            });
+
+            div.addEventListener('dragleave', function(e) {
+                this.classList.remove('over');
+            });
+
+            div.addEventListener('drop', function(e) {
+                e.stopPropagation();
+                this.classList.remove('over');
+                const dragEndIndex = i;
+                
+                if (dragStartIndex !== dragEndIndex) {
+                    const item = numbers.splice(dragStartIndex, 1)[0];
+                    numbers.splice(dragEndIndex, 0, item);
+                    renderList();
+                }
+            });
+
+            div.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.number-item').forEach(el => el.classList.remove('over'));
+            });
+
             container.appendChild(div);
         });
         updateStats();
