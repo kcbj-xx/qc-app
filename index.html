@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -367,7 +366,6 @@
         targetTimeObject = null;
     }
 
-    // --- CALCULATOR LOGIC ---
     function calculateGlaze() {
         const g=parseFloat(document.getElementById('glazedVal').value);
         const d=parseFloat(document.getElementById('deglazeVal').value);
@@ -384,12 +382,6 @@
         document.getElementById('glazeResult').style.display = 'none'; document.getElementById('clearGlazeBtn').style.display = 'none';
     }
 
-    function resetSalinity() {
-        document.getElementById('brixVal').value = ''; document.getElementById('salinityResult').style.display = 'none';
-        document.getElementById('clearSalinityBtn').style.display = 'none';
-    }
-
-    // --- AVERAGING & DRAG-AND-DROP ---
     let numbers = [];
 
     // Custom Drag State Variables
@@ -461,6 +453,7 @@
 
     function renderList() {
         const container = document.getElementById('numberList');
+        const clearBtn = document.getElementById('clearAllBtn');
         container.innerHTML = '';
         container.style.display = numbers.length ? "flex" : "none";
         clearBtn.style.display = numbers.length ? "block" : "none";
@@ -506,7 +499,6 @@
 
             container.appendChild(div);
         });
-
         updateStats();
     }
 
