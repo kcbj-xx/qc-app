@@ -32,7 +32,7 @@
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
-        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; }
+        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; transition: border-color 0.3s ease; }
         input.input-error { border: 2px solid var(--error); background-color: #fff1f2; }
         
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 8px; }
@@ -40,6 +40,8 @@
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
         
         .btn-timer-start { background-color: #8b5cf6; }
+        .btn-timer-start:hover { background-color: #7c3aed; }
+        
         .timer-display { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 2rem; font-weight: bold; margin-top: 10px; text-align: center; border: 2px solid #334155; transition: all 0.3s; }
         .timer-active { border-color: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
         .timer-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
@@ -50,8 +52,10 @@
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
-
-        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
+        
+        /* Flat Pointer-Event Drag Styles */
+        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 4px; }
+        
         .number-item { 
             display: flex; 
             align-items: center; 
@@ -60,39 +64,48 @@
             padding: 8px 12px; 
             border-radius: 8px; 
             gap: 10px; 
-            cursor: grab;
-            transition: transform 0.1s, box-shadow 0.2s;
+            position: relative;
+            z-index: 1;
+            -webkit-tap-highlight-color: transparent;
         }
-        .number-item.dragging { opacity: 0.5; background: #e0f2fe; border: 2px dashed var(--primary); transform: scale(1.02); z-index: 10; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        .edit-input { flex: 1; border: none; background: transparent; font-weight: 600; font-size: 1rem; }
         
-        .handle { color: #94a3b8; font-size: 1.2rem; cursor: grab; padding: 0 5px; user-select: none; }
+        .number-item.dragging { 
+            z-index: 100;
+            opacity: 0.9; 
+        }
         
-        .remove-btn { 
-            background: #fee2e2; 
-            color: #ef4444; 
-            border: none; 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 50%; 
-            cursor: pointer; 
+        .drag-handle { 
+            color: #94a3b8; 
+            font-size: 1.5rem; 
+            cursor: grab; 
+            padding: 10px; 
+            margin-left: -5px;
             display: flex; 
             align-items: center; 
-            justify-content: center; 
-            font-size: 1.2rem; 
-            padding: 0;
-            line-height: 1;
+            user-select: none; 
+            -webkit-user-select: none;
+            touch-action: none; 
+            transition: color 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
+        .drag-handle:active { cursor: grabbing; color: var(--primary); }
+        
+        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1.1rem; padding: 4px; transition: border-color 0.2s; }
+        .edit-input:focus { border-bottom: 2px solid var(--primary); outline: none; border-radius: 0; }
+        
+        .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; line-height: 1; transition: background-color 0.2s; }
+        .remove-btn:hover { background: #fecaca; }
         
         .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; height: 1.2em; }
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
+        
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Sampling Timer -->
+    <!-- Sampling Time Card -->
     <div class="card">
         <h2>Sampling Time</h2>
         <div class="row">
@@ -111,7 +124,12 @@
         </div>
         
         <button onclick="generateTime(false)">Generate Time</button>
+        
         <div id="timeResult" class="result" style="display: none;"></div>
+
+        <div id="timerControls" style="display: none; margin-top: 15px;">
+            <button class="btn-timer-start" onclick="handleStartTimer()">Start Countdown</button>
+        </div>
 
         <div id="activeTimer" style="display: none; margin-top: 15px;">
             <div class="timer-label">Time Remaining</div>
@@ -123,7 +141,7 @@
         <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
     </div>
 
-    <!-- Glaze Calculator -->
+    <!-- Glaze Calculator Card -->
     <div class="card">
         <h2>Glaze Calculator</h2>
         <div class="row">
@@ -135,7 +153,7 @@
         <div class="result" id="glazeResult" style="display: none;"></div>
     </div>
 
-    <!-- Averaging & Sum -->
+    <!-- Averaging Card -->
     <div class="card">
         <h2>Averaging & Sum</h2>
         <div class="stats-grid">
@@ -155,7 +173,7 @@
         <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear List</button>
     </div>
 
-    <!-- Salinity Calculator -->
+    <!-- Salinity Card -->
     <div class="card">
         <h2>Salinity Calculator</h2>
         <div class="input-group">
@@ -173,46 +191,63 @@
 </audio>
 
 <script>
-    // --- SERVICE WORKER & PERMISSIONS ---
+    // PWA Manifest Engine
+    const manifest = {
+        "name": "QC Toolset Pro",
+        "short_name": "QC Tool",
+        "start_url": ".",
+        "display": "standalone",
+        "background_color": "#f3f4f6",
+        "theme_color": "#2563eb",
+        "icons": [{
+            "src": "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }]
+    };
+    
+    const stringManifest = JSON.stringify(manifest);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
+
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(() => console.log("SW Active"));
-    }
-    if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch((err) => console.error("SW Failed:", err));
+        });
     }
 
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
     let timerInterval = null;
-    let vibrationInterval = null;
-    let wakeLock = null;
     const alarm = document.getElementById('alarmSound');
 
-        // --- SAMPLING TIMER LOGIC (UPDATED WITH AUTO-CLEARING ERRORS) ---
     function generateTime(isRecursive) {
         const minInput = document.getElementById('minMinutes');
         const maxInput = document.getElementById('maxMinutes');
         const startTimeInput = document.getElementById('startTime');
         const res = document.getElementById('timeResult');
 
-        // Clear any old error states immediately
         [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
 
         if (!isRecursive) {
             let errors = [];
-            if (!minInput.value) { errors.push("Min"); minInput.classList.add('input-error'); }
-            if (!maxInput.value) { errors.push("Max"); maxInput.classList.add('input-error'); }
+            if (!minInput.value) { errors.push("Min Minutes"); minInput.classList.add('input-error'); }
+            if (!maxInput.value) { errors.push("Max Minutes"); maxInput.classList.add('input-error'); }
             if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
-            
+
             if (errors.length > 0) {
                 res.style.display = "block";
                 res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
                 
-                // NEW: Auto-clear errors after 3 seconds
                 setTimeout(() => {
-                    res.style.display = "none";
-                    [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
-                }, 3000);
+                    if (res.innerHTML.includes("Missing:")) {
+                        res.style.display = "none";
+                        res.innerHTML = "";
+                        [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
+                    }
+                }, 3500);
                 return;
             }
         }
@@ -220,6 +255,7 @@
         const min = parseInt(minInput.value); 
         const max = parseInt(maxInput.value);
         let startStr = isRecursive ? lastGeneratedTimeStr : startTimeInput.value;
+        
         const rand = Math.floor(Math.random() * (max - min + 1)) + min;
         const [h, m] = startStr.split(':').map(Number);
         
@@ -234,38 +270,39 @@
         res.innerHTML = `
             <div style="font-size:0.85rem;color:#64748b;">Reference: ${startStr} (+${rand}m)</div>
             <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Target: ${lastGeneratedTimeStr}</div>
-            <button class="btn-timer-start" onclick="handleStartTimer()" style="margin-top:10px;">Start Countdown</button><br>
-            <button class="btn-recursive" onclick="generateTime(true)">Next from ${lastGeneratedTimeStr}</button>
+            <button class="btn-recursive" onclick="generateTime(true)">Next window from ${lastGeneratedTimeStr}</button>
         `;
+        
+        document.getElementById('timerControls').style.display = 'block';
         document.getElementById('clearTimeBtn').style.display = 'block';
     }
 
-    async function handleStartTimer() {
-        // Tweak 1: Only confirm if timerInterval is actually set
-        if (timerInterval && !confirm("Override existing timer?")) return;
-        
-        if (targetTimeObject) {
-            if ('wakeLock' in navigator) {
-                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
-            }
-            startTimer(targetTimeObject);
-        }
+    function handleStartTimer() {
+        if (Notification.permission === "default") Notification.requestPermission();
+        if (timerInterval && !confirm("An active timer is already running. Override it?")) return;
+        if (targetTimeObject) startTimer(targetTimeObject);
     }
 
     function startTimer(targetDate) {
         stopTimer();
         const display = document.getElementById('countdown');
+        const cancelBtn = document.getElementById('cancelTimerBtn');
+        const stopBtn = document.getElementById('stopAlarmBtn');
+        
         document.getElementById('activeTimer').style.display = 'block';
         display.classList.add('timer-active');
-        document.getElementById('cancelTimerBtn').style.display = 'block';
-        document.getElementById('stopAlarmBtn').style.display = 'none';
+        cancelBtn.style.display = 'block';
+        stopBtn.style.display = 'none';
 
         timerInterval = setInterval(() => {
-            const distance = targetDate.getTime() - new Date().getTime();
+            const now = new Date().getTime();
+            const distance = targetDate.getTime() - now;
+
             if (distance < 0) {
                 triggerFinalAlarm();
                 return;
             }
+
             const h = Math.floor((distance % 86400000) / 3600000);
             const m = Math.floor((distance % 3600000) / 60000);
             const s = Math.floor((distance % 60000) / 1000);
@@ -273,9 +310,9 @@
         }, 1000);
     }
 
-        function triggerFinalAlarm() {
-        // Fix: We MUST clear the interval here so it doesn't trigger every second!
+    async function triggerFinalAlarm() {
         clearInterval(timerInterval);
+        timerInterval = null;
         
         const display = document.getElementById('countdown');
         display.innerText = "TIME UP!";
@@ -283,52 +320,48 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        alarm.volume = 1.0; 
-        alarm.play().catch(() => console.log("Audio interaction required."));
-
-        if ("vibrate" in navigator) {
-            navigator.vibrate([500, 200, 500, 200, 500]);
-            // Clear any existing vibration loop just to be safe
-            if (vibrationInterval) clearInterval(vibrationInterval); 
-            vibrationInterval = setInterval(() => { navigator.vibrate([500, 200]); }, 700);
-        }
+        alarm.play().catch(e => console.log("Audio block."));
+        if ("vibrate" in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
 
         if (Notification.permission === "granted") {
-            navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification("QC Alert", { body: "Time to collect samples!", requireInteraction: true, vibrate: [200, 100, 200] });
-            });
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                await reg.showNotification("QC Alert", { 
+                    body: "Time to collect samples!", 
+                    requireInteraction: true, 
+                    vibrate: [200, 100, 200],
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+                    tag: 'qc-alert-' + Date.now() 
+                });
+            } catch (err) {
+                new Notification("QC Alert (Fallback)", { 
+                    body: "Time to collect samples!",
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png"
+                });
+            }
         }
     }
-
 
     function stopTimer() {
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null; // Tweak 1 Fix: Nullify to clear state
-        }
-        if (vibrationInterval) {
-            clearInterval(vibrationInterval);
-            vibrationInterval = null;
-        }
-        if ("vibrate" in navigator) navigator.vibrate(0);
-        
-        alarm.pause(); alarm.currentTime = 0;
-        if (wakeLock) { wakeLock.release().then(() => wakeLock = null); }
-        
+        clearInterval(timerInterval);
+        timerInterval = null;
+        alarm.pause();
+        alarm.currentTime = 0;
         document.getElementById('activeTimer').style.display = 'none';
         document.getElementById('countdown').style.color = "#38bdf8";
+        document.getElementById('countdown').classList.remove('timer-active');
     }
 
-    // --- RESET SAMPLING (UPDATED TO ALWAYS PROMPT) ---
     function resetSamplingTime() {
-        // Removed the timerInterval check so it prompts EVERY time you click it
-        if (!confirm("Clear sampling time fields?")) return;
+        const confirmMsg = timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?";
+        if (!confirm(confirmMsg)) return;
         
-        stopTimer(); // Ensure any running alarm/vibration is killed
+        stopTimer();
         document.getElementById('minMinutes').value = '';
         document.getElementById('maxMinutes').value = '';
         document.getElementById('startTime').value = '';
         document.getElementById('timeResult').style.display = 'none';
+        document.getElementById('timerControls').style.display = 'none';
         document.getElementById('clearTimeBtn').style.display = 'none';
         lastGeneratedTimeStr = "";
         targetTimeObject = null;
@@ -336,19 +369,160 @@
 
     // --- CALCULATOR LOGIC ---
     function calculateGlaze() {
-        const g = parseFloat(document.getElementById('glazedVal').value);
-        const d = parseFloat(document.getElementById('deglazeVal').value);
-        if (!g || !d) return;
-        const dec = (g - d) / g;
-        const res = document.getElementById('glazeResult');
-        res.style.display = "block";
-        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
+        const g=parseFloat(document.getElementById('glazedVal').value);
+        const d=parseFloat(document.getElementById('deglazeVal').value);
+        if(!g||!d) return;
+        const dec=(g-d)/g;
+        const res=document.getElementById('glazeResult');
+        res.style.display="block";
+        res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
         document.getElementById('clearGlazeBtn').style.display = 'block';
     }
 
     function resetGlaze() {
         document.getElementById('glazedVal').value = ''; document.getElementById('deglazeVal').value = '';
         document.getElementById('glazeResult').style.display = 'none'; document.getElementById('clearGlazeBtn').style.display = 'none';
+    }
+
+    function resetSalinity() {
+        document.getElementById('brixVal').value = ''; document.getElementById('salinityResult').style.display = 'none';
+        document.getElementById('clearSalinityBtn').style.display = 'none';
+    }
+
+    // --- AVERAGING & DRAG-AND-DROP ---
+    let numbers = [];
+
+    // Custom Drag State Variables
+    let draggingIdx = null;
+    let startY = 0;
+    let rowHeight = 0;
+    let elements = [];
+
+    function addNumber() {
+        const inp=document.getElementById('numberInput');
+        const val=parseFloat(inp.value); if(isNaN(val)) return;
+        document.getElementById('lastAddedDisplay').innerText=`Last added: ${val}`;
+        numbers.push(val); 
+        inp.value=''; 
+        renderList();
+        inp.focus(); 
+    }
+
+    // Handles the physics of gliding items up and down flatly
+    function onPointerMove(e) {
+        if (draggingIdx === null) return;
+        
+        const deltaY = e.clientY - startY;
+        const draggedEl = elements[draggingIdx];
+        
+        // Locks the dragged item exactly to the finger without scaling
+        draggedEl.style.transform = `translateY(${deltaY}px)`;
+
+        let moveSteps = Math.round(deltaY / rowHeight);
+        let targetIdx = draggingIdx + moveSteps;
+        targetIdx = Math.max(0, Math.min(elements.length - 1, targetIdx));
+
+        // Glides the sibling elements out of the way
+        elements.forEach((el, idx) => {
+            if (idx === draggingIdx) return;
+            let offset = 0;
+            if (idx > draggingIdx && idx <= targetIdx) offset = -rowHeight;
+            else if (idx < draggingIdx && idx >= targetIdx) offset = rowHeight;
+            
+            if (el.dataset.offset != offset) {
+                el.style.transform = `translateY(${offset}px)`;
+                el.dataset.offset = offset;
+            }
+        });
+    }
+
+    // Handles releasing the finger and locking in the new order
+    function onPointerUp(e) {
+        if (draggingIdx === null) return;
+        
+        const deltaY = e.clientY - startY;
+        let moveSteps = Math.round(deltaY / rowHeight);
+        let targetIdx = draggingIdx + moveSteps;
+        targetIdx = Math.max(0, Math.min(elements.length - 1, targetIdx));
+
+        if (draggingIdx !== targetIdx) {
+            const item = numbers.splice(draggingIdx, 1)[0];
+            numbers.splice(targetIdx, 0, item);
+        }
+
+        draggingIdx = null;
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
+        document.removeEventListener('pointercancel', onPointerUp);
+
+        // Instantly repaint the UI
+        renderList();
+    }
+
+    function renderList() {
+        const container = document.getElementById('numberList');
+        container.innerHTML = '';
+        container.style.display = numbers.length ? "flex" : "none";
+        clearBtn.style.display = numbers.length ? "block" : "none";
+        
+        numbers.forEach((n, i) => {
+            const div = document.createElement('div');
+            div.className = 'number-item';
+            
+            div.innerHTML = `
+                <div class="drag-handle" title="Drag to reorder">&#x2261;</div>
+                <input type="number" class="edit-input" value="${n}" onchange="numbers[${i}]=parseFloat(this.value);updateStats();" inputmode="decimal">
+                <button class="remove-btn" onclick="numbers.splice(${i},1);renderList();" title="Remove">&times;</button>
+            `;
+
+            const handle = div.querySelector('.drag-handle');
+            const inputField = div.querySelector('.edit-input');
+
+            // Initiates the flat drag
+            handle.addEventListener('pointerdown', (e) => {
+                document.activeElement.blur(); 
+                
+                draggingIdx = i;
+                startY = e.clientY;
+                elements = Array.from(container.children);
+                
+                const gap = parseInt(window.getComputedStyle(container).gap) || 8;
+                rowHeight = elements[0].offsetHeight + gap;
+                
+                elements.forEach((el) => {
+                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+                    el.dataset.offset = 0;
+                });
+                
+                div.style.transition = 'none'; 
+                div.classList.add('dragging');
+                
+                inputField.style.pointerEvents = 'none'; 
+                
+                document.addEventListener('pointermove', onPointerMove);
+                document.addEventListener('pointerup', onPointerUp);
+                document.addEventListener('pointercancel', onPointerUp);
+            });
+
+            container.appendChild(div);
+        });
+
+        updateStats();
+    }
+
+    function clearNumbers() { 
+        if (confirm("Clear all numbers?")) { 
+            numbers = []; 
+            document.getElementById('lastAddedDisplay').innerText = ''; 
+            renderList(); 
+        } 
+    }
+
+    function updateStats() {
+        const sum = numbers.reduce((a, b) => a + b, 0);
+        document.getElementById('statCount').innerText = numbers.length;
+        document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
+        document.getElementById('statAvg').innerText = (numbers.length ? (sum / numbers.length) : 0).toFixed(2).replace(/\.00$/, '');
     }
 
     function calculateSalinity() {
@@ -362,91 +536,6 @@
         document.getElementById('brixVal').value = ''; document.getElementById('salinityResult').style.display = 'none';
         document.getElementById('clearSalinityBtn').style.display = 'none';
     }
-
-    // --- AVERAGING & DRAG-AND-DROP ---
-    let numbers = [];
-
-    function addNumber() {
-        const inp = document.getElementById('numberInput');
-        const val = parseFloat(inp.value); if (isNaN(val)) return;
-        document.getElementById('lastAddedDisplay').innerText = `Last added: ${val}`;
-        numbers.push(val); 
-        inp.value = ''; 
-        renderList();
-        inp.focus(); 
-    }
-
-    function renderList() {
-        const container = document.getElementById('numberList');
-        container.innerHTML = '';
-        container.style.display = numbers.length ? "flex" : "none";
-        document.getElementById('clearAllBtn').style.display = numbers.length ? "block" : "none";
-
-        numbers.forEach((num, index) => {
-            const item = document.createElement('div');
-            item.className = 'number-item';
-            item.draggable = true;
-            item.dataset.index = index;
-            item.innerHTML = `
-                <span class="handle">☰</span>
-                <input type="number" class="edit-input" value="${num}" onchange="numbers[${index}]=parseFloat(this.value);updateStats();">
-                <button class="remove-btn" onclick="numbers.splice(${index},1);renderList();">&times;</button>
-            `;
-
-            // Tweak 3: Better drag events
-            item.addEventListener('dragstart', () => {
-                setTimeout(() => item.classList.add('dragging'), 0);
-            });
-            item.addEventListener('dragend', () => {
-                item.classList.remove('dragging');
-                // Sync data after visual drop
-                numbers = [...container.querySelectorAll('.edit-input')].map(el => parseFloat(el.value));
-                updateStats();
-            });
-            
-            container.appendChild(item);
-        });
-
-        // Reorder logic using position calculation
-        container.addEventListener('dragover', e => {
-            e.preventDefault();
-            const draggingItem = document.querySelector('.dragging');
-            if (!draggingItem) return;
-            
-            const afterElement = getDragAfterElement(container, e.clientY);
-            if (afterElement == null) {
-                container.appendChild(draggingItem);
-            } else {
-                container.insertBefore(draggingItem, afterElement);
-            }
-        });
-
-        updateStats();
-    }
-
-    // Tweak 3 Helper: Finds which element the mouse is "above"
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.number-item:not(.dragging)')];
-        
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    function updateStats() {
-        const sum = numbers.reduce((a, b) => a + b, 0);
-        document.getElementById('statCount').innerText = numbers.length;
-        document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
-        document.getElementById('statAvg').innerText = (numbers.length ? (sum / numbers.length) : 0).toFixed(3).replace(/\.00$/, '');
-    }
-
-    function clearNumbers() { if (confirm("Clear list?")) { numbers = []; document.getElementById('lastAddedDisplay').innerText = ''; renderList(); } }
 </script>
 </body>
 </html>
