@@ -52,8 +52,8 @@
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
         
-        /* Custom Pointer-Event Drag Styles */
-        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
+        /* Flat Pointer-Event Drag Styles */
+        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 4px; }
         
         .number-item { 
             display: flex; 
@@ -64,27 +64,28 @@
             border-radius: 8px; 
             gap: 10px; 
             position: relative;
-            z-index: 1; /* Keep inactive items below the dragging one */
+            z-index: 1;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .number-item.dragging { 
-            background-color: #ffffff; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
             z-index: 100;
-            border-color: var(--primary);
+            opacity: 0.9; /* Very slight transparency to see what you are gliding over */
         }
         
         .drag-handle { 
             color: #94a3b8; 
             font-size: 1.5rem; 
             cursor: grab; 
-            padding: 10px; /* Expands touch target area */
+            padding: 10px; 
             margin-left: -5px;
             display: flex; 
             align-items: center; 
             user-select: none; 
-            touch-action: none; /* Prevents Android from scrolling the screen when grabbing */
+            -webkit-user-select: none;
+            touch-action: none; 
             transition: color 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
         .drag-handle:active { cursor: grabbing; color: var(--primary); }
         
@@ -397,15 +398,15 @@
         inp.focus(); 
     }
 
-    // Handles the physics of gliding items up and down
+    // Handles the physics of gliding items up and down flatly
     function onPointerMove(e) {
         if (draggingIdx === null) return;
         
         const deltaY = e.clientY - startY;
         const draggedEl = elements[draggingIdx];
         
-        // Locks the dragged item exactly to the finger
-        draggedEl.style.transform = `translateY(${deltaY}px) scale(1.03)`;
+        // Locks the dragged item exactly to the finger without scaling
+        draggedEl.style.transform = `translateY(${deltaY}px)`;
 
         let moveSteps = Math.round(deltaY / rowHeight);
         let targetIdx = draggingIdx + moveSteps;
@@ -434,7 +435,6 @@
         let targetIdx = draggingIdx + moveSteps;
         targetIdx = Math.max(0, Math.min(elements.length - 1, targetIdx));
 
-        // Update the core array
         if (draggingIdx !== targetIdx) {
             const item = numbers.splice(draggingIdx, 1)[0];
             numbers.splice(targetIdx, 0, item);
@@ -445,7 +445,7 @@
         document.removeEventListener('pointerup', onPointerUp);
         document.removeEventListener('pointercancel', onPointerUp);
 
-        // Instantly repaint the UI to match the new array order
+        // Instantly repaint the UI
         renderList();
     }
 
@@ -469,15 +469,14 @@
             const handle = div.querySelector('.drag-handle');
             const inputField = div.querySelector('.edit-input');
 
-            // Initiates the drag when touching the handle
+            // Initiates the flat drag
             handle.addEventListener('pointerdown', (e) => {
-                document.activeElement.blur(); // Forces keyboard to hide
+                document.activeElement.blur(); 
                 
                 draggingIdx = i;
                 startY = e.clientY;
                 elements = Array.from(container.children);
                 
-                // Calculates precise height including the gap between items
                 const gap = parseInt(window.getComputedStyle(container).gap) || 8;
                 rowHeight = elements[0].offsetHeight + gap;
                 
@@ -486,10 +485,9 @@
                     el.dataset.offset = 0;
                 });
                 
-                div.style.transition = 'none'; // Dragged item moves instantly without lag
+                div.style.transition = 'none'; 
                 div.classList.add('dragging');
                 
-                // CRITICAL FIX: physically blocks the text field from registering taps while swiping
                 inputField.style.pointerEvents = 'none'; 
                 
                 document.addEventListener('pointermove', onPointerMove);
