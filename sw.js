@@ -1,27 +1,76 @@
-// sw.js - Service Worker for QC Toolset Pro
+// sw.js - Service Worker for QC Toolset Pro (Offline + State Preservation)
 
-// 1. Install Phase
+const CACHE_NAME = 'qc-toolset-cache-v2';
+
+// Core files to download for offline use
+const PRECACHE_ASSETS = [
+    './',
+    './index.html'
+];
+
+// 1. Install Phase: Download the core files
 self.addEventListener('install', (event) => {
-    // Forces the waiting service worker to become the active service worker.
-    // This ensures you are always running the latest version of your code.
     self.skipWaiting();
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(PRECACHE_ASSETS);
+        })
+    );
 });
 
-// 2. Activate Phase
+// 2. Activate Phase: Clean up old caches
 self.addEventListener('activate', (event) => {
-    // Tells the active service worker to take control of the page immediately.
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
     event.waitUntil(clients.claim());
 });
 
-// 3. The PWA "Gatekeeper"
-// CRITICAL: Chrome strictly requires a fetch listener to exist for the app to be installable.
+// 3. Fetch Phase: The Offline Gatekeeper
 self.addEventListener('fetch', (event) => {
-    // A simple pass-through network fetch ensures the requirement is met.
-    event.respondWith(fetch(event.request));
+    if (event.request.method !== 'GET') return;
+
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            // Serve from offline cache if available
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            
+            // Otherwise, fetch from network and cache it for later
+            return fetch(event.request).then((networkResponse) => {
+                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                    if (networkResponse && networkResponse.type === 'opaque') {
+                        const responseToCache = networkResponse.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return networkResponse;
+                }
+
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, responseToCache);
+                });
+
+                return networkResponse;
+            }).catch(() => {
+                // Ignore network errors when fully offline
+            });
+        })
+    );
 });
 
-// 4. Notification Interaction
-// Handles what happens when you tap the "Time to collect samples!" banner
+// 4. Notification Interaction: Wakes up the EXISTING app to save state
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
@@ -31,7 +80,8 @@ self.addEventListener('notificationclick', (event) => {
             for (let i = 0; i < windowClients.length; i++) {
                 let client = windowClients[i];
                 if ('focus' in client) {
-                    return client.focus();
+                    // This is the magic line that prevents your data from clearing
+                    return client.focus(); 
                 }
             }
             // If the app is completely closed, open it fresh
