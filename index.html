@@ -31,7 +31,7 @@
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
-        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; }
+        input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; transition: border-color 0.3s; }
         input.input-error { border: 2px solid var(--error); background-color: #fff1f2; }
         
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 8px; }
@@ -52,19 +52,23 @@
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
         
-        /* Drag and Drop Styles */
+        /* Reorderable List Styles */
         .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; border-radius: 8px; padding: 4px; }
-        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; transition: all 0.2s; }
-        .number-item.dragging { opacity: 0.5; background-color: #f1f5f9; transform: scale(0.98); }
-        .number-item.over { border: 2px dashed var(--primary); background-color: #eff6ff; }
-        .drag-handle { color: #94a3b8; font-size: 1.2rem; cursor: grab; padding: 0 5px; display: flex; align-items: center; }
-        .drag-handle:active { cursor: grabbing; }
+        .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 6px 12px 6px 6px; border-radius: 8px; gap: 10px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         
-        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1rem; }
+        .reorder-controls { display: flex; flex-direction: column; gap: 3px; }
+        .reorder-btn { background: #f8fafc; border: 1px solid var(--border); color: #64748b; width: 32px; height: 22px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; box-sizing: border-box; }
+        .reorder-btn:hover:not(:disabled) { background: #e2e8f0; color: var(--primary); border-color: #cbd5e1; }
+        .reorder-btn:disabled { opacity: 0.2; background: transparent; border-color: transparent; cursor: default; }
+        
+        .item-index { font-size: 0.85rem; color: #94a3b8; font-weight: bold; width: 20px; text-align: center; }
+        .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1.1rem; padding: 4px; }
+        .edit-input:focus { border-bottom: 2px solid var(--primary); outline: none; border-radius: 0; }
+        
         .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; line-height: 1; }
-        
         .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; height: 1.2em; }
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
+        
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
     </style>
 </head>
@@ -208,11 +212,12 @@
                 res.style.display = "block";
                 res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
                 
-                // Hide prompt automatically after 3.5 seconds
+                // Hide text AND remove red borders automatically after 3.5 seconds
                 setTimeout(() => {
                     if (res.innerHTML.includes("Missing:")) {
                         res.style.display = "none";
                         res.innerHTML = "";
+                        [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
                     }
                 }, 3500);
                 return;
@@ -349,7 +354,6 @@
     }
 
     let numbers = [];
-    let dragStartIndex = null;
 
     function addNumber() {
         const inp=document.getElementById('numberInput');
@@ -359,6 +363,13 @@
         inp.value=''; 
         renderList();
         inp.focus(); 
+    }
+
+    function moveItem(index, direction) {
+        if (index + direction < 0 || index + direction >= numbers.length) return;
+        const item = numbers.splice(index, 1)[0];
+        numbers.splice(index + direction, 0, item);
+        renderList();
     }
 
     function renderList() {
@@ -371,50 +382,16 @@
         numbers.forEach((n, i) => {
             const div = document.createElement('div');
             div.className = 'number-item';
-            div.draggable = true;
             
             div.innerHTML = `
-                <div class="drag-handle" title="Drag to reorder">&#x2261;</div>
+                <div class="reorder-controls">
+                    <button class="reorder-btn" onclick="moveItem(${i}, -1)" ${i === 0 ? 'disabled' : ''} title="Move Up">&#9650;</button>
+                    <button class="reorder-btn" onclick="moveItem(${i}, 1)" ${i === numbers.length - 1 ? 'disabled' : ''} title="Move Down">&#9660;</button>
+                </div>
+                <div class="item-index">${i + 1}.</div>
                 <input type="number" class="edit-input" value="${n}" onchange="numbers[${i}]=parseFloat(this.value);updateStats();" inputmode="decimal">
                 <button class="remove-btn" onclick="numbers.splice(${i},1);renderList();" title="Remove">&times;</button>
             `;
-
-            // Drag and Drop Events
-            div.addEventListener('dragstart', function(e) {
-                dragStartIndex = i;
-                this.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            });
-
-            div.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-            });
-
-            div.addEventListener('dragenter', function(e) {
-                this.classList.add('over');
-            });
-
-            div.addEventListener('dragleave', function(e) {
-                this.classList.remove('over');
-            });
-
-            div.addEventListener('drop', function(e) {
-                e.stopPropagation();
-                this.classList.remove('over');
-                const dragEndIndex = i;
-                
-                if (dragStartIndex !== dragEndIndex) {
-                    const item = numbers.splice(dragStartIndex, 1)[0];
-                    numbers.splice(dragEndIndex, 0, item);
-                    renderList();
-                }
-            });
-
-            div.addEventListener('dragend', function() {
-                this.classList.remove('dragging');
-                document.querySelectorAll('.number-item').forEach(el => el.classList.remove('over'));
-            });
 
             container.appendChild(div);
         });
