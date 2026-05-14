@@ -70,7 +70,7 @@
         
         .number-item.dragging { 
             z-index: 100;
-            opacity: 0.9; /* Very slight transparency to see what you are gliding over */
+            opacity: 0.9; 
         }
         
         .drag-handle { 
@@ -352,7 +352,9 @@
     }
 
     function resetSamplingTime() {
-        if (timerInterval && !confirm("Cancel current timer and clear data?")) return;
+        const confirmMsg = timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?";
+        if (!confirm(confirmMsg)) return;
+        
         stopTimer();
         document.getElementById('minMinutes').value = '';
         document.getElementById('maxMinutes').value = '';
