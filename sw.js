@@ -1,7 +1,7 @@
 // sw.js - Service Worker for QC Toolset Pro (Offline + State Preservation)
 
-// Bumped to v5 to force cache breaking!
-const CACHE_NAME = 'qc-toolset-cache-v5';
+// Bumped to v7 to force cache breaking!
+const CACHE_NAME = 'qc-toolset-cache-v7';
 
 // Core files to download for offline use
 const PRECACHE_ASSETS = [
