@@ -328,8 +328,10 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
+        // 1. Keep playing the audio stream (Works fine in background)
         alarm.play().catch(e => console.log("Audio block."));
         
+        // 2. Foreground app vibration loop (For when the app is wide open)
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
             vibrationInterval = setInterval(() => {
@@ -337,28 +339,43 @@
             }, 2000);
         }
 
+        // 3. THE BACKGROUND LOOP HOOPHOLE:
+        // Spawns a repeating system notification every 2.5 seconds to force
+        // Android to continuously vibrate the phone from the OS layer when off.
         if (Notification.permission === "granted") {
-            try {
-                const reg = await navigator.serviceWorker.ready;
-                await reg.showNotification("QC Alert", { 
-                    body: "Time to collect samples!", 
-                    requireInteraction: true, 
-                    vibrate: [1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000],
-                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-                    tag: 'qc-alert-' + Date.now() 
-                });
-            } catch (err) {
-                new Notification("QC Alert (Fallback)", { 
-                    body: "Time to collect samples!",
-                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png"
-                });
-            }
+            const fireNotification = async () => {
+                try {
+                    const reg = await navigator.serviceWorker.ready;
+                    await reg.showNotification("QC ALERT: COLLECT SAMPLES!", { 
+                        body: "Tap to stop the alarm.", 
+                        requireInteraction: true,
+                        vibrate: [500, 200, 500], // Heavy pulse pattern per notification
+                        icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+                        // We use a fixed tag so it replaces the previous card instead of cluttering your screen
+                        tag: 'qc-continuous-alarm' 
+                    });
+                } catch (err) {
+                    console.log("Notification failed", err);
+                }
+            };
+
+            // Fire the first one instantly
+            fireNotification();
+
+            // Set up a background interval separate from the audio to repeatedly force a system buzz
+            window.backgroundVibrateInterval = setInterval(fireNotification, 2500);
         }
     }
 
     function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
+        
+        // Clear the continuous notification loop completely
+        if (window.backgroundVibrateInterval) {
+            clearInterval(window.backgroundVibrateInterval);
+            window.backgroundVibrateInterval = null;
+        }
         
         if (vibrationInterval) {
             clearInterval(vibrationInterval);
@@ -371,7 +388,15 @@
         document.getElementById('activeTimer').style.display = 'none';
         document.getElementById('countdown').style.color = "#38bdf8";
         document.getElementById('countdown').classList.remove('timer-active');
+        
+        // Dismiss any lingering alarm notifications from the shade
+        navigator.serviceWorker.ready.then(reg => {
+            reg.getNotifications({tag: 'qc-continuous-alarm'}).then(notifications => {
+                notifications.forEach(n => n.close());
+            });
+        });
     }
+
 
     function resetSamplingTime() {
         const confirmMsg = timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?";
