@@ -117,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v13</span></h2>
+        <h2>Sampling Time <span class="version-tag">v11</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -228,6 +228,7 @@
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
     let timerInterval = null;
+    let vibrationInterval = null; 
     const alarm = document.getElementById('alarmSound');
 
     function generateTime(isRecursive) {
@@ -328,7 +329,13 @@
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
         alarm.play().catch(e => console.log("Audio block."));
-        if ("vibrate" in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
+        
+        if ("vibrate" in navigator) {
+            navigator.vibrate([500, 200, 500, 200, 500]); 
+            vibrationInterval = setInterval(() => {
+                navigator.vibrate([500, 200, 500, 200, 500]); 
+            }, 2000);
+        }
 
         if (Notification.permission === "granted") {
             try {
@@ -352,6 +359,13 @@
     function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
+        
+        if (vibrationInterval) {
+            clearInterval(vibrationInterval);
+            vibrationInterval = null;
+            if ("vibrate" in navigator) navigator.vibrate(0); 
+        }
+
         alarm.pause();
         alarm.currentTime = 0;
         document.getElementById('activeTimer').style.display = 'none';
@@ -424,6 +438,7 @@
             numbers[index] = newVal;
             
             const display = document.getElementById('lastAddedDisplay');
+            // Using the thick arrow HTML code
             display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
             display.style.color = 'var(--accent)'; 
             
