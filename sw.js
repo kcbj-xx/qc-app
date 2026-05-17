@@ -1,15 +1,14 @@
-// sw.js - Service Worker for QC Toolset Pro (Offline + State Preservation)
+// sw.js - Service Worker for QC Toolset Pro (Network-First Strategy)
 
-const CACHE_NAME = 'qc-toolset-cache-v3';
+// One final name change to flush out the old cache-first rules
+const CACHE_NAME = 'qc-toolset-cache-final';
 
-// Core files to download for offline use
 const PRECACHE_ASSETS = [
     './',
     './index.html',
-    './alarm.ogg' // Added local audio file for offline reliability
+    './alarm.ogg'
 ];
 
-// 1. Install Phase: Download the core files
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
@@ -19,7 +18,6 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// 2. Activate Phase: Clean up old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -35,57 +33,44 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(clients.claim());
 });
 
-// 3. Fetch Phase: The Offline Gatekeeper
+// The Magic Fix: Network-First Strategy
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
 
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            // Serve from offline cache if available
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            
-            // Otherwise, fetch from network and cache it for later
-            return fetch(event.request).then((networkResponse) => {
-                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-                    if (networkResponse && networkResponse.type === 'opaque') {
-                        const responseToCache = networkResponse.clone();
-                        caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(event.request, responseToCache);
-                        });
-                    }
-                    return networkResponse;
-                }
-
+        // 1. ALWAYS try the internet first
+        fetch(event.request).then((networkResponse) => {
+            // If we successfully get the newest file from GitHub,
+            // save a backup copy in the vault for later.
+            if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
                 const responseToCache = networkResponse.clone();
                 caches.open(CACHE_NAME).then((cache) => {
                     cache.put(event.request, responseToCache);
                 });
-
-                return networkResponse;
-            }).catch(() => {
-                // Ignore network errors when fully offline
-            });
+            }
+            // Show the fresh file to the user
+            return networkResponse;
+            
+        }).catch(() => {
+            // 2. The internet failed (Offline mode!)
+            // Don't panic, just pull the most recent backup from the vault.
+            return caches.match(event.request);
         })
     );
 });
 
-// 4. Notification Interaction: Wakes up the EXISTING app to save state
+// Notification Interaction: Wakes up the EXISTING app to save state
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // Check if the app is already open in a background tab
             for (let i = 0; i < windowClients.length; i++) {
                 let client = windowClients[i];
                 if ('focus' in client) {
-                    // This is the magic line that prevents your data from clearing
                     return client.focus(); 
                 }
             }
-            // If the app is completely closed, open it fresh
             if (clients.openWindow) {
                 return clients.openWindow('/');
             }
