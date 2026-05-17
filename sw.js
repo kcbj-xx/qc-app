@@ -1,12 +1,12 @@
 // sw.js - Service Worker for QC Toolset Pro (Offline + State Preservation)
 
-const CACHE_NAME = 'qc-toolset-cache-v3';
+const CACHE_NAME = 'qc-toolset-cache-v4';
 
 // Core files to download for offline use
 const PRECACHE_ASSETS = [
     './',
     './index.html',
-    './alarm.ogg' // Added local audio file for offline reliability
+    './alarm.ogg' // The Service Worker will now save your audio locally!
 ];
 
 // 1. Install Phase: Download the core files
