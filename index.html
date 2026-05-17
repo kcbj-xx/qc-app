@@ -104,8 +104,8 @@
             min-height: 1.2em; 
             transition: color 0.3s;
             display: flex;
-            justify-content: flex-start; /* Pulled back to the left */
-            align-items: center; /* Keeps items vertically centered */
+            justify-content: flex-start;
+            align-items: center; 
         }
         
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
@@ -328,10 +328,8 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // Play audio exactly like v11
         alarm.play().catch(e => console.log("Audio block."));
         
-        // Foregound app vibration loop (Safe)
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
             vibrationInterval = setInterval(() => {
@@ -339,14 +337,12 @@
             }, 2000);
         }
 
-        // Fire background Notification & System-level Vibration Channel
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
                 await reg.showNotification("QC Alert", { 
                     body: "Time to collect samples!", 
                     requireInteraction: true, 
-                    // System-level deep vibration string passed to the OS layer
                     vibrate: [1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000],
                     icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
                     tag: 'qc-alert-' + Date.now() 
@@ -419,7 +415,8 @@
         const val = parseFloat(inp.value); if(isNaN(val)) return;
         
         const display = document.getElementById('lastAddedDisplay');
-        display.innerHTML = `Added: ${val}`;
+        // Label changed to "Last added: "
+        display.innerHTML = `Last added: ${val}`;
         display.style.color = 'var(--success)';
         
         numbers.push(val); 
@@ -451,6 +448,12 @@
 
     function removeNumber(index) {
         numbers.splice(index, 1);
+        
+        // Clear text display completely if the user deletes the last item on the list
+        if (numbers.length === 0) {
+            document.getElementById('lastAddedDisplay').innerHTML = '';
+        }
+        
         renderList();
     }
 
