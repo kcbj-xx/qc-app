@@ -339,19 +339,31 @@
             }, 2000);
         }
 
-        // 3. Hand off the background notification looping to the Service Worker thread
+        // 3. THE LONG-BURST SINGLE NOTIFICATION:
+        // Since Android freezes background intervals, we pack a massive, 
+        // 30-second continuous pulsing pattern into the single allowed notification.
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
-                if (reg.active) {
-                    // Send a direct message to sw.js telling it to start the background loop
-                    reg.active.postMessage({ action: 'START_BACKGROUND_ALARM' });
-                }
+                await reg.showNotification("QC ALERT: COLLECT SAMPLES!", { 
+                    body: "Tap to stop the alarm.", 
+                    requireInteraction: true,
+                    // A massive, relentless 30-second pulsing vibration array executed entirely by the OS
+                    vibrate: [
+                        1000, 300, 1000, 300, 1000, 300, 1000, 300, 1000, 300,
+                        1000, 300, 1000, 300, 1000, 300, 1000, 300, 1000, 300,
+                        1000, 300, 1000, 300, 1000, 300, 1000, 300, 1000, 300,
+                        1000, 300, 1000, 300, 1000, 300, 1000, 300, 1000, 300
+                    ],
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+                    tag: 'qc-continuous-alarm' 
+                });
             } catch (err) {
-                console.log("Failed to contact Service Worker:", err);
+                console.log("Notification failed", err);
             }
         }
     }
+
 
     async function stopTimer() {
         clearInterval(timerInterval);
