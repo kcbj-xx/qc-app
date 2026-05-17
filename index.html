@@ -118,7 +118,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v9</span></h2>
+        <h2>Sampling Time <span class="version-tag">v10</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -425,8 +425,7 @@
             numbers[index] = newVal;
             
             const display = document.getElementById('lastAddedDisplay');
-            // Swapped the arrow symbol for the word "to"
-            display.innerHTML = `Edited: ${oldVal} to ${newVal}`;
+            display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
             display.style.color = 'var(--accent)'; 
             
             updateStats();
