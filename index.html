@@ -317,7 +317,7 @@
             display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
-
+    
     async function triggerFinalAlarm() {
         clearInterval(timerInterval);
         timerInterval = null;
@@ -339,43 +339,23 @@
             }, 2000);
         }
 
-        // 3. THE BACKGROUND LOOP HOOPHOLE:
-        // Spawns a repeating system notification every 2.5 seconds to force
-        // Android to continuously vibrate the phone from the OS layer when off.
+        // 3. Hand off the background notification looping to the Service Worker thread
         if (Notification.permission === "granted") {
-            const fireNotification = async () => {
-                try {
-                    const reg = await navigator.serviceWorker.ready;
-                    await reg.showNotification("QC ALERT: COLLECT SAMPLES!", { 
-                        body: "Tap to stop the alarm.", 
-                        requireInteraction: true,
-                        vibrate: [500, 200, 500], // Heavy pulse pattern per notification
-                        icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-                        // We use a fixed tag so it replaces the previous card instead of cluttering your screen
-                        tag: 'qc-continuous-alarm' 
-                    });
-                } catch (err) {
-                    console.log("Notification failed", err);
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                if (reg.active) {
+                    // Send a direct message to sw.js telling it to start the background loop
+                    reg.active.postMessage({ action: 'START_BACKGROUND_ALARM' });
                 }
-            };
-
-            // Fire the first one instantly
-            fireNotification();
-
-            // Set up a background interval separate from the audio to repeatedly force a system buzz
-            window.backgroundVibrateInterval = setInterval(fireNotification, 2500);
+            } catch (err) {
+                console.log("Failed to contact Service Worker:", err);
+            }
         }
     }
 
-    function stopTimer() {
+    async function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
-        
-        // Clear the continuous notification loop completely
-        if (window.backgroundVibrateInterval) {
-            clearInterval(window.backgroundVibrateInterval);
-            window.backgroundVibrateInterval = null;
-        }
         
         if (vibrationInterval) {
             clearInterval(vibrationInterval);
@@ -389,14 +369,14 @@
         document.getElementById('countdown').style.color = "#38bdf8";
         document.getElementById('countdown').classList.remove('timer-active');
         
-        // Dismiss any lingering alarm notifications from the shade
-        navigator.serviceWorker.ready.then(reg => {
-            reg.getNotifications({tag: 'qc-continuous-alarm'}).then(notifications => {
-                notifications.forEach(n => n.close());
-            });
-        });
+        // Message the Service Worker to kill the background loop and close cards
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            if (reg.active) {
+                reg.active.postMessage({ action: 'STOP_BACKGROUND_ALARM' });
+            }
+        } catch(e) {}
     }
-
 
     function resetSamplingTime() {
         const confirmMsg = timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?";
