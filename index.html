@@ -105,8 +105,8 @@
             min-height: 1.2em; 
             transition: color 0.3s;
             display: flex;
-            justify-content: flex-start; /* Pulled back to the left */
-            align-items: center; /* Keeps items vertically centered */
+            justify-content: flex-start;
+            align-items: center; 
         }
         
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
@@ -118,7 +118,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v8</span></h2>
+        <h2>Sampling Time <span class="version-tag">v9</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -425,8 +425,8 @@
             numbers[index] = newVal;
             
             const display = document.getElementById('lastAddedDisplay');
-            // Using a margin to perfectly space the arrow, while the flexbox rules handle vertical centering
-            display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&rarr;</span> ${newVal}`;
+            // Swapped the arrow symbol for the word "to"
+            display.innerHTML = `Edited: ${oldVal} to ${newVal}`;
             display.style.color = 'var(--accent)'; 
             
             updateStats();
