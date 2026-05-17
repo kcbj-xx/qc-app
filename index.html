@@ -95,7 +95,6 @@
         .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; line-height: 1; transition: background-color 0.2s; }
         .remove-btn:hover { background: #fecaca; }
         
-        /* Updated last added/edited text to handle longer edits gracefully */
         .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; min-height: 1.2em; transition: color 0.3s; }
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
         
@@ -380,8 +379,6 @@
     }
 
     let numbers = [];
-
-    // Custom Drag State Variables
     let draggingIdx = null;
     let startY = 0;
     let rowHeight = 0;
@@ -392,7 +389,7 @@
         const val = parseFloat(inp.value); if(isNaN(val)) return;
         
         const display = document.getElementById('lastAddedDisplay');
-        display.innerText = `Last added: ${val}`;
+        display.innerText = `Added: ${val}`;
         display.style.color = 'var(--success)';
         
         numbers.push(val); 
@@ -404,7 +401,6 @@
     function updateNumber(index, inputEl) {
         const newVal = parseFloat(inputEl.value);
         
-        // If the user clears the box completely and hits enter, revert to old value safely
         if (isNaN(newVal)) {
             inputEl.value = numbers[index]; 
             return;
@@ -414,13 +410,22 @@
         if (newVal !== oldVal) {
             numbers[index] = newVal;
             
-            // Updates the display with a visual cue for the edit
             const display = document.getElementById('lastAddedDisplay');
-            display.innerText = `Last edited: ${oldVal} \u2192 ${newVal}`;
-            display.style.color = 'var(--accent)'; // Turns orange so it stands out from a generic "add"
+            display.innerText = `Edited: ${oldVal} \u2192 ${newVal}`;
+            display.style.color = 'var(--accent)'; 
             
             updateStats();
         }
+    }
+
+    function removeNumber(index) {
+        const removedVal = numbers.splice(index, 1)[0];
+        
+        const display = document.getElementById('lastAddedDisplay');
+        display.innerText = `Removed: ${removedVal}`;
+        display.style.color = 'var(--error)';
+        
+        renderList();
     }
 
     // Handles the physics of gliding items up and down flatly
@@ -481,11 +486,11 @@
             const div = document.createElement('div');
             div.className = 'number-item';
             
-            // Replaced onchange with the new updateNumber function, and added onkeydown for the Enter key support
+            // Fixed the mobile keyboard quirk by relying on onblur and onkeyup
             div.innerHTML = `
                 <div class="drag-handle" title="Drag to reorder">&#x2261;</div>
-                <input type="number" class="edit-input" value="${n}" onchange="updateNumber(${i}, this)" onkeydown="if(event.key==='Enter') this.blur();" inputmode="decimal">
-                <button class="remove-btn" onclick="numbers.splice(${i},1);renderList();" title="Remove">&times;</button>
+                <input type="number" class="edit-input" value="${n}" onblur="updateNumber(${i}, this)" onkeyup="if(event.key==='Enter') this.blur();" inputmode="decimal">
+                <button class="remove-btn" onclick="removeNumber(${i})" title="Remove">&times;</button>
             `;
 
             const handle = div.querySelector('.drag-handle');
@@ -526,7 +531,7 @@
             numbers = []; 
             const display = document.getElementById('lastAddedDisplay');
             display.innerText = ''; 
-            display.style.color = 'var(--success)'; // Resets the color back to default green
+            display.style.color = 'var(--success)';
             renderList(); 
         } 
     }
