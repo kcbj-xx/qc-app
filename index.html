@@ -96,7 +96,6 @@
         .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; line-height: 1; transition: background-color 0.2s; }
         .remove-btn:hover { background: #fecaca; }
         
-        /* Left-aligned, perfectly vertically centered text display */
         .last-added-text { 
             font-size: 0.85rem; 
             color: var(--success); 
@@ -118,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time stable development</h2>
+        <h2>Sampling Time <span class="version-tag">v14</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -229,6 +228,7 @@
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
     let timerInterval = null;
+    let vibrationInterval = null;
     const alarm = document.getElementById('alarmSound');
 
     function generateTime(isRecursive) {
@@ -328,16 +328,26 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
+        // Play audio exactly like v11
         alarm.play().catch(e => console.log("Audio block."));
-        if ("vibrate" in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
+        
+        // Foregound app vibration loop (Safe)
+        if ("vibrate" in navigator) {
+            navigator.vibrate([500, 200, 500, 200, 500]);
+            vibrationInterval = setInterval(() => {
+                try { navigator.vibrate([500, 200, 500, 200, 500]); } catch(e){}
+            }, 2000);
+        }
 
+        // Fire background Notification & System-level Vibration Channel
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
                 await reg.showNotification("QC Alert", { 
                     body: "Time to collect samples!", 
                     requireInteraction: true, 
-                    vibrate: [200, 100, 200],
+                    // System-level deep vibration string passed to the OS layer
+                    vibrate: [1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000],
                     icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
                     tag: 'qc-alert-' + Date.now() 
                 });
@@ -353,6 +363,13 @@
     function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
+        
+        if (vibrationInterval) {
+            clearInterval(vibrationInterval);
+            vibrationInterval = null;
+        }
+        if ("vibrate" in navigator) { try { navigator.vibrate(0); } catch(e){} }
+
         alarm.pause();
         alarm.currentTime = 0;
         document.getElementById('activeTimer').style.display = 'none';
@@ -425,8 +442,7 @@
             numbers[index] = newVal;
             
             const display = document.getElementById('lastAddedDisplay');
-            // Using a margin to perfectly space the arrow, while the flexbox rules handle vertical centering
-            display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&rarr;</span> ${newVal}`;
+            display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
             display.style.color = 'var(--accent)'; 
             
             updateStats();
