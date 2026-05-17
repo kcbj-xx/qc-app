@@ -26,8 +26,9 @@
         
         body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 50px; }
-        .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+        .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; }
+        h2 { margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .version-tag { font-size: 0.75rem; color: #94a3b8; font-weight: normal; }
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
@@ -105,7 +106,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time</h2>
+        <h2>Sampling Time <span class="version-tag">v5</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -159,10 +160,10 @@
         </div>
         <div class="input-group">
             <label>Add Number</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" onkeypress="if(event.key==='Enter')addNumber()">
-                <button onclick="addNumber()" style="width: auto;">Add</button>
-            </div>
+            <form onsubmit="event.preventDefault(); addNumber();" style="display: flex; gap: 10px; width: 100%; margin: 0;">
+                <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" style="flex: 1;">
+                <button type="submit" style="width: auto; margin-bottom: 0;">Add</button>
+            </form>
             <div class="last-added-text" id="lastAddedDisplay"></div>
         </div>
         <div id="numberList" class="drag-container"></div>
@@ -395,6 +396,8 @@
         numbers.push(val); 
         inp.value=''; 
         renderList();
+        
+        // Ensure keyboard doesn't violently snap down if user wants to keep adding
         inp.focus(); 
     }
 
@@ -428,7 +431,6 @@
         renderList();
     }
 
-    // Handles the physics of gliding items up and down flatly
     function onPointerMove(e) {
         if (draggingIdx === null) return;
         
@@ -486,10 +488,10 @@
             const div = document.createElement('div');
             div.className = 'number-item';
             
-            // Fixed the mobile keyboard quirk by relying on onblur and onkeyup
+            // onchange natively triggers when the user hits 'Done' or 'Enter' on mobile, or leaves the field.
             div.innerHTML = `
                 <div class="drag-handle" title="Drag to reorder">&#x2261;</div>
-                <input type="number" class="edit-input" value="${n}" onblur="updateNumber(${i}, this)" onkeyup="if(event.key==='Enter') this.blur();" inputmode="decimal">
+                <input type="number" class="edit-input" value="${n}" onchange="updateNumber(${i}, this); this.blur();" inputmode="decimal">
                 <button class="remove-btn" onclick="removeNumber(${i})" title="Remove">&times;</button>
             `;
 
