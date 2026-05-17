@@ -117,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v12</span></h2>
+        <h2>Sampling Time <span class="version-tag">v13</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -284,7 +284,6 @@
         document.getElementById('clearTimeBtn').style.display = 'block';
     }
 
-    // Restored to the clean, original working logic without the volume hacks
     function handleStartTimer() {
         if (Notification.permission === "default") Notification.requestPermission();
         if (timerInterval && !confirm("An active timer is already running. Override it?")) return;
@@ -318,7 +317,6 @@
         }, 1000);
     }
 
-    // Combines the working audio player with a long system-level vibration
     async function triggerFinalAlarm() {
         clearInterval(timerInterval);
         timerInterval = null;
@@ -338,8 +336,7 @@
                 await reg.showNotification("QC Alert", { 
                     body: "Time to collect samples!", 
                     requireInteraction: true, 
-                    // This creates a heavy, extended system-level pulsing vibration
-                    vibrate: [1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000, 500, 1000],
+                    vibrate: [200, 100, 200],
                     icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
                     tag: 'qc-alert-' + Date.now() 
                 });
@@ -352,7 +349,6 @@
         }
     }
 
-    // Restored to the clean original working logic
     function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
