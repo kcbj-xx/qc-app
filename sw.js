@@ -1,7 +1,7 @@
 // sw.js - Service Worker for QC Toolset Pro (Offline + State Preservation)
 
-// Bumped to v8 to force cache breaking for the new text alignment!
-const CACHE_NAME = 'qc-toolset-cache-v8';
+// Bumped to v9 to force cache breaking for the new text alignment!
+const CACHE_NAME = 'qc-toolset-cache-v9';
 
 // Core files to download for offline use
 const PRECACHE_ASSETS = [
