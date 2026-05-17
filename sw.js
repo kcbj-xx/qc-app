@@ -1,12 +1,13 @@
 // sw.js - Service Worker for QC Toolset Pro (Offline + State Preservation)
 
-const CACHE_NAME = 'qc-toolset-cache-v4';
+// Bumped to v5 to force cache breaking!
+const CACHE_NAME = 'qc-toolset-cache-v5';
 
 // Core files to download for offline use
 const PRECACHE_ASSETS = [
     './',
     './index.html',
-    './alarm.ogg' // The Service Worker will now save your audio locally!
+    './alarm.ogg'
 ];
 
 // 1. Install Phase: Download the core files
@@ -41,12 +42,10 @@ self.addEventListener('fetch', (event) => {
 
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
-            // Serve from offline cache if available
             if (cachedResponse) {
                 return cachedResponse;
             }
             
-            // Otherwise, fetch from network and cache it for later
             return fetch(event.request).then((networkResponse) => {
                 if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
                     if (networkResponse && networkResponse.type === 'opaque') {
@@ -77,15 +76,12 @@ self.addEventListener('notificationclick', (event) => {
     
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // Check if the app is already open in a background tab
             for (let i = 0; i < windowClients.length; i++) {
                 let client = windowClients[i];
                 if ('focus' in client) {
-                    // This is the magic line that prevents your data from clearing
                     return client.focus(); 
                 }
             }
-            // If the app is completely closed, open it fresh
             if (clients.openWindow) {
                 return clients.openWindow('/');
             }
