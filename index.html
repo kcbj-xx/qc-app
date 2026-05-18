@@ -117,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v20</span></h2>
+        <h2>Sampling Time <span class="version-tag">v21</span></h2>
         
         <form onsubmit="event.preventDefault(); generateTime(false);">
             <div class="row">
@@ -156,7 +156,7 @@
     <div class="card">
         <h2>Stopwatch</h2>
         <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
-        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; user-select: none; touch-action: none;">Hold to Time</button>
+        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none;">Hold to Time</button>
         <button class="secondary" onclick="resetStopwatch()">Reset</button>
     </div>
 
@@ -263,7 +263,13 @@
         swDisplay.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(2,'0')}`;
     }
 
+    // Explicit Apple iOS Shield to kill the magnifying glass
+    holdBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault(); 
+    }, { passive: false });
+
     holdBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); // Extra layer of selection prevention
         if(e.button !== 0 && e.pointerType === 'mouse') return; 
         try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
         
