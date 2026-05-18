@@ -104,8 +104,8 @@
             min-height: 1.2em; 
             transition: color 0.3s;
             display: flex;
-            justify-content: flex-start; /* Pulled back to the left */
-            align-items: center; /* Keeps items vertically centered */
+            justify-content: flex-start;
+            align-items: center; 
         }
         
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
@@ -319,6 +319,7 @@
     }
 
     async function triggerFinalAlarm() {
+        async function triggerFinalAlarm() {
         clearInterval(timerInterval);
         timerInterval = null;
         
@@ -420,7 +421,8 @@
         const val = parseFloat(inp.value); if(isNaN(val)) return;
         
         const display = document.getElementById('lastAddedDisplay');
-        display.innerHTML = `Added: ${val}`;
+        // Label changed to "Last added: "
+        display.innerHTML = `Last added: ${val}`;
         display.style.color = 'var(--success)';
         
         numbers.push(val); 
@@ -452,6 +454,12 @@
 
     function removeNumber(index) {
         numbers.splice(index, 1);
+        
+        // Clear text display completely if the user deletes the last item on the list
+        if (numbers.length === 0) {
+            document.getElementById('lastAddedDisplay').innerHTML = '';
+        }
+        
         renderList();
     }
 
