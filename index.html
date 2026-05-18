@@ -117,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">main</span></h2>
+        <h2>Sampling Time <span class="version-tag">v16</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -328,10 +328,10 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // 1. Keep playing the audio stream (Works fine in background)
+        // 1. Audio stream
         alarm.play().catch(e => console.log("Audio block."));
         
-        // 2. Foreground app vibration loop (For when the app is wide open)
+        // 2. Foreground open-app vibration loop
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
             vibrationInterval = setInterval(() => {
@@ -339,16 +339,19 @@
             }, 2000);
         }
 
-        // 3. Hand off the background notification looping to the Service Worker thread
+        // 3. Fire a single notification instead of messaging the Service Worker
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
-                if (reg.active) {
-                    // Send a direct message to sw.js telling it to start the background loop
-                    reg.active.postMessage({ action: 'START_BACKGROUND_ALARM' });
-                }
+                await reg.showNotification("QC ALERT: COLLECT SAMPLES!", { 
+                    body: "Tap to stop the alarm.", 
+                    requireInteraction: true,
+                    vibrate: [500, 200, 500, 200, 500],
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+                    tag: 'qc-alert' 
+                });
             } catch (err) {
-                console.log("Failed to contact Service Worker:", err);
+                console.log("Notification failed", err);
             }
         }
     }
@@ -369,15 +372,13 @@
         document.getElementById('countdown').style.color = "#38bdf8";
         document.getElementById('countdown').classList.remove('timer-active');
         
-        // Message the Service Worker to kill the background loop and close cards
+        // Clear the single notification card
         try {
             const reg = await navigator.serviceWorker.ready;
-            if (reg.active) {
-                reg.active.postMessage({ action: 'STOP_BACKGROUND_ALARM' });
-            }
+            const notifications = await reg.getNotifications({ tag: 'qc-alert' });
+            notifications.forEach(n => n.close());
         } catch(e) {}
     }
-
 
     function resetSamplingTime() {
         const confirmMsg = timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?";
@@ -421,7 +422,6 @@
         const val = parseFloat(inp.value); if(isNaN(val)) return;
         
         const display = document.getElementById('lastAddedDisplay');
-        // Label changed to "Last added: "
         display.innerHTML = `Last added: ${val}`;
         display.style.color = 'var(--success)';
         
@@ -455,7 +455,6 @@
     function removeNumber(index) {
         numbers.splice(index, 1);
         
-        // Clear text display completely if the user deletes the last item on the list
         if (numbers.length === 0) {
             document.getElementById('lastAddedDisplay').innerHTML = '';
         }
