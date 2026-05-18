@@ -117,23 +117,25 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v18</span></h2>
-        <div class="row">
-            <div class="input-group">
-                <label>Min Mins</label>
-                <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
-            </div>
-            <div class="input-group">
-                <label>Max Mins</label>
-                <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
-            </div>
-        </div>
-        <div class="input-group">
-            <label>Start Time</label>
-            <input type="time" id="startTime">
-        </div>
+        <h2>Sampling Time <span class="version-tag">v19</span></h2>
         
-        <button onclick="generateTime(false)">Generate Time</button>
+        <form onsubmit="event.preventDefault(); generateTime(false); document.activeElement.blur();">
+            <div class="row">
+                <div class="input-group">
+                    <label>Min Mins</label>
+                    <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
+                </div>
+                <div class="input-group">
+                    <label>Max Mins</label>
+                    <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Start Time</label>
+                <input type="time" id="startTime">
+            </div>
+            <button type="submit">Generate Time</button>
+        </form>
         
         <div id="timeResult" class="result" style="display: none;"></div>
 
@@ -160,11 +162,13 @@
 
     <div class="card">
         <h2>Pickup Calculator</h2>
-        <div class="row">
-            <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
-            <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="postSampleVal" inputmode="decimal"></div>
-        </div>
-        <button onclick="calculatePickup()">Compute Pickup</button>
+        <form onsubmit="event.preventDefault(); calculatePickup(); document.activeElement.blur();">
+            <div class="row">
+                <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
+                <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="postSampleVal" inputmode="decimal"></div>
+            </div>
+            <button type="submit">Compute Pickup</button>
+        </form>
         <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none;">Clear</button>
         <div class="result" id="pickupResult" style="display: none;"></div>
     </div>
@@ -190,11 +194,13 @@
 
     <div class="card">
         <h2>Salinity Calculator</h2>
-        <div class="input-group">
-            <label>Brix Value</label>
-            <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
-        </div>
-        <button onclick="calculateSalinity()">Calculate Salinity</button>
+        <form onsubmit="event.preventDefault(); calculateSalinity(); document.activeElement.blur();">
+            <div class="input-group">
+                <label>Brix Value</label>
+                <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
+            </div>
+            <button type="submit">Calculate Salinity</button>
+        </form>
         <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none;">Clear</button>
         <div class="result" id="salinityResult" style="display: none;"></div>
     </div>
@@ -258,7 +264,6 @@
     }
 
     holdBtn.addEventListener('pointerdown', (e) => {
-        // Only allow left clicks or touches
         if(e.button !== 0 && e.pointerType === 'mouse') return; 
         try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
         
@@ -275,7 +280,6 @@
         if (!isSwRunning) return;
         clearInterval(swInterval);
         
-        // Save the exact elapsed time and mark as stopped BEFORE the final UI sync
         swElapsed += (Date.now() - swStartTime);
         isSwRunning = false; 
         updateStopwatch(); 
