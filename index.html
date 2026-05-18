@@ -328,10 +328,10 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // Play audio exactly like v11
+        // 1. Keep playing the audio stream (Works fine in background)
         alarm.play().catch(e => console.log("Audio block."));
         
-        // Foregound app vibration loop (Safe)
+        // 2. Foreground app vibration loop (For when the app is wide open)
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
             vibrationInterval = setInterval(() => {
@@ -339,28 +339,21 @@
             }, 2000);
         }
 
-        // Fire background Notification & System-level Vibration Channel
+        // 3. Hand off the background notification looping to the Service Worker thread
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
-                await reg.showNotification("QC Alert", { 
-                    body: "Time to collect samples!", 
-                    requireInteraction: true, 
-                    // System-level deep vibration string passed to the OS layer
-                    vibrate: [1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000],
-                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-                    tag: 'qc-alert-' + Date.now() 
-                });
+                if (reg.active) {
+                    // Send a direct message to sw.js telling it to start the background loop
+                    reg.active.postMessage({ action: 'START_BACKGROUND_ALARM' });
+                }
             } catch (err) {
-                new Notification("QC Alert (Fallback)", { 
-                    body: "Time to collect samples!",
-                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png"
-                });
+                console.log("Failed to contact Service Worker:", err);
             }
         }
     }
 
-    function stopTimer() {
+    async function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
         
@@ -375,6 +368,14 @@
         document.getElementById('activeTimer').style.display = 'none';
         document.getElementById('countdown').style.color = "#38bdf8";
         document.getElementById('countdown').classList.remove('timer-active');
+        
+        // Message the Service Worker to kill the background loop and close cards
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            if (reg.active) {
+                reg.active.postMessage({ action: 'STOP_BACKGROUND_ALARM' });
+            }
+        } catch(e) {}
     }
 
     function resetSamplingTime() {
