@@ -47,7 +47,7 @@
         .timer-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
         
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
-        .glaze-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
+        .pickup-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 15px 0; text-align: center; }
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
@@ -117,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v16</span></h2>
+        <h2>Sampling Time <span class="version-tag">v17</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -152,14 +152,21 @@
     </div>
 
     <div class="card">
+        <h2>Stopwatch</h2>
+        <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
+        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; user-select: none; touch-action: none;">Hold to Time</button>
+        <button class="secondary" onclick="resetStopwatch()">Reset</button>
+    </div>
+
+    <div class="card">
         <h2>Pickup Calculator</h2>
         <div class="row">
-            <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="glazedVal" inputmode="decimal"></div>
-            <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="deglazeVal" inputmode="decimal"></div>
+            <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
+            <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="postSampleVal" inputmode="decimal"></div>
         </div>
-        <button onclick="calculateGlaze()">Calculate Pickup</button>
-        <button id="clearGlazeBtn" class="secondary" onclick="resetGlaze()" style="display: none;">Clear</button>
-        <div class="result" id="glazeResult" style="display: none;"></div>
+        <button onclick="calculatePickup()">Compute Pickup</button>
+        <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none;">Clear</button>
+        <div class="result" id="pickupResult" style="display: none;"></div>
     </div>
 
     <div class="card">
@@ -230,6 +237,64 @@
     let timerInterval = null;
     let vibrationInterval = null;
     const alarm = document.getElementById('alarmSound');
+
+    // ---- STOPWATCH LOGIC ----
+    let swInterval = null;
+    let swStartTime = 0;
+    let swElapsed = 0;
+    let isSwRunning = false;
+    const swDisplay = document.getElementById('stopwatchDisplay');
+    const holdBtn = document.getElementById('holdTimerBtn');
+
+    function updateStopwatch() {
+        const diff = swElapsed + (Date.now() - swStartTime);
+        const m = Math.floor(diff / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        const ms = Math.floor((diff % 1000) / 10);
+        swDisplay.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(2,'0')}`;
+    }
+
+    holdBtn.addEventListener('pointerdown', (e) => {
+        // Only allow left clicks or touches
+        if(e.button !== 0 && e.pointerType === 'mouse') return; 
+        
+        // Lock the pointer to the button so if you drag off it, it still knows when you let go
+        try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
+        
+        if (isSwRunning) return;
+        isSwRunning = true;
+        swStartTime = Date.now();
+        swInterval = setInterval(updateStopwatch, 10);
+        
+        // Visual feedback that it's recording
+        holdBtn.style.filter = 'brightness(0.8)';
+        holdBtn.style.transform = 'scale(0.98)';
+    });
+
+    const stopAction = (e) => {
+        if (!isSwRunning) return;
+        isSwRunning = false;
+        clearInterval(swInterval);
+        swElapsed += (Date.now() - swStartTime);
+        updateStopwatch(); // Final sync
+        
+        holdBtn.style.filter = '';
+        holdBtn.style.transform = 'scale(1)';
+        try { holdBtn.releasePointerCapture(e.pointerId); } catch(err){}
+    };
+
+    holdBtn.addEventListener('pointerup', stopAction);
+    holdBtn.addEventListener('pointercancel', stopAction);
+
+    function resetStopwatch() {
+        if (swElapsed === 0 && !isSwRunning) return;
+        if (confirm("Reset the stopwatch?")) {
+            if (isSwRunning) stopAction({});
+            swElapsed = 0;
+            swDisplay.innerText = "00:00.00";
+        }
+    }
+    // -------------------------
 
     function generateTime(isRecursive) {
         const minInput = document.getElementById('minMinutes');
@@ -328,10 +393,8 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // 1. Audio stream
         alarm.play().catch(e => console.log("Audio block."));
         
-        // 2. Foreground open-app vibration loop
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
             vibrationInterval = setInterval(() => {
@@ -339,7 +402,6 @@
             }, 2000);
         }
 
-        // 3. Fire a single notification instead of messaging the Service Worker
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
@@ -372,7 +434,6 @@
         document.getElementById('countdown').style.color = "#38bdf8";
         document.getElementById('countdown').classList.remove('timer-active');
         
-        // Clear the single notification card
         try {
             const reg = await navigator.serviceWorker.ready;
             const notifications = await reg.getNotifications({ tag: 'qc-alert' });
@@ -395,20 +456,22 @@
         targetTimeObject = null;
     }
 
-    function calculateGlaze() {
-        const g=parseFloat(document.getElementById('glazedVal').value);
-        const d=parseFloat(document.getElementById('deglazeVal').value);
-        if(!g||!d) return;
-        const dec=(g-d)/g;
-        const res=document.getElementById('glazeResult');
-        res.style.display="block";
-        res.innerHTML=`Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="glaze-pct">${(dec * 100).toFixed(2)}%</span>`;
-        document.getElementById('clearGlazeBtn').style.display = 'block';
+    function calculatePickup() {
+        const pre = parseFloat(document.getElementById('preSampleVal').value);
+        const post = parseFloat(document.getElementById('postSampleVal').value);
+        if(!pre || !post) return;
+        const dec = (pre - post) / pre;
+        const res = document.getElementById('pickupResult');
+        res.style.display = "block";
+        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="pickup-pct">${(dec * 100).toFixed(2)}%</span>`;
+        document.getElementById('clearPickupBtn').style.display = 'block';
     }
 
-    function resetGlaze() {
-        document.getElementById('glazedVal').value = ''; document.getElementById('deglazeVal').value = '';
-        document.getElementById('glazeResult').style.display = 'none'; document.getElementById('clearGlazeBtn').style.display = 'none';
+    function resetPickup() {
+        document.getElementById('preSampleVal').value = ''; 
+        document.getElementById('postSampleVal').value = '';
+        document.getElementById('pickupResult').style.display = 'none'; 
+        document.getElementById('clearPickupBtn').style.display = 'none';
     }
 
     let numbers = [];
