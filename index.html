@@ -117,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">main vibrate test 2</span></h2>
+        <h2>Sampling Time <span class="version-tag">main</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -317,7 +317,7 @@
             display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
-    
+
     async function triggerFinalAlarm() {
         clearInterval(timerInterval);
         timerInterval = null;
@@ -328,10 +328,8 @@
         document.getElementById('cancelTimerBtn').style.display = 'none';
         document.getElementById('stopAlarmBtn').style.display = 'block';
 
-        // 1. Keep playing the audio stream (Works fine in background)
         alarm.play().catch(e => console.log("Audio block."));
         
-        // 2. Foreground app vibration loop (For when the app is wide open)
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
             vibrationInterval = setInterval(() => {
@@ -339,21 +337,26 @@
             }, 2000);
         }
 
-        // 3. Hand off the background notification looping to the Service Worker thread
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
-                if (reg.active) {
-                    // Send a direct message to sw.js telling it to start the background loop
-                    reg.active.postMessage({ action: 'START_BACKGROUND_ALARM' });
-                }
+                await reg.showNotification("QC Alert", { 
+                    body: "Time to collect samples!", 
+                    requireInteraction: true, 
+                    vibrate: [1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000, 400, 1000],
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+                    tag: 'qc-alert-' + Date.now() 
+                });
             } catch (err) {
-                console.log("Failed to contact Service Worker:", err);
+                new Notification("QC Alert (Fallback)", { 
+                    body: "Time to collect samples!",
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png"
+                });
             }
         }
     }
 
-    async function stopTimer() {
+    function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
         
@@ -368,14 +371,6 @@
         document.getElementById('activeTimer').style.display = 'none';
         document.getElementById('countdown').style.color = "#38bdf8";
         document.getElementById('countdown').classList.remove('timer-active');
-        
-        // Message the Service Worker to kill the background loop and close cards
-        try {
-            const reg = await navigator.serviceWorker.ready;
-            if (reg.active) {
-                reg.active.postMessage({ action: 'STOP_BACKGROUND_ALARM' });
-            }
-        } catch(e) {}
     }
 
     function resetSamplingTime() {
