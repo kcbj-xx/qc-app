@@ -117,7 +117,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v17</span></h2>
+        <h2>Sampling Time <span class="version-tag">v18</span></h2>
         <div class="row">
             <div class="input-group">
                 <label>Min Mins</label>
@@ -247,7 +247,10 @@
     const holdBtn = document.getElementById('holdTimerBtn');
 
     function updateStopwatch() {
-        const diff = swElapsed + (Date.now() - swStartTime);
+        let diff = swElapsed;
+        if (isSwRunning) {
+            diff += (Date.now() - swStartTime);
+        }
         const m = Math.floor(diff / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         const ms = Math.floor((diff % 1000) / 10);
@@ -257,8 +260,6 @@
     holdBtn.addEventListener('pointerdown', (e) => {
         // Only allow left clicks or touches
         if(e.button !== 0 && e.pointerType === 'mouse') return; 
-        
-        // Lock the pointer to the button so if you drag off it, it still knows when you let go
         try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
         
         if (isSwRunning) return;
@@ -266,17 +267,18 @@
         swStartTime = Date.now();
         swInterval = setInterval(updateStopwatch, 10);
         
-        // Visual feedback that it's recording
         holdBtn.style.filter = 'brightness(0.8)';
         holdBtn.style.transform = 'scale(0.98)';
     });
 
     const stopAction = (e) => {
         if (!isSwRunning) return;
-        isSwRunning = false;
         clearInterval(swInterval);
+        
+        // Save the exact elapsed time and mark as stopped BEFORE the final UI sync
         swElapsed += (Date.now() - swStartTime);
-        updateStopwatch(); // Final sync
+        isSwRunning = false; 
+        updateStopwatch(); 
         
         holdBtn.style.filter = '';
         holdBtn.style.transform = 'scale(1)';
@@ -289,7 +291,12 @@
     function resetStopwatch() {
         if (swElapsed === 0 && !isSwRunning) return;
         if (confirm("Reset the stopwatch?")) {
-            if (isSwRunning) stopAction({});
+            if (isSwRunning) {
+                isSwRunning = false;
+                clearInterval(swInterval);
+                holdBtn.style.filter = '';
+                holdBtn.style.transform = 'scale(1)';
+            }
             swElapsed = 0;
             swDisplay.innerText = "00:00.00";
         }
