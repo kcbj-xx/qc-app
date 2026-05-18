@@ -117,9 +117,9 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v19</span></h2>
+        <h2>Sampling Time <span class="version-tag">v20</span></h2>
         
-        <form onsubmit="event.preventDefault(); generateTime(false); document.activeElement.blur();">
+        <form onsubmit="event.preventDefault(); generateTime(false);">
             <div class="row">
                 <div class="input-group">
                     <label>Min Mins</label>
@@ -162,7 +162,7 @@
 
     <div class="card">
         <h2>Pickup Calculator</h2>
-        <form onsubmit="event.preventDefault(); calculatePickup(); document.activeElement.blur();">
+        <form onsubmit="event.preventDefault(); calculatePickup();">
             <div class="row">
                 <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
                 <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="postSampleVal" inputmode="decimal"></div>
@@ -194,7 +194,7 @@
 
     <div class="card">
         <h2>Salinity Calculator</h2>
-        <form onsubmit="event.preventDefault(); calculateSalinity(); document.activeElement.blur();">
+        <form onsubmit="event.preventDefault(); calculateSalinity();">
             <div class="input-group">
                 <label>Brix Value</label>
                 <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
