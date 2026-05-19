@@ -33,7 +33,6 @@
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
         
-        /* Updated Input CSS: Added min-height and font-family to force equal heights across all types */
         input { 
             padding: 12px; 
             border: 1px solid var(--border); 
@@ -70,7 +69,6 @@
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
         
-        /* Flat Pointer-Event Drag Styles */
         .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 4px; }
         
         .number-item { 
@@ -182,12 +180,17 @@
     <div class="card">
         <h2>Stopwatch</h2>
         <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
-        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none;">Hold to Time</button>
-        <button class="secondary" onclick="resetStopwatch()">Reset</button>
+        
+        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; margin-bottom: 10px;">Hold to Time</button>
+        
+        <div style="display: flex; gap: 10px;">
+            <button id="toggleTimerBtn" onclick="toggleStopwatch()" style="margin: 0; flex: 1;">Start</button>
+            <button class="secondary" onclick="resetStopwatch()" style="margin: 0; flex: 1;">Reset</button>
+        </div>
     </div>
 
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v24</span></h2>
+        <h2>Sampling Time <span class="version-tag">v25</span></h2>
         
         <form onsubmit="event.preventDefault(); generateTime(false);">
             <div class="row">
@@ -268,6 +271,7 @@
     let swStartTime = 0;
     let swElapsed = 0;
     let isSwRunning = false;
+    let swMode = null; // Tracks if started by 'hold' or 'tap'
     const swDisplay = document.getElementById('stopwatchDisplay');
     const holdBtn = document.getElementById('holdTimerBtn');
 
@@ -282,18 +286,42 @@
         swDisplay.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(2,'0')}`;
     }
 
-    // Explicit Apple iOS Shield to kill the magnifying glass
+    // Toggle button logic for Tap Start/Stop
+    function toggleStopwatch() {
+        if (isSwRunning && swMode === 'hold') return; // Ignore if currently running via 'Hold'
+
+        const toggleBtn = document.getElementById('toggleTimerBtn');
+        if (isSwRunning) {
+            clearInterval(swInterval);
+            swElapsed += (Date.now() - swStartTime);
+            isSwRunning = false;
+            swMode = null;
+            updateStopwatch();
+            toggleBtn.innerText = "Start";
+            toggleBtn.style.backgroundColor = ""; 
+        } else {
+            swStartTime = Date.now();
+            swInterval = setInterval(updateStopwatch, 10);
+            isSwRunning = true;
+            swMode = 'tap';
+            toggleBtn.innerText = "Stop";
+            toggleBtn.style.backgroundColor = "var(--accent)"; 
+        }
+    }
+
+    // Hold button logic
     holdBtn.addEventListener('touchstart', (e) => {
         e.preventDefault(); 
     }, { passive: false });
 
     holdBtn.addEventListener('pointerdown', (e) => {
-        e.preventDefault(); // Extra layer of selection prevention
+        e.preventDefault(); 
         if(e.button !== 0 && e.pointerType === 'mouse') return; 
         try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
         
-        if (isSwRunning) return;
+        if (isSwRunning) return; // Do nothing if tap mode is running
         isSwRunning = true;
+        swMode = 'hold';
         swStartTime = Date.now();
         swInterval = setInterval(updateStopwatch, 10);
         
@@ -302,11 +330,12 @@
     });
 
     const stopAction = (e) => {
-        if (!isSwRunning) return;
+        if (!isSwRunning || swMode !== 'hold') return; // Only stop if it was started by hold
         clearInterval(swInterval);
         
         swElapsed += (Date.now() - swStartTime);
         isSwRunning = false; 
+        swMode = null;
         updateStopwatch(); 
         
         holdBtn.style.filter = '';
@@ -322,9 +351,14 @@
         if (confirm("Reset the stopwatch?")) {
             if (isSwRunning) {
                 isSwRunning = false;
+                swMode = null;
                 clearInterval(swInterval);
                 holdBtn.style.filter = '';
                 holdBtn.style.transform = 'scale(1)';
+                
+                const toggleBtn = document.getElementById('toggleTimerBtn');
+                toggleBtn.innerText = "Start";
+                toggleBtn.style.backgroundColor = "";
             }
             swElapsed = 0;
             swDisplay.innerText = "00:00.00";
