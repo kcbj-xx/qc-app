@@ -33,14 +33,16 @@
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
         
-        /* Updated Input CSS to fix Apple WebKit overflow bug */
+        /* Updated Input CSS: Added min-height and font-family to force equal heights across all types */
         input { 
             padding: 12px; 
             border: 1px solid var(--border); 
             border-radius: 8px; 
             font-size: 1rem; 
+            font-family: inherit;
             width: 100%; 
             max-width: 100%; 
+            min-height: 46px; 
             box-sizing: border-box; 
             transition: border-color 0.3s ease; 
             margin: 0; 
@@ -132,7 +134,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v22</span></h2>
+        <h2>Sampling Time <span class="version-tag">v23</span></h2>
         
         <form onsubmit="event.preventDefault(); generateTime(false);">
             <div class="row">
