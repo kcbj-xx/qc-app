@@ -133,49 +133,6 @@
 <body>
 
 <div class="container">
-    <div class="card">
-        <h2>Sampling Time <span class="version-tag">v23</span></h2>
-        
-        <form onsubmit="event.preventDefault(); generateTime(false);">
-            <div class="row">
-                <div class="input-group">
-                    <label>Min Mins</label>
-                    <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
-                </div>
-                <div class="input-group">
-                    <label>Max Mins</label>
-                    <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
-                </div>
-            </div>
-            <div class="input-group">
-                <label>Start Time</label>
-                <input type="time" id="startTime">
-            </div>
-            <button type="submit">Generate Time</button>
-        </form>
-        
-        <div id="timeResult" class="result" style="display: none;"></div>
-
-        <div id="timerControls" style="display: none; margin-top: 15px;">
-            <button class="btn-timer-start" onclick="handleStartTimer()">Start Countdown</button>
-        </div>
-
-        <div id="activeTimer" style="display: none; margin-top: 15px;">
-            <div class="timer-label">Time Remaining</div>
-            <div class="timer-display" id="countdown">00:00:00</div>
-            <button class="secondary" id="stopAlarmBtn" onclick="stopTimer()" style="display: none;">Stop Alarm</button>
-            <button class="secondary" id="cancelTimerBtn" onclick="stopTimer()">Cancel Timer</button>
-        </div>
-
-        <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
-    </div>
-
-    <div class="card">
-        <h2>Stopwatch</h2>
-        <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
-        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none;">Hold to Time</button>
-        <button class="secondary" onclick="resetStopwatch()">Reset</button>
-    </div>
 
     <div class="card">
         <h2>Pickup Calculator</h2>
@@ -221,6 +178,51 @@
         <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none;">Clear</button>
         <div class="result" id="salinityResult" style="display: none;"></div>
     </div>
+
+    <div class="card">
+        <h2>Stopwatch</h2>
+        <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
+        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none;">Hold to Time</button>
+        <button class="secondary" onclick="resetStopwatch()">Reset</button>
+    </div>
+
+    <div class="card">
+        <h2>Sampling Time <span class="version-tag">v24</span></h2>
+        
+        <form onsubmit="event.preventDefault(); generateTime(false);">
+            <div class="row">
+                <div class="input-group">
+                    <label>Min Mins</label>
+                    <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
+                </div>
+                <div class="input-group">
+                    <label>Max Mins</label>
+                    <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Start Time</label>
+                <input type="time" id="startTime">
+            </div>
+            <button type="submit">Generate Time</button>
+        </form>
+        
+        <div id="timeResult" class="result" style="display: none;"></div>
+
+        <div id="timerControls" style="display: none; margin-top: 15px;">
+            <button class="btn-timer-start" onclick="handleStartTimer()">Start Countdown</button>
+        </div>
+
+        <div id="activeTimer" style="display: none; margin-top: 15px;">
+            <div class="timer-label">Time Remaining</div>
+            <div class="timer-display" id="countdown">00:00:00</div>
+            <button class="secondary" id="stopAlarmBtn" onclick="stopTimer()" style="display: none;">Stop Alarm</button>
+            <button class="secondary" id="cancelTimerBtn" onclick="stopTimer()">Cancel Timer</button>
+        </div>
+
+        <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
+    </div>
+
 </div>
 
 <audio id="alarmSound" loop preload="auto">
