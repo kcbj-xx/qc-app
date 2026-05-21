@@ -133,7 +133,7 @@
 <div class="container">
 
     <div class="card">
-        <h2>Pickup Calculator</h2>
+        <h2>Pickup Calculator <span class="version-tag">v26</span></h2>
         <form onsubmit="event.preventDefault(); calculatePickup();">
             <div class="row">
                 <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
@@ -190,8 +190,24 @@
     </div>
 
     <div class="card">
-        <h2>Sampling Time <span class="version-tag">v25</span></h2>
-        
+        <h2>Temperature Converter</h2>
+        <form onsubmit="event.preventDefault();">
+            <div class="row">
+                <div class="input-group">
+                    <label>Celsius (°C)</label>
+                    <input type="number" step="any" id="celsiusVal" inputmode="decimal" placeholder="°C" oninput="convertTemp('C')">
+                </div>
+                <div class="input-group">
+                    <label>Fahrenheit (°F)</label>
+                    <input type="number" step="any" id="fahrenheitVal" inputmode="decimal" placeholder="°F" oninput="convertTemp('F')">
+                </div>
+            </div>
+        </form>
+        <button id="clearTempBtn" class="secondary" onclick="resetTemp()" style="display: none;">Clear</button>
+    </div>
+
+    <div class="card">
+        <h2>Sampling Time</h2>
         <form onsubmit="event.preventDefault(); generateTime(false);">
             <div class="row">
                 <div class="input-group">
@@ -266,12 +282,45 @@
     let vibrationInterval = null;
     const alarm = document.getElementById('alarmSound');
 
+    // ---- TEMPERATURE CONVERTER LOGIC ----
+    function convertTemp(source) {
+        const cInput = document.getElementById('celsiusVal');
+        const fInput = document.getElementById('fahrenheitVal');
+        const clearBtn = document.getElementById('clearTempBtn');
+        
+        if (source === 'C') {
+            if (cInput.value === '') { 
+                fInput.value = ''; 
+                clearBtn.style.display = 'none'; 
+                return; 
+            }
+            const c = parseFloat(cInput.value);
+            fInput.value = ((c * 9/5) + 32).toFixed(2).replace(/\.00$/, '');
+        } else {
+            if (fInput.value === '') { 
+                cInput.value = ''; 
+                clearBtn.style.display = 'none'; 
+                return; 
+            }
+            const f = parseFloat(fInput.value);
+            cInput.value = ((f - 32) * 5/9).toFixed(2).replace(/\.00$/, '');
+        }
+        clearBtn.style.display = 'block';
+    }
+
+    function resetTemp() {
+        document.getElementById('celsiusVal').value = '';
+        document.getElementById('fahrenheitVal').value = '';
+        document.getElementById('clearTempBtn').style.display = 'none';
+    }
+    // -------------------------------------
+
     // ---- STOPWATCH LOGIC ----
     let swInterval = null;
     let swStartTime = 0;
     let swElapsed = 0;
     let isSwRunning = false;
-    let swMode = null; // Tracks if started by 'hold' or 'tap'
+    let swMode = null; 
     const swDisplay = document.getElementById('stopwatchDisplay');
     const holdBtn = document.getElementById('holdTimerBtn');
 
@@ -286,9 +335,8 @@
         swDisplay.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(2,'0')}`;
     }
 
-    // Toggle button logic for Tap Start/Stop
     function toggleStopwatch() {
-        if (isSwRunning && swMode === 'hold') return; // Ignore if currently running via 'Hold'
+        if (isSwRunning && swMode === 'hold') return; 
 
         const toggleBtn = document.getElementById('toggleTimerBtn');
         if (isSwRunning) {
@@ -309,7 +357,6 @@
         }
     }
 
-    // Hold button logic
     holdBtn.addEventListener('touchstart', (e) => {
         e.preventDefault(); 
     }, { passive: false });
@@ -319,7 +366,7 @@
         if(e.button !== 0 && e.pointerType === 'mouse') return; 
         try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
         
-        if (isSwRunning) return; // Do nothing if tap mode is running
+        if (isSwRunning) return; 
         isSwRunning = true;
         swMode = 'hold';
         swStartTime = Date.now();
@@ -330,7 +377,7 @@
     });
 
     const stopAction = (e) => {
-        if (!isSwRunning || swMode !== 'hold') return; // Only stop if it was started by hold
+        if (!isSwRunning || swMode !== 'hold') return; 
         clearInterval(swInterval);
         
         swElapsed += (Date.now() - swStartTime);
