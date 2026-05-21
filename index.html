@@ -133,7 +133,7 @@
 <div class="container">
 
     <div class="card">
-        <h2>Pickup Calculator <span class="version-tag">v26</span></h2>
+        <h2>Pickup Calculator <span class="version-tag">v27</span></h2>
         <form onsubmit="event.preventDefault(); calculatePickup();">
             <div class="row">
                 <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
@@ -178,18 +178,6 @@
     </div>
 
     <div class="card">
-        <h2>Stopwatch</h2>
-        <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
-        
-        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; margin-bottom: 10px;">Hold to Time</button>
-        
-        <div style="display: flex; gap: 10px;">
-            <button id="toggleTimerBtn" onclick="toggleStopwatch()" style="margin: 0; flex: 1;">Start</button>
-            <button class="secondary" onclick="resetStopwatch()" style="margin: 0; flex: 1;">Reset</button>
-        </div>
-    </div>
-
-    <div class="card">
         <h2>Temperature Converter</h2>
         <form onsubmit="event.preventDefault();">
             <div class="row">
@@ -204,6 +192,18 @@
             </div>
         </form>
         <button id="clearTempBtn" class="secondary" onclick="resetTemp()" style="display: none;">Clear</button>
+    </div>
+
+    <div class="card">
+        <h2>Stopwatch</h2>
+        <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
+        
+        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; margin-bottom: 10px;">Hold to Time</button>
+        
+        <div style="display: flex; gap: 10px;">
+            <button id="toggleTimerBtn" onclick="toggleStopwatch()" style="margin: 0; flex: 1;">Start</button>
+            <button class="secondary" onclick="resetStopwatch()" style="margin: 0; flex: 1;">Reset</button>
+        </div>
     </div>
 
     <div class="card">
