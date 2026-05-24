@@ -79,8 +79,92 @@
         
         .card.collapsed h2 { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .card.collapsed .card-body { display: none; }
+        .card.collapsed .chevron { transform: rotate(-90deg); }<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QC Toolset Pro</title>
+    
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
+    
+    <link rel="manifest" id="pwa-manifest">
+
+    <style>
+        :root { 
+            --primary: #2563eb; 
+            --primary-hover: #1d4ed8; 
+            --bg: #f3f4f6; 
+            --card-bg: #ffffff; 
+            --text: #1f2937; 
+            --border: #e5e7eb; 
+            --accent: #d97706; 
+            --success: #10b981;
+            --error: #ef4444;
+        }
+        
+        body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 30px; }
+        .section-container { width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        .divider { text-align: center; color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: -5px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .divider::before, .divider::after { content: ""; height: 1px; background-color: var(--border); flex: 1; }
+        
+        .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; }
+        
+        .card h2 { 
+            margin-top: 0; 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 12px; 
+        }
+        
+        .card-title-text { font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+        .chevron { font-size: 0.8rem; color: #94a3b8; transition: transform 0.3s ease; justify-self: end;}
+        
+        .pin-btn {
+            grid-column: 1;
+            background: transparent !important;
+            border: none !important;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            margin: 0;
+            margin-left: -6px; 
+            -webkit-tap-highlight-color: transparent !important;
+            outline: none !important;
+            -webkit-appearance: none;
+        }
+
+        @media (hover: hover) {
+            .pin-btn:hover { background: #f1f5f9 !important; color: #94a3b8; }
+        }
+        
+        .pin-btn svg { pointer-events: none; transition: fill 0.2s; }
+        .card.pinned .pin-btn { color: var(--accent); }
+        .card.pinned .pin-btn svg { fill: var(--accent); }
+        
+        .card.collapsed h2 { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .card.collapsed .card-body { display: none; }
         .card.collapsed .chevron { transform: rotate(-90deg); }
 
+        /* Footer styling for version */
+        .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
+
+        /* ... [Keep all your other CSS here] ... */
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
@@ -275,6 +359,7 @@
         </div>
 
     </div>
+    <div class="footer-version">v32.1</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
