@@ -9,88 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
     
-    <link rel="manifest" id="pwa-manifest">
-
-    <style>
-        :root { 
-            --primary: #2563eb; 
-            --primary-hover: #1d4ed8; 
-            --bg: #f3f4f6; 
-            --card-bg: #ffffff; 
-            --text: #1f2937; 
-            --border: #e5e7eb; 
-            --accent: #d97706; 
-            --success: #10b981;
-            --error: #ef4444;
-        }
-        
-        body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        
-        .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 50px; }
-        .section-container { width: 100%; display: flex; flex-direction: column; gap: 20px; }
-        .divider { text-align: center; color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: -5px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .divider::before, .divider::after { content: ""; height: 1px; background-color: var(--border); flex: 1; }
-        
-        .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; }
-        
-        .card h2 { 
-            margin-top: 0; 
-            border-bottom: 2px solid var(--border); 
-            padding-bottom: 10px; 
-            margin-bottom: 20px; 
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 12px; 
-        }
-        
-        .card-title-text { font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
-        .chevron { font-size: 0.8rem; color: #94a3b8; transition: transform 0.3s ease; justify-self: end;}
-        .version-tag { font-size: 0.75rem; color: #94a3b8; font-weight: normal; }
-        
-        .pin-btn {
-            grid-column: 1;
-            background: transparent !important;
-            border: none !important;
-            color: #cbd5e1;
-            cursor: pointer;
-            padding: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            margin: 0;
-            margin-left: -6px; 
-            -webkit-tap-highlight-color: transparent !important;
-            outline: none !important;
-            -webkit-appearance: none;
-        }
-
-        @media (hover: hover) {
-            .pin-btn:hover { background: #f1f5f9 !important; color: #94a3b8; }
-        }
-        
-        .pin-btn svg { pointer-events: none; transition: fill 0.2s; }
-        .card.pinned .pin-btn { color: var(--accent); }
-        .card.pinned .pin-btn svg { fill: var(--accent); }
-        
-        .card.collapsed h2 { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .card.collapsed .card-body { display: none; }
-        .card.collapsed .chevron { transform: rotate(-90deg); }<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QC Toolset Pro</title>
-    
-    <meta name="theme-color" content="#2563eb">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
-    
-    <link rel="manifest" id="pwa-manifest">
+    <link rel="manifest" href='data:application/manifest+json,%7B%22name%22%3A%22QC%20Toolset%20Pro%22%2C%22short_name%22%3A%22QC%20Tool%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f4f6%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1162%2F1162456.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D'>
 
     <style>
         :root { 
@@ -161,10 +80,8 @@
         .card.collapsed .card-body { display: none; }
         .card.collapsed .chevron { transform: rotate(-90deg); }
 
-        /* Footer styling for version */
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
-        /* ... [Keep all your other CSS here] ... */
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
@@ -232,7 +149,7 @@
                 <button class="pin-btn" onclick="togglePin(event, 'card-averaging')" title="Pin Tool">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
                 </button>
-                <div class="card-title-text">Sum & Averaging</div>
+                <div class="card-title-text">Averaging & Sum</div>
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
@@ -367,13 +284,20 @@
 </audio>
 
 <script>
-    // JS remains identical to v30 for full functionality
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch((err) => console.error("SW Failed:", err));
+        });
+    }
+
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling'];
+    
     function toggleCard(cardId) {
         const card = document.getElementById(cardId);
         card.classList.toggle('collapsed');
         localStorage.setItem(cardId + '_collapsed', card.classList.contains('collapsed') ? '1' : '0');
     }
+    
     function togglePin(event, cardId) {
         event.stopPropagation(); 
         const card = document.getElementById(cardId);
@@ -386,6 +310,7 @@
         }
         reorderCards();
     }
+    
     function reorderCards() {
         const pinnedContainer = document.getElementById('pinned-section');
         const unpinnedContainer = document.getElementById('unpinned-section');
@@ -408,6 +333,7 @@
             divider.style.display = 'none';
         }
     }
+    
     document.addEventListener('DOMContentLoaded', () => {
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
@@ -417,15 +343,12 @@
         reorderCards();
     });
 
-    // -----------------------------------------------
-
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
     let timerInterval = null;
     let vibrationInterval = null;
     const alarm = document.getElementById('alarmSound');
 
-    // ---- TEMPERATURE CONVERTER LOGIC ----
     function convertTemp(source) {
         const cInput = document.getElementById('celsiusVal');
         const fInput = document.getElementById('fahrenheitVal');
@@ -457,7 +380,6 @@
         document.getElementById('clearTempBtn').style.display = 'none';
     }
 
-    // ---- STOPWATCH LOGIC ----
     let swInterval = null;
     let swStartTime = 0;
     let swElapsed = 0;
@@ -554,7 +476,6 @@
         }
     }
 
-    // ---- SAMPLING TIME LOGIC ----
     function generateTime(isRecursive) {
         const minInput = document.getElementById('minMinutes');
         const maxInput = document.getElementById('maxMinutes');
@@ -715,7 +636,6 @@
         targetTimeObject = null;
     }
 
-    // ---- GENERAL CALCULATORS ----
     function calculatePickup() {
         const pre = parseFloat(document.getElementById('preSampleVal').value);
         const post = parseFloat(document.getElementById('postSampleVal').value);
