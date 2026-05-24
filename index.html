@@ -336,8 +336,20 @@
     
     document.addEventListener('DOMContentLoaded', () => {
         allCardIds.forEach(id => {
-            const card = document.getElementById(id);
-            if (localStorage.getItem(id + '_collapsed') === '1') card.classList.add('collapsed');
+            const card = document.getElementById(cardId);
+            
+            // Check if the user has a saved preference
+            const savedState = localStorage.getItem(id + '_collapsed');
+            
+            if (savedState === '1') {
+                // User previously minimized it
+                card.classList.add('collapsed');
+            } else if (savedState === null) {
+                // NEW USER: No preference found, force it to be minimized
+                card.classList.add('collapsed');
+            }
+            // If savedState === '0', we do nothing, letting it stay open
+            
             if (localStorage.getItem(id + '_pinned') === '1') card.classList.add('pinned');
         });
         reorderCards();
