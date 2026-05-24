@@ -27,8 +27,32 @@
         body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 50px; }
         .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; }
-        h2 { margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Collapse/Accordion Header Styles */
+        .card h2 { 
+            margin-top: 0; 
+            font-size: 1.25rem; 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: color 0.2s;
+        }
+        .card h2:active { color: var(--primary); }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .chevron { font-size: 0.8rem; color: #94a3b8; transition: transform 0.3s ease; }
         .version-tag { font-size: 0.75rem; color: #94a3b8; font-weight: normal; }
+        
+        /* Collapsed State */
+        .card.collapsed h2 { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .card.collapsed .card-body { display: none; }
+        .card.collapsed .chevron { transform: rotate(-90deg); }
+
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
@@ -132,114 +156,144 @@
 
 <div class="container">
 
-    <div class="card">
-        <h2>Pickup Calculator <span class="version-tag">v27</span></h2>
-        <form onsubmit="event.preventDefault(); calculatePickup();">
-            <div class="row">
-                <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
-                <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="postSampleVal" inputmode="decimal"></div>
-            </div>
-            <button type="submit">Compute Pickup</button>
-        </form>
-        <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none;">Clear</button>
-        <div class="result" id="pickupResult" style="display: none;"></div>
-    </div>
-
-    <div class="card">
-        <h2>Averaging & Sum</h2>
-        <div class="stats-grid">
-            <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
-            <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
-            <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
-        </div>
-        <div class="input-group">
-            <label>Add Number</label>
-            <form onsubmit="event.preventDefault(); addNumber();" style="display: flex; gap: 10px; width: 100%; margin: 0;">
-                <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" style="flex: 1;">
-                <button type="submit" style="width: auto; margin-bottom: 0;">Add</button>
+    <div class="card" id="card-pickup">
+        <h2 onclick="toggleCard('card-pickup')">
+            <div class="header-left">Pickup Calculator <span class="version-tag">v28</span></div>
+            <div class="chevron">&#9660;</div>
+        </h2>
+        <div class="card-body">
+            <form onsubmit="event.preventDefault(); calculatePickup();">
+                <div class="row">
+                    <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
+                    <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="postSampleVal" inputmode="decimal"></div>
+                </div>
+                <button type="submit">Compute Pickup</button>
             </form>
-            <div class="last-added-text" id="lastAddedDisplay"></div>
-        </div>
-        <div id="numberList" class="drag-container"></div>
-        <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear List</button>
-    </div>
-
-    <div class="card">
-        <h2>Salinity Calculator</h2>
-        <form onsubmit="event.preventDefault(); calculateSalinity();">
-            <div class="input-group">
-                <label>Brix Value</label>
-                <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
-            </div>
-            <button type="submit">Calculate Salinity</button>
-        </form>
-        <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none;">Clear</button>
-        <div class="result" id="salinityResult" style="display: none;"></div>
-    </div>
-
-    <div class="card">
-        <h2>Temperature Converter</h2>
-        <form onsubmit="event.preventDefault();">
-            <div class="row">
-                <div class="input-group">
-                    <label>Celsius (°C)</label>
-                    <input type="number" step="any" id="celsiusVal" inputmode="decimal" placeholder="°C" oninput="convertTemp('C')">
-                </div>
-                <div class="input-group">
-                    <label>Fahrenheit (°F)</label>
-                    <input type="number" step="any" id="fahrenheitVal" inputmode="decimal" placeholder="°F" oninput="convertTemp('F')">
-                </div>
-            </div>
-        </form>
-        <button id="clearTempBtn" class="secondary" onclick="resetTemp()" style="display: none;">Clear</button>
-    </div>
-
-    <div class="card">
-        <h2>Stopwatch</h2>
-        <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
-        
-        <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; margin-bottom: 10px;">Hold to Time</button>
-        
-        <div style="display: flex; gap: 10px;">
-            <button id="toggleTimerBtn" onclick="toggleStopwatch()" style="margin: 0; flex: 1;">Start</button>
-            <button class="secondary" onclick="resetStopwatch()" style="margin: 0; flex: 1;">Reset</button>
+            <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none;">Clear</button>
+            <div class="result" id="pickupResult" style="display: none;"></div>
         </div>
     </div>
 
-    <div class="card">
-        <h2>Sampling Time</h2>
-        <form onsubmit="event.preventDefault(); generateTime(false);">
-            <div class="row">
-                <div class="input-group">
-                    <label>Min Mins</label>
-                    <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
-                </div>
-                <div class="input-group">
-                    <label>Max Mins</label>
-                    <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
-                </div>
+    <div class="card" id="card-averaging">
+        <h2 onclick="toggleCard('card-averaging')">
+            <div class="header-left">Averaging & Sum</div>
+            <div class="chevron">&#9660;</div>
+        </h2>
+        <div class="card-body">
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
+                <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
+                <div class="stat-box"><div class="stat-label">Avg</div><div class="stat-value" id="statAvg">0</div></div>
             </div>
             <div class="input-group">
-                <label>Start Time</label>
-                <input type="time" id="startTime">
+                <label>Add Number</label>
+                <form onsubmit="event.preventDefault(); addNumber();" style="display: flex; gap: 10px; width: 100%; margin: 0;">
+                    <input type="number" step="any" id="numberInput" inputmode="decimal" placeholder="0.00" style="flex: 1;">
+                    <button type="submit" style="width: auto; margin-bottom: 0;">Add</button>
+                </form>
+                <div class="last-added-text" id="lastAddedDisplay"></div>
             </div>
-            <button type="submit">Generate Time</button>
-        </form>
-        
-        <div id="timeResult" class="result" style="display: none;"></div>
-
-        <div id="timerControls" style="display: none; margin-top: 15px;">
-            <button class="btn-timer-start" onclick="handleStartTimer()">Start Countdown</button>
+            <div id="numberList" class="drag-container"></div>
+            <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear List</button>
         </div>
+    </div>
 
-        <div id="activeTimer" style="display: none; margin-top: 15px;">
-            <div class="timer-label">Time Remaining</div>
-            <div class="timer-display" id="countdown">00:00:00</div>
-            <button class="secondary" id="stopAlarmBtn" onclick="stopTimer()" style="display: none;">Stop Alarm</button>
-            <button class="secondary" id="cancelTimerBtn" onclick="stopTimer()">Cancel Timer</button>
+    <div class="card" id="card-salinity">
+        <h2 onclick="toggleCard('card-salinity')">
+            <div class="header-left">Salinity Calculator</div>
+            <div class="chevron">&#9660;</div>
+        </h2>
+        <div class="card-body">
+            <form onsubmit="event.preventDefault(); calculateSalinity();">
+                <div class="input-group">
+                    <label>Brix Value</label>
+                    <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
+                </div>
+                <button type="submit">Calculate Salinity</button>
+            </form>
+            <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none;">Clear</button>
+            <div class="result" id="salinityResult" style="display: none;"></div>
         </div>
+    </div>
 
-        <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
+    <div class="card" id="card-temp">
+        <h2 onclick="toggleCard('card-temp')">
+            <div class="header-left">Temperature Converter</div>
+            <div class="chevron">&#9660;</div>
+        </h2>
+        <div class="card-body">
+            <form onsubmit="event.preventDefault();">
+                <div class="row">
+                    <div class="input-group">
+                        <label>Celsius (°C)</label>
+                        <input type="number" step="any" id="celsiusVal" inputmode="decimal" placeholder="°C" oninput="convertTemp('C')">
+                    </div>
+                    <div class="input-group">
+                        <label>Fahrenheit (°F)</label>
+                        <input type="number" step="any" id="fahrenheitVal" inputmode="decimal" placeholder="°F" oninput="convertTemp('F')">
+                    </div>
+                </div>
+            </form>
+            <button id="clearTempBtn" class="secondary" onclick="resetTemp()" style="display: none;">Clear</button>
+        </div>
+    </div>
+
+    <div class="card" id="card-stopwatch">
+        <h2 onclick="toggleCard('card-stopwatch')">
+            <div class="header-left">Stopwatch</div>
+            <div class="chevron">&#9660;</div>
+        </h2>
+        <div class="card-body">
+            <div class="timer-display" id="stopwatchDisplay" style="margin-top: 0; margin-bottom: 15px;">00:00.00</div>
+            
+            <button id="holdTimerBtn" class="btn-timer-start" oncontextmenu="return false;" style="-webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; margin-bottom: 10px;">Hold to Time</button>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="toggleTimerBtn" onclick="toggleStopwatch()" style="margin: 0; flex: 1;">Start</button>
+                <button class="secondary" onclick="resetStopwatch()" style="margin: 0; flex: 1;">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="card-sampling">
+        <h2 onclick="toggleCard('card-sampling')">
+            <div class="header-left">Sampling Time</div>
+            <div class="chevron">&#9660;</div>
+        </h2>
+        <div class="card-body">
+            <form onsubmit="event.preventDefault(); generateTime(false);">
+                <div class="row">
+                    <div class="input-group">
+                        <label>Min Mins</label>
+                        <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
+                    </div>
+                    <div class="input-group">
+                        <label>Max Mins</label>
+                        <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Start Time</label>
+                    <input type="time" id="startTime">
+                </div>
+                <button type="submit">Generate Time</button>
+            </form>
+            
+            <div id="timeResult" class="result" style="display: none;"></div>
+
+            <div id="timerControls" style="display: none; margin-top: 15px;">
+                <button class="btn-timer-start" onclick="handleStartTimer()">Start Countdown</button>
+            </div>
+
+            <div id="activeTimer" style="display: none; margin-top: 15px;">
+                <div class="timer-label">Time Remaining</div>
+                <div class="timer-display" id="countdown">00:00:00</div>
+                <button class="secondary" id="stopAlarmBtn" onclick="stopTimer()" style="display: none;">Stop Alarm</button>
+                <button class="secondary" id="cancelTimerBtn" onclick="stopTimer()">Cancel Timer</button>
+            </div>
+
+            <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
+        </div>
     </div>
 
 </div>
@@ -275,6 +329,23 @@
             navigator.serviceWorker.register('sw.js').catch((err) => console.error("SW Failed:", err));
         });
     }
+
+    // ---- ACCORDION / COLLAPSE LOGIC ----
+    function toggleCard(cardId) {
+        const card = document.getElementById(cardId);
+        card.classList.toggle('collapsed');
+        // Save state to offline local storage
+        localStorage.setItem(cardId, card.classList.contains('collapsed') ? '1' : '0');
+    }
+
+    // Restore saved card states when the app loads
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.card').forEach(card => {
+            if (localStorage.getItem(card.id) === '1') {
+                card.classList.add('collapsed');
+            }
+        });
+    });
 
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
