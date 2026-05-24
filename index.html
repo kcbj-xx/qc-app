@@ -336,22 +336,27 @@
     
     document.addEventListener('DOMContentLoaded', () => {
         allCardIds.forEach(id => {
-            const card = document.getElementById(cardId);
+            const card = document.getElementById(id);
             
-            // Check if the user has a saved preference
+            // 1. Restore Pin State
+            if (localStorage.getItem(id + '_pinned') === '1') {
+                card.classList.add('pinned');
+            }
+            
+            // 2. Restore/Set Collapse State
             const savedState = localStorage.getItem(id + '_collapsed');
             
             if (savedState === '1') {
-                // User previously minimized it
+                // User explicitly closed it before
                 card.classList.add('collapsed');
             } else if (savedState === null) {
-                // NEW USER: No preference found, force it to be minimized
+                // BRAND NEW USER: Force close by default
                 card.classList.add('collapsed');
             }
-            // If savedState === '0', we do nothing, letting it stay open
-            
-            if (localStorage.getItem(id + '_pinned') === '1') card.classList.add('pinned');
+            // If savedState === '0', we do nothing (it stays open)
         });
+        
+        // Now that classes are set, perform the reorder
         reorderCards();
     });
 
