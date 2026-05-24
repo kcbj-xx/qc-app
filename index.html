@@ -33,7 +33,7 @@
         
         .card { background-color: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; }
         
-        /* Updated Card Header to fix organization */
+        /* Accordion Header Styles */
         .card h2 { 
             margin-top: 0; 
             border-bottom: 2px solid var(--border); 
@@ -43,8 +43,6 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             transition: color 0.2s;
-            
-            /* Use a grid to force the Pin Button into its own far-left slot */
             display: grid;
             grid-template-columns: auto 1fr auto;
             align-items: center;
@@ -61,7 +59,7 @@
         .chevron { font-size: 0.8rem; color: #94a3b8; transition: transform 0.3s ease; justify-self: end;}
         .version-tag { font-size: 0.75rem; color: #94a3b8; font-weight: normal; }
         
-        /* Pin Button Styles - Dedicated far-left slot */
+        /* Pin Button Styles - Fixed Sticky Hover */
         .pin-btn {
             grid-column: 1;
             background: transparent;
@@ -75,10 +73,20 @@
             border-radius: 6px;
             transition: all 0.2s;
             margin: 0;
-            margin-left: -6px; /* Align icon with padding */
+            margin-left: -6px; 
             -webkit-tap-highlight-color: transparent;
+            outline: none;
         }
-        .pin-btn:hover { background: #f1f5f9; color: #94a3b8; }
+        
+        .pin-btn:focus, .pin-btn:active {
+            outline: none;
+            background: transparent;
+        }
+
+        @media (hover: hover) {
+            .pin-btn:hover { color: #94a3b8; }
+        }
+        
         .pin-btn svg { pointer-events: none; transition: fill 0.2s; }
         .card.pinned .pin-btn { color: var(--accent); }
         .card.pinned .pin-btn svg { fill: var(--accent); }
@@ -161,7 +169,7 @@
                 <button class="pin-btn" onclick="togglePin(event, 'card-pickup')" title="Pin Tool to Top">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
                 </button>
-                <div class="card-title-text">Pickup Calculator <span class="version-tag">v30</span></div>
+                <div class="card-title-text">Pickup Calculator <span class="version-tag">v31</span></div>
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
@@ -358,7 +366,7 @@
     }
 
     function togglePin(event, cardId) {
-        event.stopPropagation(); // Prevents the card from collapsing/expanding when tapping the pin
+        event.stopPropagation(); 
         const card = document.getElementById(cardId);
         
         if (card.classList.contains('pinned')) {
@@ -378,7 +386,6 @@
         
         let pinnedCount = 0;
         
-        // Loop through the strict absolute array to ensure order is flawlessly maintained
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
             if (card.classList.contains('pinned')) {
@@ -389,7 +396,6 @@
             }
         });
         
-        // Handle visual division lines based on if anything is pinned
         if (pinnedCount > 0) {
             pinnedContainer.style.display = 'flex';
             divider.style.display = 'flex';
@@ -399,7 +405,6 @@
         }
     }
 
-    // Restore saved card states exactly when the app loads
     document.addEventListener('DOMContentLoaded', () => {
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
