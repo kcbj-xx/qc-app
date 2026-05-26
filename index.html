@@ -116,7 +116,7 @@
             font-weight: 600; 
             color: #64748b; 
             white-space: nowrap; 
-            transition: all 0.2s ease; 
+            transition: background-color 0.2s, color 0.2s; 
             -webkit-tap-highlight-color: transparent;
             height: 38px; 
             box-sizing: border-box;
@@ -124,7 +124,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
-            touch-action: manipulation; /* Re-allows normal horizontal scrolling */
+            touch-action: manipulation; 
         }
         .tab-btn.active { 
             background: #ffffff; 
@@ -402,7 +402,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v41</div>
+    <div class="footer-version">v42</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -459,60 +459,221 @@
             divider.style.display = 'none';
         }
     }
-    
+
+    // ==========================================
+    // ---- GHOST DRAG MANAGER FOR TABS ---------
+    // ==========================================
+    function createTabDragManager(config) {
+        let state = {
+            isDragging: false, preventClick: false, timer: null, 
+            startX: 0, startY: 0, clientX: 0, offsetX: 0,
+            ghost: null, placeholder: null, scrollInterval: null
+        };
+
+        const container = document.getElementById(config.containerId);
+        const list = document.getElementById(config.listId);
+
+        const checkHitAndSwap = () => {
+            const siblings = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn)'));
+            let targetEl = null;
+            let closestDist = Infinity;
+
+            siblings.forEach(tab => {
+                if (tab === state.placeholder) return;
+                const tabRect = tab.getBoundingClientRect();
+                const tabCenter = tabRect.left + tabRect.width / 2;
+                const dist = Math.abs(state.clientX - tabCenter);
+
+                if (dist < closestDist && dist < tabRect.width * 0.6) {
+                    closestDist = dist;
+                    targetEl = tab;
+                }
+            });
+
+            if (targetEl) {
+                const targetRect = targetEl.getBoundingClientRect();
+                if (state.clientX < targetRect.left + targetRect.width / 2) {
+                     list.insertBefore(state.placeholder, targetEl);
+                } else {
+                     list.insertBefore(state.placeholder, targetEl.nextSibling);
+                }
+            }
+        };
+
+        const startScroll = (speed) => {
+            if (state.scrollInterval) return;
+            state.scrollInterval = setInterval(() => {
+                container.scrollLeft += speed;
+                checkHitAndSwap();
+            }, 16);
+        };
+
+        const stopScroll = () => {
+            if (state.scrollInterval) {
+                clearInterval(state.scrollInterval);
+                state.scrollInterval = null;
+            }
+        };
+
+        const onPointerMove = (e) => {
+            state.clientX = e.clientX;
+            if (!state.isDragging) {
+                if (Math.abs(e.clientX - state.startX) > 10 || Math.abs(e.clientY - state.startY) > 10) {
+                    clearTimeout(state.timer);
+                }
+                return;
+            }
+            e.preventDefault();
+            state.ghost.style.left = (e.clientX - state.offsetX) + 'px';
+
+            const rect = container.getBoundingClientRect();
+            const edgeSize = 60;
+            if (e.clientX < rect.left + edgeSize) startScroll(-6);
+            else if (e.clientX > rect.right - edgeSize) startScroll(6);
+            else stopScroll();
+
+            checkHitAndSwap();
+        };
+
+        const onPointerUp = (e) => {
+            clearTimeout(state.timer);
+            stopScroll();
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+
+            if (state.isDragging) {
+                state.preventClick = true;
+                
+                const newOrderIds = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn)')).map(el => el.dataset.id);
+                config.onReorder(newOrderIds);
+
+                state.ghost.remove();
+                state.ghost = null;
+                state.placeholder.style.opacity = '1';
+                
+                container.style.overflowX = 'auto';
+                container.style.touchAction = '';
+                
+                state.isDragging = false;
+                setTimeout(() => state.preventClick = false, 50);
+                
+                config.renderFn();
+            }
+        };
+
+        return {
+            attach: (btn, tabId) => {
+                btn.dataset.id = tabId;
+                btn.addEventListener('pointerdown', (e) => {
+                    if (e.pointerType === 'mouse' && e.button !== 0) return;
+                    state.startX = e.clientX;
+                    state.startY = e.clientY;
+                    state.clientX = e.clientX;
+
+                    state.timer = setTimeout(() => {
+                        state.isDragging = true;
+                        if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
+
+                        const rect = btn.getBoundingClientRect();
+                        state.offsetX = e.clientX - rect.left;
+
+                        // Create the physical ghost layer
+                        state.ghost = btn.cloneNode(true);
+                        state.ghost.classList.add('active'); // Keep it visible
+                        state.ghost.style.position = 'fixed';
+                        state.ghost.style.left = rect.left + 'px';
+                        state.ghost.style.top = rect.top + 'px';
+                        state.ghost.style.margin = '0';
+                        state.ghost.style.zIndex = '9999';
+                        state.ghost.style.pointerEvents = 'none';
+                        state.ghost.style.opacity = '0.95';
+                        state.ghost.style.boxShadow = '0 10px 20px rgba(0,0,0,0.15)';
+                        state.ghost.style.transform = 'scale(1.05)';
+                        state.ghost.style.transition = 'none';
+                        document.body.appendChild(state.ghost);
+
+                        btn.style.opacity = '0.3';
+                        state.placeholder = btn;
+
+                        container.style.overflowX = 'hidden';
+                        container.style.touchAction = 'none';
+
+                        config.onDragStart();
+                    }, 400);
+
+                    document.addEventListener('pointermove', onPointerMove, { passive: false });
+                    document.addEventListener('pointerup', onPointerUp);
+                    document.addEventListener('pointercancel', onPointerUp);
+                });
+                
+                btn.addEventListener('click', (e) => {
+                    if (state.preventClick) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                });
+            },
+            isClickPrevented: () => state.preventClick
+        };
+    }
+
+    // ==========================================
+    // ---- STATE AND RENDER LOGIC --------------
+    // ==========================================
+
+    let pickupTabs = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
+    let activePickupTabId = pickupTabs[0].id;
+    let isPickupTabMenuOpen = false;
+
+    let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
+    let activeTabId = appTabs[0].id;
+    let isTabMenuOpen = false;
+
+    const pickupDragManager = createTabDragManager({
+        containerId: 'pickupTabsContainer', listId: 'pickupTabsList',
+        onDragStart: () => { isPickupTabMenuOpen = false; updatePickupTabMenuState(); },
+        onReorder: (newIds) => {
+            pickupTabs.sort((a, b) => newIds.indexOf(a.id) - newIds.indexOf(b.id));
+            savePickupTabs();
+        },
+        renderFn: () => renderPickupTabs()
+    });
+
+    const avgDragManager = createTabDragManager({
+        containerId: 'tabsContainer', listId: 'tabsList',
+        onDragStart: () => { isTabMenuOpen = false; updateTabMenuState(); },
+        onReorder: (newIds) => {
+            appTabs.sort((a, b) => newIds.indexOf(a.id) - newIds.indexOf(b.id));
+            saveTabs();
+        },
+        renderFn: () => renderTabs()
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
-            
-            if (localStorage.getItem(id + '_pinned') === '1') {
-                card.classList.add('pinned');
-            }
+            if (localStorage.getItem(id + '_pinned') === '1') card.classList.add('pinned');
             
             const savedState = localStorage.getItem(id + '_collapsed');
-            if (savedState === '1') {
-                card.classList.add('collapsed');
-            } else if (savedState === null) {
-                card.classList.add('collapsed');
-            }
+            if (savedState === '1') card.classList.add('collapsed');
+            else if (savedState === null) card.classList.add('collapsed');
         });
         
         reorderCards();
-        
-        // Initialize Both Tab Systems
         renderTabs();
         renderList();
         renderPickupTabs();
         loadPickupInputs();
     });
 
-    // ==========================================
-    // ---- PICKUP TABS SYSTEM LOGIC ----
-    // ==========================================
-    let pickupTabs = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
-    let activePickupTabId = pickupTabs[0].id;
-    let isPickupTabMenuOpen = false;
-
-    let draggingPickupTabIdx = null;
-    let pickupTabStartX = 0;
-    let pickupTabStartY = 0;
-    let pickupTabStartScrollLeft = 0;
-    let pickupClientX = 0;
-    let pickupTabWidth = 0;
-    let pickupTabElements = [];
-    let isPickupTabDragging = false;
-    let pickupTabDragTimer = null;
-    let isPickupTabReadyToDrag = false;
-    let pickupScrollVelocity = 0;
-    let pickupAutoScrollReq = null;
-
-    function savePickupTabs() {
-        localStorage.setItem('qc_pickup_tabs_data', JSON.stringify(pickupTabs));
-    }
+    function savePickupTabs() { localStorage.setItem('qc_pickup_tabs_data', JSON.stringify(pickupTabs)); }
+    function saveTabs() { localStorage.setItem('qc_tabs_data', JSON.stringify(appTabs)); }
+    function getActiveData() { return appTabs.find(t => t.id === activeTabId).data; }
 
     function renderPickupTabs() {
         const list = document.getElementById('pickupTabsList');
         list.innerHTML = '';
-        
         let activeBtnElement = null;
 
         pickupTabs.forEach((tab) => {
@@ -520,53 +681,13 @@
             btn.className = `tab-btn ${tab.id === activePickupTabId ? 'active' : ''}`;
             btn.innerText = tab.name;
             
-            if (tab.id === activePickupTabId) {
-                activeBtnElement = btn;
-            }
+            if (tab.id === activePickupTabId) activeBtnElement = btn;
 
-            btn.addEventListener('pointerdown', (e) => {
-                if (e.pointerType === 'mouse' && e.button !== 0) return;
-                
-                pickupTabStartX = e.clientX;
-                pickupTabStartY = e.clientY;
-                draggingPickupTabIdx = pickupTabs.findIndex(t => t.id === tab.id);
-                pickupTabElements = Array.from(list.children).filter(el => el.classList.contains('tab-btn'));
-                isPickupTabDragging = false;
-                isPickupTabReadyToDrag = false;
-                
-                pickupTabDragTimer = setTimeout(() => {
-                    isPickupTabReadyToDrag = true;
-                    if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(e){} }
-                    
-                    const draggedEl = pickupTabElements[draggingPickupTabIdx];
-                    draggedEl.style.transition = 'none';
-                    draggedEl.style.zIndex = 100;
-                    draggedEl.style.opacity = 0.9;
-                    draggedEl.style.backgroundColor = '#f1f5f9';
-                    
-                    pickupTabStartScrollLeft = document.getElementById('pickupTabsContainer').scrollLeft;
-                    
-                    const gap = parseInt(window.getComputedStyle(list).gap) || 4;
-                    pickupTabWidth = pickupTabElements[0].offsetWidth + gap;
-                    
-                    pickupTabElements.forEach(el => {
-                        el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
-                        el.dataset.offset = 0;
-                    });
-                    
-                    isPickupTabMenuOpen = false;
-                    updatePickupTabMenuState();
-                }, 400); 
-                
-                document.addEventListener('pointermove', onPickupTabPointerMove, { passive: false });
-                document.addEventListener('pointerup', onPickupTabPointerUp);
-                document.addEventListener('pointercancel', onPickupTabPointerUp);
-            });
+            pickupDragManager.attach(btn, tab.id);
             
             btn.onclick = (e) => {
-                if (isPickupTabDragging || isPickupTabReadyToDrag) {
-                    e.preventDefault(); e.stopPropagation(); return;
-                }
+                if (pickupDragManager.isClickPrevented()) return;
+                
                 if (activePickupTabId === tab.id) {
                     isPickupTabMenuOpen = !isPickupTabMenuOpen;
                     updatePickupTabMenuState();
@@ -581,7 +702,6 @@
             list.appendChild(btn);
         });
         
-        // --- ADD BUTTON WITH HOLD TO DELETE LOGIC ---
         const addBtn = document.createElement('button');
         addBtn.className = 'add-tab-btn';
         addBtn.innerText = '+';
@@ -605,138 +725,82 @@
             }, 800);
         });
         
-        const clearAddHold = () => { clearTimeout(addHoldTimer); };
-        addBtn.addEventListener('pointerup', (e) => {
-            clearAddHold();
-            if (!isAddHold && !isPickupTabReadyToDrag) addNewPickupTab();
-        });
+        const clearAddHold = () => clearTimeout(addHoldTimer);
+        addBtn.addEventListener('pointerup', () => { clearAddHold(); if (!isAddHold && !pickupDragManager.isClickPrevented()) addNewPickupTab(); });
         addBtn.addEventListener('pointercancel', clearAddHold);
         addBtn.addEventListener('pointerleave', clearAddHold);
 
         list.appendChild(addBtn);
-        
-        setTimeout(() => {
-            if (activeBtnElement && !isPickupTabDragging) {
-                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
-        }, 10);
+        setTimeout(() => { if (activeBtnElement) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, 10);
     }
 
-    function updatePickupTabOffsets(currentDeltaX) {
-        let moveSteps = Math.round(currentDeltaX / pickupTabWidth);
-        let targetIdx = draggingPickupTabIdx + moveSteps;
-        targetIdx = Math.max(0, Math.min(pickupTabElements.length - 1, targetIdx));
-        
-        pickupTabElements.forEach((el, idx) => {
-            if (idx === draggingPickupTabIdx) return;
-            let offset = 0;
-            if (idx > draggingPickupTabIdx && idx <= targetIdx) offset = -pickupTabWidth;
-            else if (idx < draggingPickupTabIdx && idx >= targetIdx) offset = pickupTabWidth;
+    function renderTabs() {
+        const list = document.getElementById('tabsList');
+        list.innerHTML = '';
+        let activeBtnElement = null;
+
+        appTabs.forEach((tab) => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
+            btn.innerText = tab.name;
             
-            if (el.dataset.offset != offset) {
-                el.style.transform = `translateX(${offset}px)`;
-                el.dataset.offset = offset;
-            }
+            if (tab.id === activeTabId) activeBtnElement = btn;
+
+            avgDragManager.attach(btn, tab.id);
+            
+            btn.onclick = (e) => {
+                if (avgDragManager.isClickPrevented()) return;
+                
+                if (activeTabId === tab.id) {
+                    isTabMenuOpen = !isTabMenuOpen;
+                    updateTabMenuState();
+                } else {
+                    activeTabId = tab.id;
+                    isTabMenuOpen = false;
+                    document.getElementById('lastAddedDisplay').innerHTML = ''; 
+                    renderTabs();
+                    renderList();
+                    updateTabMenuState();
+                }
+            };
+            list.appendChild(btn);
         });
-    }
-
-    function onPickupTabPointerMove(e) {
-        if (draggingPickupTabIdx === null) return;
-        pickupClientX = e.clientX;
-        const deltaX = e.clientX - pickupTabStartX;
-        const deltaY = e.clientY - pickupTabStartY;
         
-        if (!isPickupTabReadyToDrag) {
-            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-                clearTimeout(pickupTabDragTimer);
-                draggingPickupTabIdx = null;
-                document.removeEventListener('pointermove', onPickupTabPointerMove);
-                document.removeEventListener('pointerup', onPickupTabPointerUp);
-                document.removeEventListener('pointercancel', onPickupTabPointerUp);
-            }
-            return;
-        }
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-tab-btn';
+        addBtn.innerText = '+';
         
-        e.preventDefault(); 
-        isPickupTabDragging = true;
+        let addHoldTimer = null;
+        let isAddHold = false;
         
-        const container = document.getElementById('pickupTabsContainer');
-        const currentScrollLeft = container.scrollLeft;
-        const adjustedDeltaX = pickupClientX - pickupTabStartX + (currentScrollLeft - pickupTabStartScrollLeft);
-        
-        const draggedEl = pickupTabElements[draggingPickupTabIdx];
-        draggedEl.style.transform = `translate(${adjustedDeltaX}px, -2px) scale(1.05)`; 
-        updatePickupTabOffsets(adjustedDeltaX);
-
-        // Auto-scroll boundary detection
-        const rect = container.getBoundingClientRect();
-        if (pickupClientX < rect.left + 40) pickupScrollVelocity = -6;
-        else if (pickupClientX > rect.right - 40) pickupScrollVelocity = 6;
-        else pickupScrollVelocity = 0;
-        
-        if (pickupScrollVelocity !== 0 && !pickupAutoScrollReq) {
-            pickupAutoScrollReq = requestAnimationFrame(function scrollLoop() {
-                if (pickupScrollVelocity === 0 || !isPickupTabDragging) {
-                    pickupAutoScrollReq = null;
-                    return;
+        addBtn.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            isAddHold = false;
+            addHoldTimer = setTimeout(() => {
+                isAddHold = true;
+                if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(e){} }
+                if (confirm("Delete ALL samples? This cannot be undone.")) {
+                    appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
+                    activeTabId = appTabs[0].id;
+                    saveTabs();
+                    renderTabs();
+                    renderList();
                 }
-                container.scrollLeft += pickupScrollVelocity;
-                const newScrollLeft = container.scrollLeft;
-                const newDeltaX = pickupClientX - pickupTabStartX + (newScrollLeft - pickupTabStartScrollLeft);
-                
-                if (pickupTabElements[draggingPickupTabIdx]) {
-                    pickupTabElements[draggingPickupTabIdx].style.transform = `translate(${newDeltaX}px, -2px) scale(1.05)`;
-                }
-                updatePickupTabOffsets(newDeltaX);
-                
-                pickupAutoScrollReq = requestAnimationFrame(scrollLoop);
-            });
-        }
+            }, 800);
+        });
+        
+        const clearAddHold = () => clearTimeout(addHoldTimer);
+        addBtn.addEventListener('pointerup', () => { clearAddHold(); if (!isAddHold && !avgDragManager.isClickPrevented()) addNewTab(); });
+        addBtn.addEventListener('pointercancel', clearAddHold);
+        addBtn.addEventListener('pointerleave', clearAddHold);
+
+        list.appendChild(addBtn);
+        setTimeout(() => { if (activeBtnElement) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, 10);
     }
 
-    function onPickupTabPointerUp(e) {
-        clearTimeout(pickupTabDragTimer);
-        pickupScrollVelocity = 0;
-        if (pickupAutoScrollReq) { cancelAnimationFrame(pickupAutoScrollReq); pickupAutoScrollReq = null; }
-        
-        if (draggingPickupTabIdx === null) return;
-        
-        let wasDragging = isPickupTabDragging;
-        let wasReady = isPickupTabReadyToDrag;
-
-        if (isPickupTabDragging) {
-            const container = document.getElementById('pickupTabsContainer');
-            const finalScrollLeft = container.scrollLeft;
-            const finalDeltaX = e.clientX - pickupTabStartX + (finalScrollLeft - pickupTabStartScrollLeft);
-            
-            let moveSteps = Math.round(finalDeltaX / pickupTabWidth);
-            let targetIdx = draggingPickupTabIdx + moveSteps;
-            targetIdx = Math.max(0, Math.min(pickupTabElements.length - 1, targetIdx));
-            
-            if (draggingPickupTabIdx !== targetIdx) {
-                const item = pickupTabs.splice(draggingPickupTabIdx, 1)[0];
-                pickupTabs.splice(targetIdx, 0, item);
-                savePickupTabs();
-            }
-        }
-        
-        if (draggingPickupTabIdx !== null && pickupTabElements[draggingPickupTabIdx]) {
-            pickupTabElements[draggingPickupTabIdx].style.backgroundColor = '';
-        }
-        
-        draggingPickupTabIdx = null;
-        document.removeEventListener('pointermove', onPickupTabPointerMove);
-        document.removeEventListener('pointerup', onPickupTabPointerUp);
-        document.removeEventListener('pointercancel', onPickupTabPointerUp);
-        
-        if (wasDragging || wasReady) {
-            setTimeout(() => {
-                isPickupTabDragging = false;
-                isPickupTabReadyToDrag = false;
-                renderPickupTabs();
-            }, 10);
-        }
-    }
+    // ==========================================
+    // ---- BUSINESS LOGIC & UTILITIES ----------
+    // ==========================================
 
     function updatePickupTabMenuState() {
         const panel = document.getElementById('pickupTabOptionsPanel');
@@ -752,8 +816,7 @@
     function savePickupTabName() {
         const newName = document.getElementById('renamePickupTabInput').value.trim();
         if (newName !== '') {
-            const tab = pickupTabs.find(t => t.id === activePickupTabId);
-            tab.name = newName;
+            pickupTabs.find(t => t.id === activePickupTabId).name = newName;
             savePickupTabs();
             isPickupTabMenuOpen = false;
             renderPickupTabs();
@@ -764,18 +827,13 @@
 
     function confirmDeletePickupTab() {
         const tab = pickupTabs.find(t => t.id === activePickupTabId);
-        if (pickupTabs.length === 1) {
-            alert("You must have at least one sample.");
-            return;
-        }
+        if (pickupTabs.length === 1) { alert("You must have at least one sample."); return; }
         if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
             let currentIndex = pickupTabs.findIndex(t => t.id === activePickupTabId);
             pickupTabs = pickupTabs.filter(t => t.id !== activePickupTabId);
             
             let newIndex = currentIndex - 1;
-            if (newIndex < 0) newIndex = 0; 
-            
-            activePickupTabId = pickupTabs[newIndex].id; 
+            activePickupTabId = pickupTabs[newIndex < 0 ? 0 : newIndex].id; 
             isPickupTabMenuOpen = false;
             savePickupTabs();
             renderPickupTabs();
@@ -788,14 +846,10 @@
         let maxNum = 0;
         pickupTabs.forEach(t => {
             const match = t.name.match(/^Sample (\d+)$/i);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num > maxNum) maxNum = num;
-            }
+            if (match) maxNum = Math.max(maxNum, parseInt(match[1]));
         });
-        const nextNum = maxNum > 0 ? maxNum + 1 : pickupTabs.length + 1;
         
-        const newTab = { id: 'ptab_' + Date.now(), name: `Sample ${nextNum}`, pre: '', post: '' };
+        const newTab = { id: 'ptab_' + Date.now(), name: `Sample ${maxNum > 0 ? maxNum + 1 : pickupTabs.length + 1}`, pre: '', post: '' };
         pickupTabs.push(newTab);
         activePickupTabId = newTab.id;
         isPickupTabMenuOpen = false;
@@ -807,12 +861,10 @@
     }
 
     function savePickupInputs() {
-        const pre = document.getElementById('preSampleVal').value;
-        const post = document.getElementById('postSampleVal').value;
         const tab = pickupTabs.find(t => t.id === activePickupTabId);
         if (tab) {
-            tab.pre = pre;
-            tab.post = post;
+            tab.pre = document.getElementById('preSampleVal').value;
+            tab.post = document.getElementById('postSampleVal').value;
             savePickupTabs();
             calculatePickup();
         }
@@ -837,9 +889,7 @@
         const clearBtn = document.getElementById('clearPickupBtn');
         const activeTab = pickupTabs.find(t => t.id === activePickupTabId);
         
-        if (activeTab) {
-            clearBtn.innerText = `Clear ${activeTab.name}`;
-        }
+        if (activeTab) clearBtn.innerText = `Clear ${activeTab.name}`;
 
         if(isNaN(pre) || isNaN(post) || pre === 0) {
             res.style.display = "none";
@@ -863,270 +913,10 @@
         }
     }
 
-
-    // ==========================================
-    // ---- SUM & AVERAGING TABS SYSTEM LOGIC ---
-    // ==========================================
-    let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
-    let activeTabId = appTabs[0].id;
-    let isTabMenuOpen = false;
-
-    let draggingTabIdx = null;
-    let tabStartX = 0;
-    let tabStartY = 0;
-    let tabStartScrollLeft = 0;
-    let tabClientX = 0;
-    let tabWidth = 0;
-    let tabElements = [];
-    let isTabDragging = false;
-    let tabDragTimer = null;
-    let isTabReadyToDrag = false;
-    let tabScrollVelocity = 0;
-    let tabAutoScrollReq = null;
-
-    function saveTabs() {
-        localStorage.setItem('qc_tabs_data', JSON.stringify(appTabs));
-    }
-
-    function getActiveData() {
-        return appTabs.find(t => t.id === activeTabId).data;
-    }
-
-    function renderTabs() {
-        const list = document.getElementById('tabsList');
-        list.innerHTML = '';
-        
-        let activeBtnElement = null;
-
-        appTabs.forEach((tab) => {
-            const btn = document.createElement('button');
-            btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
-            btn.innerText = tab.name;
-            
-            if (tab.id === activeTabId) {
-                activeBtnElement = btn;
-            }
-
-            btn.addEventListener('pointerdown', (e) => {
-                if (e.pointerType === 'mouse' && e.button !== 0) return;
-                
-                tabStartX = e.clientX;
-                tabStartY = e.clientY;
-                draggingTabIdx = appTabs.findIndex(t => t.id === tab.id);
-                tabElements = Array.from(list.children).filter(el => el.classList.contains('tab-btn'));
-                isTabDragging = false;
-                isTabReadyToDrag = false;
-                
-                tabDragTimer = setTimeout(() => {
-                    isTabReadyToDrag = true;
-                    if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(e){} }
-                    
-                    const draggedEl = tabElements[draggingTabIdx];
-                    draggedEl.style.transition = 'none';
-                    draggedEl.style.zIndex = 100;
-                    draggedEl.style.opacity = 0.9;
-                    draggedEl.style.backgroundColor = '#f1f5f9';
-                    
-                    tabStartScrollLeft = document.getElementById('tabsContainer').scrollLeft;
-                    
-                    const gap = parseInt(window.getComputedStyle(list).gap) || 4;
-                    tabWidth = tabElements[0].offsetWidth + gap;
-                    
-                    tabElements.forEach(el => {
-                        el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
-                        el.dataset.offset = 0;
-                    });
-                    
-                    isTabMenuOpen = false;
-                    updateTabMenuState();
-                }, 400); 
-                
-                document.addEventListener('pointermove', onTabPointerMove, { passive: false });
-                document.addEventListener('pointerup', onTabPointerUp);
-                document.addEventListener('pointercancel', onTabPointerUp);
-            });
-            
-            btn.onclick = (e) => {
-                if (isTabDragging || isTabReadyToDrag) {
-                    e.preventDefault(); e.stopPropagation(); return;
-                }
-                if (activeTabId === tab.id) {
-                    isTabMenuOpen = !isTabMenuOpen;
-                    updateTabMenuState();
-                } else {
-                    activeTabId = tab.id;
-                    isTabMenuOpen = false;
-                    document.getElementById('lastAddedDisplay').innerHTML = ''; 
-                    renderTabs();
-                    renderList();
-                    updateTabMenuState();
-                }
-            };
-            list.appendChild(btn);
-        });
-        
-        // --- ADD BUTTON WITH HOLD TO DELETE LOGIC ---
-        const addBtn = document.createElement('button');
-        addBtn.className = 'add-tab-btn';
-        addBtn.innerText = '+';
-        
-        let addHoldTimer = null;
-        let isAddHold = false;
-        
-        addBtn.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0 && e.pointerType === 'mouse') return;
-            isAddHold = false;
-            addHoldTimer = setTimeout(() => {
-                isAddHold = true;
-                if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(e){} }
-                if (confirm("Delete ALL samples? This cannot be undone.")) {
-                    appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
-                    activeTabId = appTabs[0].id;
-                    saveTabs();
-                    renderTabs();
-                    renderList();
-                }
-            }, 800);
-        });
-        
-        const clearAddHold = () => { clearTimeout(addHoldTimer); };
-        addBtn.addEventListener('pointerup', (e) => {
-            clearAddHold();
-            if (!isAddHold && !isTabReadyToDrag) addNewTab();
-        });
-        addBtn.addEventListener('pointercancel', clearAddHold);
-        addBtn.addEventListener('pointerleave', clearAddHold);
-
-        list.appendChild(addBtn);
-        
-        setTimeout(() => {
-            if (activeBtnElement && !isTabDragging) {
-                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
-        }, 10);
-    }
-
-    function updateTabOffsets(currentDeltaX) {
-        let moveSteps = Math.round(currentDeltaX / tabWidth);
-        let targetIdx = draggingTabIdx + moveSteps;
-        targetIdx = Math.max(0, Math.min(tabElements.length - 1, targetIdx));
-        
-        tabElements.forEach((el, idx) => {
-            if (idx === draggingTabIdx) return;
-            let offset = 0;
-            if (idx > draggingTabIdx && idx <= targetIdx) offset = -tabWidth;
-            else if (idx < draggingTabIdx && idx >= targetIdx) offset = tabWidth;
-            
-            if (el.dataset.offset != offset) {
-                el.style.transform = `translateX(${offset}px)`;
-                el.dataset.offset = offset;
-            }
-        });
-    }
-
-    function onTabPointerMove(e) {
-        if (draggingTabIdx === null) return;
-        tabClientX = e.clientX;
-        const deltaX = e.clientX - tabStartX;
-        const deltaY = e.clientY - tabStartY;
-        
-        if (!isTabReadyToDrag) {
-            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-                clearTimeout(tabDragTimer);
-                draggingTabIdx = null;
-                document.removeEventListener('pointermove', onTabPointerMove);
-                document.removeEventListener('pointerup', onTabPointerUp);
-                document.removeEventListener('pointercancel', onTabPointerUp);
-            }
-            return;
-        }
-        
-        e.preventDefault(); 
-        isTabDragging = true;
-        
-        const container = document.getElementById('tabsContainer');
-        const currentScrollLeft = container.scrollLeft;
-        const adjustedDeltaX = tabClientX - tabStartX + (currentScrollLeft - tabStartScrollLeft);
-        
-        const draggedEl = tabElements[draggingTabIdx];
-        draggedEl.style.transform = `translate(${adjustedDeltaX}px, -2px) scale(1.05)`; 
-        updateTabOffsets(adjustedDeltaX);
-
-        // Auto-scroll boundary detection
-        const rect = container.getBoundingClientRect();
-        if (tabClientX < rect.left + 40) tabScrollVelocity = -6;
-        else if (tabClientX > rect.right - 40) tabScrollVelocity = 6;
-        else tabScrollVelocity = 0;
-        
-        if (tabScrollVelocity !== 0 && !tabAutoScrollReq) {
-            tabAutoScrollReq = requestAnimationFrame(function scrollLoop() {
-                if (tabScrollVelocity === 0 || !isTabDragging) {
-                    tabAutoScrollReq = null;
-                    return;
-                }
-                container.scrollLeft += tabScrollVelocity;
-                const newScrollLeft = container.scrollLeft;
-                const newDeltaX = tabClientX - tabStartX + (newScrollLeft - tabStartScrollLeft);
-                
-                if (tabElements[draggingTabIdx]) {
-                    tabElements[draggingTabIdx].style.transform = `translate(${newDeltaX}px, -2px) scale(1.05)`;
-                }
-                updateTabOffsets(newDeltaX);
-                
-                tabAutoScrollReq = requestAnimationFrame(scrollLoop);
-            });
-        }
-    }
-
-    function onTabPointerUp(e) {
-        clearTimeout(tabDragTimer);
-        tabScrollVelocity = 0;
-        if (tabAutoScrollReq) { cancelAnimationFrame(tabAutoScrollReq); tabAutoScrollReq = null; }
-        
-        if (draggingTabIdx === null) return;
-        
-        let wasDragging = isTabDragging;
-        let wasReady = isTabReadyToDrag;
-
-        if (isTabDragging) {
-            const container = document.getElementById('tabsContainer');
-            const finalScrollLeft = container.scrollLeft;
-            const finalDeltaX = e.clientX - tabStartX + (finalScrollLeft - tabStartScrollLeft);
-            
-            let moveSteps = Math.round(finalDeltaX / tabWidth);
-            let targetIdx = draggingTabIdx + moveSteps;
-            targetIdx = Math.max(0, Math.min(tabElements.length - 1, targetIdx));
-            
-            if (draggingTabIdx !== targetIdx) {
-                const item = appTabs.splice(draggingTabIdx, 1)[0];
-                appTabs.splice(targetIdx, 0, item);
-                saveTabs();
-            }
-        }
-        
-        if (draggingTabIdx !== null && tabElements[draggingTabIdx]) {
-            tabElements[draggingTabIdx].style.backgroundColor = '';
-        }
-        
-        draggingTabIdx = null;
-        document.removeEventListener('pointermove', onTabPointerMove);
-        document.removeEventListener('pointerup', onTabPointerUp);
-        document.removeEventListener('pointercancel', onTabPointerUp);
-        
-        if (wasDragging || wasReady) {
-            setTimeout(() => {
-                isTabDragging = false;
-                isTabReadyToDrag = false;
-                renderTabs();
-            }, 10);
-        }
-    }
-
     function updateTabMenuState() {
         const panel = document.getElementById('tabOptionsPanel');
         if (isTabMenuOpen) {
-            const activeTab = appTabs.find(t => t.id === activeTabId);
-            document.getElementById('renameTabInput').value = activeTab.name;
+            document.getElementById('renameTabInput').value = appTabs.find(t => t.id === activeTabId).name;
             panel.style.display = 'flex';
         } else {
             panel.style.display = 'none';
@@ -1136,8 +926,7 @@
     function saveTabName() {
         const newName = document.getElementById('renameTabInput').value.trim();
         if (newName !== '') {
-            const tab = appTabs.find(t => t.id === activeTabId);
-            tab.name = newName;
+            appTabs.find(t => t.id === activeTabId).name = newName;
             saveTabs();
             isTabMenuOpen = false;
             renderTabs();
@@ -1148,18 +937,13 @@
 
     function confirmDeleteTab() {
         const tab = appTabs.find(t => t.id === activeTabId);
-        if (appTabs.length === 1) {
-            alert("You must have at least one sample.");
-            return;
-        }
+        if (appTabs.length === 1) { alert("You must have at least one sample."); return; }
         if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
             let currentIndex = appTabs.findIndex(t => t.id === activeTabId);
             appTabs = appTabs.filter(t => t.id !== activeTabId);
             
             let newIndex = currentIndex - 1;
-            if (newIndex < 0) newIndex = 0;
-            
-            activeTabId = appTabs[newIndex].id; 
+            activeTabId = appTabs[newIndex < 0 ? 0 : newIndex].id; 
             isTabMenuOpen = false;
             saveTabs();
             renderTabs();
@@ -1172,30 +956,22 @@
         let maxNum = 0;
         appTabs.forEach(t => {
             const match = t.name.match(/^Sample (\d+)$/i);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num > maxNum) maxNum = num;
-            }
+            if (match) maxNum = Math.max(maxNum, parseInt(match[1]));
         });
-        const nextNum = maxNum > 0 ? maxNum + 1 : appTabs.length + 1;
         
-        const newTab = { id: 'tab_' + Date.now(), name: `Sample ${nextNum}`, data: [] };
+        const newTab = { id: 'tab_' + Date.now(), name: `Sample ${maxNum > 0 ? maxNum + 1 : appTabs.length + 1}`, data: [] };
         appTabs.push(newTab);
         activeTabId = newTab.id;
         isTabMenuOpen = false;
         
-        const display = document.getElementById('lastAddedDisplay');
-        display.innerHTML = ''; 
+        document.getElementById('lastAddedDisplay').innerHTML = ''; 
         saveTabs();
         renderTabs();
         renderList();
         updateTabMenuState();
     }
 
-    // ==========================================
-    // ---- LIST DRAG & GENERAL LOGIC ----
-    // ==========================================
-
+    // --- Sub-Tools Logic ---
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
     let timerInterval = null;
@@ -1209,12 +985,10 @@
         
         if (source === 'C') {
             if (cInput.value === '') { fInput.value = ''; clearBtn.style.display = 'none'; return; }
-            const c = parseFloat(cInput.value);
-            fInput.value = ((c * 9/5) + 32).toFixed(2).replace(/\.00$/, '');
+            fInput.value = ((parseFloat(cInput.value) * 9/5) + 32).toFixed(2).replace(/\.00$/, '');
         } else {
             if (fInput.value === '') { cInput.value = ''; clearBtn.style.display = 'none'; return; }
-            const f = parseFloat(fInput.value);
-            cInput.value = ((f - 32) * 5/9).toFixed(2).replace(/\.00$/, '');
+            cInput.value = ((parseFloat(fInput.value) - 32) * 5/9).toFixed(2).replace(/\.00$/, '');
         }
         clearBtn.style.display = 'block';
     }
@@ -1234,8 +1008,7 @@
     const holdBtn = document.getElementById('holdTimerBtn');
 
     function updateStopwatch() {
-        let diff = swElapsed;
-        if (isSwRunning) { diff += (Date.now() - swStartTime); }
+        let diff = swElapsed + (isSwRunning ? (Date.now() - swStartTime) : 0);
         const m = Math.floor(diff / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         const ms = Math.floor((diff % 1000) / 10);
@@ -1265,18 +1038,13 @@
     }
 
     holdBtn.addEventListener('touchstart', (e) => { e.preventDefault(); }, { passive: false });
-
     holdBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault(); 
         if(e.button !== 0 && e.pointerType === 'mouse') return; 
         try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
-        
         if (isSwRunning) return; 
-        isSwRunning = true;
-        swMode = 'hold';
-        swStartTime = Date.now();
+        isSwRunning = true; swMode = 'hold'; swStartTime = Date.now();
         swInterval = setInterval(updateStopwatch, 10);
-        
         holdBtn.style.filter = 'brightness(0.8)';
         holdBtn.style.transform = 'scale(0.98)';
     });
@@ -1284,17 +1052,11 @@
     const stopAction = (e) => {
         if (!isSwRunning || swMode !== 'hold') return; 
         clearInterval(swInterval);
-        
         swElapsed += (Date.now() - swStartTime);
-        isSwRunning = false; 
-        swMode = null;
-        updateStopwatch(); 
-        
-        holdBtn.style.filter = '';
-        holdBtn.style.transform = 'scale(1)';
+        isSwRunning = false; swMode = null; updateStopwatch(); 
+        holdBtn.style.filter = ''; holdBtn.style.transform = 'scale(1)';
         try { holdBtn.releasePointerCapture(e.pointerId); } catch(err){}
     };
-
     holdBtn.addEventListener('pointerup', stopAction);
     holdBtn.addEventListener('pointercancel', stopAction);
 
@@ -1302,18 +1064,12 @@
         if (swElapsed === 0 && !isSwRunning) return;
         if (confirm("Reset the stopwatch?")) {
             if (isSwRunning) {
-                isSwRunning = false;
-                swMode = null;
-                clearInterval(swInterval);
-                holdBtn.style.filter = '';
-                holdBtn.style.transform = 'scale(1)';
-                
+                isSwRunning = false; swMode = null; clearInterval(swInterval);
+                holdBtn.style.filter = ''; holdBtn.style.transform = 'scale(1)';
                 const toggleBtn = document.getElementById('toggleTimerBtn');
-                toggleBtn.innerText = "Start";
-                toggleBtn.style.backgroundColor = "";
+                toggleBtn.innerText = "Start"; toggleBtn.style.backgroundColor = "";
             }
-            swElapsed = 0;
-            swDisplay.innerText = "00:00.00";
+            swElapsed = 0; swDisplay.innerText = "00:00.00";
         }
     }
 
@@ -1334,11 +1090,9 @@
             if (errors.length > 0) {
                 res.style.display = "block";
                 res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
-                
                 setTimeout(() => {
                     if (res.innerHTML.includes("Missing:")) {
-                        res.style.display = "none";
-                        res.innerHTML = "";
+                        res.style.display = "none"; res.innerHTML = "";
                         [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
                     }
                 }, 3500);
@@ -1349,13 +1103,12 @@
         const min = parseInt(minInput.value); 
         const max = parseInt(maxInput.value);
         let startStr = isRecursive ? lastGeneratedTimeStr : startTimeInput.value;
-        
         const rand = Math.floor(Math.random() * (max - min + 1)) + min;
         const [h, m] = startStr.split(':').map(Number);
         
         let target = new Date();
         target.setHours(h, m + rand, 0, 0);
-        if (target < new Date()) { target.setDate(target.getDate() + 1); }
+        if (target < new Date()) target.setDate(target.getDate() + 1); 
 
         targetTimeObject = target;
         lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
@@ -1366,7 +1119,6 @@
             <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Target: ${lastGeneratedTimeStr}</div>
             <button class="btn-recursive" onclick="generateTime(true)">Next window from ${lastGeneratedTimeStr}</button>
         `;
-        
         document.getElementById('timerControls').style.display = 'block';
         document.getElementById('clearTimeBtn').style.display = 'block';
     }
@@ -1380,22 +1132,16 @@
     function startTimer(targetDate) {
         stopTimer();
         const display = document.getElementById('countdown');
-        const cancelBtn = document.getElementById('cancelTimerBtn');
-        const stopBtn = document.getElementById('stopAlarmBtn');
         
         document.getElementById('activeTimer').style.display = 'block';
         display.classList.add('timer-active');
-        cancelBtn.style.display = 'block';
-        stopBtn.style.display = 'none';
+        document.getElementById('cancelTimerBtn').style.display = 'block';
+        document.getElementById('stopAlarmBtn').style.display = 'none';
 
         timerInterval = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = targetDate.getTime() - now;
+            const distance = targetDate.getTime() - new Date().getTime();
 
-            if (distance < 0) {
-                triggerFinalAlarm();
-                return;
-            }
+            if (distance < 0) { triggerFinalAlarm(); return; }
 
             const h = Math.floor((distance % 86400000) / 3600000);
             const m = Math.floor((distance % 3600000) / 60000);
@@ -1405,8 +1151,7 @@
     }
 
     async function triggerFinalAlarm() {
-        clearInterval(timerInterval);
-        timerInterval = null;
+        clearInterval(timerInterval); timerInterval = null;
         
         const display = document.getElementById('countdown');
         display.innerText = "TIME UP!";
@@ -1418,39 +1163,26 @@
         
         if ("vibrate" in navigator) {
             navigator.vibrate([500, 200, 500, 200, 500]);
-            vibrationInterval = setInterval(() => {
-                try { navigator.vibrate([500, 200, 500, 200, 500]); } catch(e){}
-            }, 2000);
+            vibrationInterval = setInterval(() => { try { navigator.vibrate([500, 200, 500, 200, 500]); } catch(e){} }, 2000);
         }
 
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
                 await reg.showNotification("QC ALERT: COLLECT SAMPLES!", { 
-                    body: "Tap to stop the alarm.", 
-                    requireInteraction: true,
-                    vibrate: [500, 200, 500, 200, 500],
-                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
-                    tag: 'qc-alert' 
+                    body: "Tap to stop the alarm.", requireInteraction: true, vibrate: [500, 200, 500, 200, 500],
+                    icon: "https://cdn-icons-png.flaticon.com/512/1162/1162456.png", tag: 'qc-alert' 
                 });
-            } catch (err) {
-                console.log("Notification failed", err);
-            }
+            } catch (err) {}
         }
     }
 
     async function stopTimer() {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        
-        if (vibrationInterval) {
-            clearInterval(vibrationInterval);
-            vibrationInterval = null;
-        }
+        clearInterval(timerInterval); timerInterval = null;
+        if (vibrationInterval) { clearInterval(vibrationInterval); vibrationInterval = null; }
         if ("vibrate" in navigator) { try { navigator.vibrate(0); } catch(e){} }
 
-        alarm.pause();
-        alarm.currentTime = 0;
+        alarm.pause(); alarm.currentTime = 0;
         document.getElementById('activeTimer').style.display = 'none';
         document.getElementById('countdown').style.color = "#38bdf8";
         document.getElementById('countdown').classList.remove('timer-active');
@@ -1463,8 +1195,7 @@
     }
 
     function resetSamplingTime() {
-        const confirmMsg = timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?";
-        if (!confirm(confirmMsg)) return;
+        if (!confirm(timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?")) return;
         
         stopTimer();
         document.getElementById('minMinutes').value = '';
@@ -1473,15 +1204,11 @@
         document.getElementById('timeResult').style.display = 'none';
         document.getElementById('timerControls').style.display = 'none';
         document.getElementById('clearTimeBtn').style.display = 'none';
-        lastGeneratedTimeStr = "";
-        targetTimeObject = null;
+        lastGeneratedTimeStr = ""; targetTimeObject = null;
     }
 
     // Number List Logic
-    let listDraggingIdx = null;
-    let listStartY = 0;
-    let listRowHeight = 0;
-    let listElements = [];
+    let listDraggingIdx = null, listStartY = 0, listRowHeight = 0, listElements = [];
 
     function addNumber() {
         const inp = document.getElementById('numberInput');
@@ -1495,7 +1222,6 @@
         saveTabs();
         inp.value=''; 
         renderList();
-        
         inp.focus(); 
     }
 
@@ -1518,20 +1244,17 @@
     function removeNumber(index) {
         getActiveData().splice(index, 1);
         saveTabs();
-        const arr = getActiveData();
-        if (arr.length === 0) document.getElementById('lastAddedDisplay').innerHTML = '';
+        if (getActiveData().length === 0) document.getElementById('lastAddedDisplay').innerHTML = '';
         renderList();
     }
 
     function onListPointerMove(e) {
         if (listDraggingIdx === null) return;
         const deltaY = e.clientY - listStartY;
-        const draggedEl = listElements[listDraggingIdx];
-        draggedEl.style.transform = `translateY(${deltaY}px)`;
+        listElements[listDraggingIdx].style.transform = `translateY(${deltaY}px)`;
 
         let moveSteps = Math.round(deltaY / listRowHeight);
-        let targetIdx = listDraggingIdx + moveSteps;
-        targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
+        let targetIdx = Math.max(0, Math.min(listElements.length - 1, listDraggingIdx + moveSteps));
 
         listElements.forEach((el, idx) => {
             if (idx === listDraggingIdx) return;
@@ -1548,15 +1271,12 @@
 
     function onListPointerUp(e) {
         if (listDraggingIdx === null) return;
-        const deltaY = e.clientY - listStartY;
-        let moveSteps = Math.round(deltaY / listRowHeight);
-        let targetIdx = listDraggingIdx + moveSteps;
-        targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
+        let moveSteps = Math.round((e.clientY - listStartY) / listRowHeight);
+        let targetIdx = Math.max(0, Math.min(listElements.length - 1, listDraggingIdx + moveSteps));
 
         if (listDraggingIdx !== targetIdx) {
             const arr = getActiveData();
-            const item = arr.splice(listDraggingIdx, 1)[0];
-            arr.splice(targetIdx, 0, item);
+            arr.splice(targetIdx, 0, arr.splice(listDraggingIdx, 1)[0]);
             saveTabs();
         }
 
@@ -1577,9 +1297,7 @@
         container.style.display = arr.length ? "flex" : "none";
         clearBtn.style.display = arr.length ? "block" : "none";
         
-        if (activeTab) {
-            clearBtn.innerText = `Clear ${activeTab.name}`;
-        }
+        if (activeTab) clearBtn.innerText = `Clear ${activeTab.name}`;
         
         arr.forEach((n, i) => {
             const div = document.createElement('div');
@@ -1590,26 +1308,16 @@
                 <button class="remove-btn" onclick="removeNumber(${i})" title="Remove">&times;</button>
             `;
 
-            const handle = div.querySelector('.drag-handle');
-            const inputField = div.querySelector('.edit-input');
-
-            handle.addEventListener('pointerdown', (e) => {
+            div.querySelector('.drag-handle').addEventListener('pointerdown', (e) => {
                 document.activeElement.blur(); 
-                listDraggingIdx = i;
-                listStartY = e.clientY;
+                listDraggingIdx = i; listStartY = e.clientY;
                 listElements = Array.from(container.children);
+                listRowHeight = listElements[0].offsetHeight + (parseInt(window.getComputedStyle(container).gap) || 8);
                 
-                const gap = parseInt(window.getComputedStyle(container).gap) || 8;
-                listRowHeight = listElements[0].offsetHeight + gap;
+                listElements.forEach((el) => { el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)'; el.dataset.offset = 0; });
                 
-                listElements.forEach((el) => {
-                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
-                    el.dataset.offset = 0;
-                });
-                
-                div.style.transition = 'none'; 
-                div.classList.add('dragging');
-                inputField.style.pointerEvents = 'none'; 
+                div.style.transition = 'none'; div.classList.add('dragging');
+                div.querySelector('.edit-input').style.pointerEvents = 'none'; 
                 
                 document.addEventListener('pointermove', onListPointerMove);
                 document.addEventListener('pointerup', onListPointerUp);
@@ -1624,11 +1332,8 @@
     function clearNumbers() { 
         const tab = appTabs.find(t => t.id === activeTabId);
         if (confirm(`Are you sure you want to clear all data in "${tab.name}"?`)) { 
-            tab.data = [];
-            saveTabs();
-            const display = document.getElementById('lastAddedDisplay');
-            display.innerHTML = ''; 
-            display.style.color = 'var(--success)';
+            tab.data = []; saveTabs();
+            document.getElementById('lastAddedDisplay').innerHTML = ''; 
             renderList(); 
         } 
     }
