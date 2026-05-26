@@ -82,6 +82,15 @@
 
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
+        /* --- Tabs Styling --- */
+        .tabs-container { display: flex; align-items: center; border-bottom: 2px solid var(--border); margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .tabs-container::-webkit-scrollbar { display: none; }
+        .tabs-list { display: flex; gap: 4px; padding-top: 5px;}
+        .tab-btn { background: #f8fafc; border: 1px solid var(--border); border-bottom: none; padding: 10px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #64748b; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent;}
+        .tab-btn.active { background: #ffffff; color: var(--primary); border-top: 3px solid var(--primary); margin-bottom: -2px; padding-bottom: 12px; z-index: 2; border-left: 1px solid var(--border); border-right: 1px solid var(--border);}
+        .add-tab-btn { background: transparent; color: #94a3b8; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px 15px; font-weight: bold; transition: color 0.2s; -webkit-tap-highlight-color: transparent;}
+        .add-tab-btn:hover { color: var(--primary); }
+
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.875rem; }
@@ -91,6 +100,7 @@
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 8px; }
         button:hover { background-color: var(--primary-hover); }
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
+        
         .btn-timer-start { background-color: #8b5cf6; }
         .btn-timer-start:hover { background-color: #7c3aed; }
         .timer-display { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 2rem; font-weight: bold; margin-top: 10px; text-align: center; border: 2px solid #334155; transition: all 0.3s; }
@@ -98,10 +108,12 @@
         .timer-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
         .pickup-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
+        
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 15px 0; text-align: center; }
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
+        
         .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 4px; }
         .number-item { display: flex; align-items: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; position: relative; z-index: 1; -webkit-tap-highlight-color: transparent; }
         .number-item.dragging { z-index: 100; opacity: 0.9; }
@@ -113,6 +125,7 @@
         .remove-btn:hover { background: #fecaca; }
         .last-added-text { font-size: 0.85rem; color: var(--success); font-weight: 600; margin-top: 5px; min-height: 1.2em; transition: color 0.3s; display: flex; justify-content: flex-start; align-items: center; }
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
+        
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
     </style>
 </head>
@@ -153,6 +166,12 @@
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
+                
+                <div class="tabs-container">
+                    <div id="tabsList" class="tabs-list"></div>
+                    <button class="add-tab-btn" onclick="addNewTab()">+</button>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-box"><div class="stat-label">Count</div><div class="stat-value" id="statCount">0</div></div>
                     <div class="stat-box"><div class="stat-label">Sum</div><div class="stat-value" id="statSum">0</div></div>
@@ -167,7 +186,7 @@
                     <div class="last-added-text" id="lastAddedDisplay"></div>
                 </div>
                 <div id="numberList" class="drag-container"></div>
-                <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear List</button>
+                <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear Current Sheet</button>
             </div>
         </div>
 
@@ -276,7 +295,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v32.1</div>
+    <div class="footer-version">v33</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -338,27 +357,91 @@
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
             
-            // 1. Restore Pin State
             if (localStorage.getItem(id + '_pinned') === '1') {
                 card.classList.add('pinned');
             }
             
-            // 2. Restore/Set Collapse State
             const savedState = localStorage.getItem(id + '_collapsed');
-            
             if (savedState === '1') {
-                // User explicitly closed it before
                 card.classList.add('collapsed');
             } else if (savedState === null) {
-                // BRAND NEW USER: Force close by default
                 card.classList.add('collapsed');
             }
-            // If savedState === '0', we do nothing (it stays open)
         });
         
-        // Now that classes are set, perform the reorder
         reorderCards();
+        
+        // Initialize Tabs System
+        renderTabs();
+        renderList();
     });
+
+    // ---- TABS SYSTEM LOGIC ----
+    let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sheet 1', data: [] }];
+    let activeTabId = appTabs[0].id;
+
+    function saveTabs() {
+        localStorage.setItem('qc_tabs_data', JSON.stringify(appTabs));
+    }
+
+    function getActiveData() {
+        return appTabs.find(t => t.id === activeTabId).data;
+    }
+
+    function renderTabs() {
+        const list = document.getElementById('tabsList');
+        list.innerHTML = '';
+        appTabs.forEach(tab => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
+            btn.innerText = tab.name;
+            
+            btn.onclick = () => {
+                if (activeTabId === tab.id) {
+                    const newName = prompt("Rename tab (Clear text to delete):", tab.name);
+                    if (newName !== null) {
+                        if (newName.trim() === '') {
+                            if (appTabs.length > 1 && confirm(`Permanently delete tab "${tab.name}"?`)) {
+                                appTabs = appTabs.filter(t => t.id !== tab.id);
+                                activeTabId = appTabs[0].id;
+                            } else if (appTabs.length === 1) {
+                                alert("You must have at least one sheet.");
+                            }
+                        } else {
+                            tab.name = newName.trim();
+                        }
+                        saveTabs();
+                        renderTabs();
+                        renderList();
+                    }
+                } else {
+                    activeTabId = tab.id;
+                    const display = document.getElementById('lastAddedDisplay');
+                    display.innerHTML = ''; 
+                    renderTabs();
+                    renderList();
+                }
+            };
+            list.appendChild(btn);
+        });
+        
+        // Auto-scroll tab bar to the end if a new tab is added
+        const container = document.querySelector('.tabs-container');
+        container.scrollLeft = container.scrollWidth;
+    }
+
+    function addNewTab() {
+        const newTab = { id: 'tab_' + Date.now(), name: `Sheet ${appTabs.length + 1}`, data: [] };
+        appTabs.push(newTab);
+        activeTabId = newTab.id;
+        const display = document.getElementById('lastAddedDisplay');
+        display.innerHTML = ''; 
+        saveTabs();
+        renderTabs();
+        renderList();
+    }
+
+    // ---- GENERAL APP LOGIC ----
 
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
@@ -671,7 +754,7 @@
         document.getElementById('clearPickupBtn').style.display = 'none';
     }
 
-    let numbers = [];
+    // Tabs version of number list
     let draggingIdx = null;
     let startY = 0;
     let rowHeight = 0;
@@ -685,7 +768,8 @@
         display.innerHTML = `Last added: ${val}`;
         display.style.color = 'var(--success)';
         
-        numbers.push(val); 
+        getActiveData().push(val); 
+        saveTabs();
         inp.value=''; 
         renderList();
         
@@ -693,12 +777,14 @@
     }
 
     function updateNumber(index, inputEl) {
+        const arr = getActiveData();
         const newVal = parseFloat(inputEl.value);
-        if (isNaN(newVal)) { inputEl.value = numbers[index]; return; }
+        if (isNaN(newVal)) { inputEl.value = arr[index]; return; }
         
-        const oldVal = numbers[index];
+        const oldVal = arr[index];
         if (newVal !== oldVal) {
-            numbers[index] = newVal;
+            arr[index] = newVal;
+            saveTabs();
             const display = document.getElementById('lastAddedDisplay');
             display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
             display.style.color = 'var(--accent)'; 
@@ -707,8 +793,10 @@
     }
 
     function removeNumber(index) {
-        numbers.splice(index, 1);
-        if (numbers.length === 0) document.getElementById('lastAddedDisplay').innerHTML = '';
+        getActiveData().splice(index, 1);
+        saveTabs();
+        const arr = getActiveData();
+        if (arr.length === 0) document.getElementById('lastAddedDisplay').innerHTML = '';
         renderList();
     }
 
@@ -743,8 +831,10 @@
         targetIdx = Math.max(0, Math.min(elements.length - 1, targetIdx));
 
         if (draggingIdx !== targetIdx) {
-            const item = numbers.splice(draggingIdx, 1)[0];
-            numbers.splice(targetIdx, 0, item);
+            const arr = getActiveData();
+            const item = arr.splice(draggingIdx, 1)[0];
+            arr.splice(targetIdx, 0, item);
+            saveTabs();
         }
 
         draggingIdx = null;
@@ -757,11 +847,13 @@
     function renderList() {
         const container = document.getElementById('numberList');
         const clearBtn = document.getElementById('clearAllBtn');
-        container.innerHTML = '';
-        container.style.display = numbers.length ? "flex" : "none";
-        clearBtn.style.display = numbers.length ? "block" : "none";
+        const arr = getActiveData();
         
-        numbers.forEach((n, i) => {
+        container.innerHTML = '';
+        container.style.display = arr.length ? "flex" : "none";
+        clearBtn.style.display = arr.length ? "block" : "none";
+        
+        arr.forEach((n, i) => {
             const div = document.createElement('div');
             div.className = 'number-item';
             div.innerHTML = `
@@ -802,8 +894,10 @@
     }
 
     function clearNumbers() { 
-        if (confirm("Clear all numbers?")) { 
-            numbers = []; 
+        if (confirm("Clear all numbers in this specific sheet?")) { 
+            const tab = appTabs.find(t => t.id === activeTabId);
+            tab.data = [];
+            saveTabs();
             const display = document.getElementById('lastAddedDisplay');
             display.innerHTML = ''; 
             display.style.color = 'var(--success)';
@@ -812,10 +906,11 @@
     }
 
     function updateStats() {
-        const sum = numbers.reduce((a, b) => a + b, 0);
-        document.getElementById('statCount').innerText = numbers.length;
+        const arr = getActiveData();
+        const sum = arr.reduce((a, b) => a + b, 0);
+        document.getElementById('statCount').innerText = arr.length;
         document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
-        document.getElementById('statAvg').innerText = (numbers.length ? (sum / numbers.length) : 0).toFixed(2).replace(/\.00$/, '');
+        document.getElementById('statAvg').innerText = (arr.length ? (sum / arr.length) : 0).toFixed(2).replace(/\.00$/, '');
     }
 
     function calculateSalinity() {
