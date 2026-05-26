@@ -151,6 +151,9 @@
             align-items: center;
             justify-content: center;
             padding-bottom: 4px; 
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
         .add-tab-btn:hover { color: var(--primary); }
 
@@ -399,7 +402,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v39</div>
+    <div class="footer-version">v41</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -492,11 +495,15 @@
     let draggingPickupTabIdx = null;
     let pickupTabStartX = 0;
     let pickupTabStartY = 0;
+    let pickupTabStartScrollLeft = 0;
+    let pickupClientX = 0;
     let pickupTabWidth = 0;
     let pickupTabElements = [];
     let isPickupTabDragging = false;
     let pickupTabDragTimer = null;
     let isPickupTabReadyToDrag = false;
+    let pickupScrollVelocity = 0;
+    let pickupAutoScrollReq = null;
 
     function savePickupTabs() {
         localStorage.setItem('qc_pickup_tabs_data', JSON.stringify(pickupTabs));
@@ -535,7 +542,9 @@
                     draggedEl.style.transition = 'none';
                     draggedEl.style.zIndex = 100;
                     draggedEl.style.opacity = 0.9;
-                    draggedEl.style.transform = 'scale(1.05)';
+                    draggedEl.style.backgroundColor = '#f1f5f9';
+                    
+                    pickupTabStartScrollLeft = document.getElementById('pickupTabsContainer').scrollLeft;
                     
                     const gap = parseInt(window.getComputedStyle(list).gap) || 4;
                     pickupTabWidth = pickupTabElements[0].offsetWidth + gap;
@@ -547,7 +556,7 @@
                     
                     isPickupTabMenuOpen = false;
                     updatePickupTabMenuState();
-                }, 400); // 400ms long press required
+                }, 400); 
                 
                 document.addEventListener('pointermove', onPickupTabPointerMove, { passive: false });
                 document.addEventListener('pointerup', onPickupTabPointerUp);
@@ -572,10 +581,38 @@
             list.appendChild(btn);
         });
         
+        // --- ADD BUTTON WITH HOLD TO DELETE LOGIC ---
         const addBtn = document.createElement('button');
         addBtn.className = 'add-tab-btn';
         addBtn.innerText = '+';
-        addBtn.onclick = addNewPickupTab;
+        
+        let addHoldTimer = null;
+        let isAddHold = false;
+        
+        addBtn.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            isAddHold = false;
+            addHoldTimer = setTimeout(() => {
+                isAddHold = true;
+                if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(e){} }
+                if (confirm("Delete ALL samples? This cannot be undone.")) {
+                    pickupTabs = [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
+                    activePickupTabId = pickupTabs[0].id;
+                    savePickupTabs();
+                    renderPickupTabs();
+                    loadPickupInputs();
+                }
+            }, 800);
+        });
+        
+        const clearAddHold = () => { clearTimeout(addHoldTimer); };
+        addBtn.addEventListener('pointerup', (e) => {
+            clearAddHold();
+            if (!isAddHold && !isPickupTabReadyToDrag) addNewPickupTab();
+        });
+        addBtn.addEventListener('pointercancel', clearAddHold);
+        addBtn.addEventListener('pointerleave', clearAddHold);
+
         list.appendChild(addBtn);
         
         setTimeout(() => {
@@ -585,29 +622,8 @@
         }, 10);
     }
 
-    function onPickupTabPointerMove(e) {
-        if (draggingPickupTabIdx === null) return;
-        const deltaX = e.clientX - pickupTabStartX;
-        const deltaY = e.clientY - pickupTabStartY;
-        
-        if (!isPickupTabReadyToDrag) {
-            // Cancel timer if user scrolls heavily before the 400ms is up
-            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-                clearTimeout(pickupTabDragTimer);
-                draggingPickupTabIdx = null;
-                document.removeEventListener('pointermove', onPickupTabPointerMove);
-                document.removeEventListener('pointerup', onPickupTabPointerUp);
-                document.removeEventListener('pointercancel', onPickupTabPointerUp);
-            }
-            return;
-        }
-        
-        e.preventDefault(); // Block scrolling while actively dragging
-        isPickupTabDragging = true;
-        const draggedEl = pickupTabElements[draggingPickupTabIdx];
-        draggedEl.style.transform = `translate(${deltaX}px, -2px) scale(1.05)`;
-        
-        let moveSteps = Math.round(deltaX / pickupTabWidth);
+    function updatePickupTabOffsets(currentDeltaX) {
+        let moveSteps = Math.round(currentDeltaX / pickupTabWidth);
         let targetIdx = draggingPickupTabIdx + moveSteps;
         targetIdx = Math.max(0, Math.min(pickupTabElements.length - 1, targetIdx));
         
@@ -624,16 +640,76 @@
         });
     }
 
+    function onPickupTabPointerMove(e) {
+        if (draggingPickupTabIdx === null) return;
+        pickupClientX = e.clientX;
+        const deltaX = e.clientX - pickupTabStartX;
+        const deltaY = e.clientY - pickupTabStartY;
+        
+        if (!isPickupTabReadyToDrag) {
+            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+                clearTimeout(pickupTabDragTimer);
+                draggingPickupTabIdx = null;
+                document.removeEventListener('pointermove', onPickupTabPointerMove);
+                document.removeEventListener('pointerup', onPickupTabPointerUp);
+                document.removeEventListener('pointercancel', onPickupTabPointerUp);
+            }
+            return;
+        }
+        
+        e.preventDefault(); 
+        isPickupTabDragging = true;
+        
+        const container = document.getElementById('pickupTabsContainer');
+        const currentScrollLeft = container.scrollLeft;
+        const adjustedDeltaX = pickupClientX - pickupTabStartX + (currentScrollLeft - pickupTabStartScrollLeft);
+        
+        const draggedEl = pickupTabElements[draggingPickupTabIdx];
+        draggedEl.style.transform = `translate(${adjustedDeltaX}px, -2px) scale(1.05)`; 
+        updatePickupTabOffsets(adjustedDeltaX);
+
+        // Auto-scroll boundary detection
+        const rect = container.getBoundingClientRect();
+        if (pickupClientX < rect.left + 40) pickupScrollVelocity = -6;
+        else if (pickupClientX > rect.right - 40) pickupScrollVelocity = 6;
+        else pickupScrollVelocity = 0;
+        
+        if (pickupScrollVelocity !== 0 && !pickupAutoScrollReq) {
+            pickupAutoScrollReq = requestAnimationFrame(function scrollLoop() {
+                if (pickupScrollVelocity === 0 || !isPickupTabDragging) {
+                    pickupAutoScrollReq = null;
+                    return;
+                }
+                container.scrollLeft += pickupScrollVelocity;
+                const newScrollLeft = container.scrollLeft;
+                const newDeltaX = pickupClientX - pickupTabStartX + (newScrollLeft - pickupTabStartScrollLeft);
+                
+                if (pickupTabElements[draggingPickupTabIdx]) {
+                    pickupTabElements[draggingPickupTabIdx].style.transform = `translate(${newDeltaX}px, -2px) scale(1.05)`;
+                }
+                updatePickupTabOffsets(newDeltaX);
+                
+                pickupAutoScrollReq = requestAnimationFrame(scrollLoop);
+            });
+        }
+    }
+
     function onPickupTabPointerUp(e) {
         clearTimeout(pickupTabDragTimer);
+        pickupScrollVelocity = 0;
+        if (pickupAutoScrollReq) { cancelAnimationFrame(pickupAutoScrollReq); pickupAutoScrollReq = null; }
+        
         if (draggingPickupTabIdx === null) return;
         
         let wasDragging = isPickupTabDragging;
         let wasReady = isPickupTabReadyToDrag;
 
         if (isPickupTabDragging) {
-            const deltaX = e.clientX - pickupTabStartX;
-            let moveSteps = Math.round(deltaX / pickupTabWidth);
+            const container = document.getElementById('pickupTabsContainer');
+            const finalScrollLeft = container.scrollLeft;
+            const finalDeltaX = e.clientX - pickupTabStartX + (finalScrollLeft - pickupTabStartScrollLeft);
+            
+            let moveSteps = Math.round(finalDeltaX / pickupTabWidth);
             let targetIdx = draggingPickupTabIdx + moveSteps;
             targetIdx = Math.max(0, Math.min(pickupTabElements.length - 1, targetIdx));
             
@@ -642,6 +718,10 @@
                 pickupTabs.splice(targetIdx, 0, item);
                 savePickupTabs();
             }
+        }
+        
+        if (draggingPickupTabIdx !== null && pickupTabElements[draggingPickupTabIdx]) {
+            pickupTabElements[draggingPickupTabIdx].style.backgroundColor = '';
         }
         
         draggingPickupTabIdx = null;
@@ -677,7 +757,7 @@
             savePickupTabs();
             isPickupTabMenuOpen = false;
             renderPickupTabs();
-            calculatePickup(); // Refreshes the clear button text
+            calculatePickup(); 
             updatePickupTabMenuState();
         }
     }
@@ -692,7 +772,6 @@
             let currentIndex = pickupTabs.findIndex(t => t.id === activePickupTabId);
             pickupTabs = pickupTabs.filter(t => t.id !== activePickupTabId);
             
-            // Focus on the tab immediately to the left
             let newIndex = currentIndex - 1;
             if (newIndex < 0) newIndex = 0; 
             
@@ -795,11 +874,15 @@
     let draggingTabIdx = null;
     let tabStartX = 0;
     let tabStartY = 0;
+    let tabStartScrollLeft = 0;
+    let tabClientX = 0;
     let tabWidth = 0;
     let tabElements = [];
     let isTabDragging = false;
     let tabDragTimer = null;
     let isTabReadyToDrag = false;
+    let tabScrollVelocity = 0;
+    let tabAutoScrollReq = null;
 
     function saveTabs() {
         localStorage.setItem('qc_tabs_data', JSON.stringify(appTabs));
@@ -842,7 +925,9 @@
                     draggedEl.style.transition = 'none';
                     draggedEl.style.zIndex = 100;
                     draggedEl.style.opacity = 0.9;
-                    draggedEl.style.transform = 'scale(1.05)';
+                    draggedEl.style.backgroundColor = '#f1f5f9';
+                    
+                    tabStartScrollLeft = document.getElementById('tabsContainer').scrollLeft;
                     
                     const gap = parseInt(window.getComputedStyle(list).gap) || 4;
                     tabWidth = tabElements[0].offsetWidth + gap;
@@ -854,7 +939,7 @@
                     
                     isTabMenuOpen = false;
                     updateTabMenuState();
-                }, 400); // 400ms long press required
+                }, 400); 
                 
                 document.addEventListener('pointermove', onTabPointerMove, { passive: false });
                 document.addEventListener('pointerup', onTabPointerUp);
@@ -880,10 +965,38 @@
             list.appendChild(btn);
         });
         
+        // --- ADD BUTTON WITH HOLD TO DELETE LOGIC ---
         const addBtn = document.createElement('button');
         addBtn.className = 'add-tab-btn';
         addBtn.innerText = '+';
-        addBtn.onclick = addNewTab;
+        
+        let addHoldTimer = null;
+        let isAddHold = false;
+        
+        addBtn.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            isAddHold = false;
+            addHoldTimer = setTimeout(() => {
+                isAddHold = true;
+                if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(e){} }
+                if (confirm("Delete ALL samples? This cannot be undone.")) {
+                    appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
+                    activeTabId = appTabs[0].id;
+                    saveTabs();
+                    renderTabs();
+                    renderList();
+                }
+            }, 800);
+        });
+        
+        const clearAddHold = () => { clearTimeout(addHoldTimer); };
+        addBtn.addEventListener('pointerup', (e) => {
+            clearAddHold();
+            if (!isAddHold && !isTabReadyToDrag) addNewTab();
+        });
+        addBtn.addEventListener('pointercancel', clearAddHold);
+        addBtn.addEventListener('pointerleave', clearAddHold);
+
         list.appendChild(addBtn);
         
         setTimeout(() => {
@@ -893,29 +1006,8 @@
         }, 10);
     }
 
-    function onTabPointerMove(e) {
-        if (draggingTabIdx === null) return;
-        const deltaX = e.clientX - tabStartX;
-        const deltaY = e.clientY - tabStartY;
-        
-        if (!isTabReadyToDrag) {
-            // Cancel timer if user scrolls heavily before the 400ms is up
-            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-                clearTimeout(tabDragTimer);
-                draggingTabIdx = null;
-                document.removeEventListener('pointermove', onTabPointerMove);
-                document.removeEventListener('pointerup', onTabPointerUp);
-                document.removeEventListener('pointercancel', onTabPointerUp);
-            }
-            return;
-        }
-        
-        e.preventDefault(); // Block scrolling while actively dragging
-        isTabDragging = true;
-        const draggedEl = tabElements[draggingTabIdx];
-        draggedEl.style.transform = `translate(${deltaX}px, -2px) scale(1.05)`;
-        
-        let moveSteps = Math.round(deltaX / tabWidth);
+    function updateTabOffsets(currentDeltaX) {
+        let moveSteps = Math.round(currentDeltaX / tabWidth);
         let targetIdx = draggingTabIdx + moveSteps;
         targetIdx = Math.max(0, Math.min(tabElements.length - 1, targetIdx));
         
@@ -932,16 +1024,76 @@
         });
     }
 
+    function onTabPointerMove(e) {
+        if (draggingTabIdx === null) return;
+        tabClientX = e.clientX;
+        const deltaX = e.clientX - tabStartX;
+        const deltaY = e.clientY - tabStartY;
+        
+        if (!isTabReadyToDrag) {
+            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+                clearTimeout(tabDragTimer);
+                draggingTabIdx = null;
+                document.removeEventListener('pointermove', onTabPointerMove);
+                document.removeEventListener('pointerup', onTabPointerUp);
+                document.removeEventListener('pointercancel', onTabPointerUp);
+            }
+            return;
+        }
+        
+        e.preventDefault(); 
+        isTabDragging = true;
+        
+        const container = document.getElementById('tabsContainer');
+        const currentScrollLeft = container.scrollLeft;
+        const adjustedDeltaX = tabClientX - tabStartX + (currentScrollLeft - tabStartScrollLeft);
+        
+        const draggedEl = tabElements[draggingTabIdx];
+        draggedEl.style.transform = `translate(${adjustedDeltaX}px, -2px) scale(1.05)`; 
+        updateTabOffsets(adjustedDeltaX);
+
+        // Auto-scroll boundary detection
+        const rect = container.getBoundingClientRect();
+        if (tabClientX < rect.left + 40) tabScrollVelocity = -6;
+        else if (tabClientX > rect.right - 40) tabScrollVelocity = 6;
+        else tabScrollVelocity = 0;
+        
+        if (tabScrollVelocity !== 0 && !tabAutoScrollReq) {
+            tabAutoScrollReq = requestAnimationFrame(function scrollLoop() {
+                if (tabScrollVelocity === 0 || !isTabDragging) {
+                    tabAutoScrollReq = null;
+                    return;
+                }
+                container.scrollLeft += tabScrollVelocity;
+                const newScrollLeft = container.scrollLeft;
+                const newDeltaX = tabClientX - tabStartX + (newScrollLeft - tabStartScrollLeft);
+                
+                if (tabElements[draggingTabIdx]) {
+                    tabElements[draggingTabIdx].style.transform = `translate(${newDeltaX}px, -2px) scale(1.05)`;
+                }
+                updateTabOffsets(newDeltaX);
+                
+                tabAutoScrollReq = requestAnimationFrame(scrollLoop);
+            });
+        }
+    }
+
     function onTabPointerUp(e) {
         clearTimeout(tabDragTimer);
+        tabScrollVelocity = 0;
+        if (tabAutoScrollReq) { cancelAnimationFrame(tabAutoScrollReq); tabAutoScrollReq = null; }
+        
         if (draggingTabIdx === null) return;
         
         let wasDragging = isTabDragging;
         let wasReady = isTabReadyToDrag;
 
         if (isTabDragging) {
-            const deltaX = e.clientX - tabStartX;
-            let moveSteps = Math.round(deltaX / tabWidth);
+            const container = document.getElementById('tabsContainer');
+            const finalScrollLeft = container.scrollLeft;
+            const finalDeltaX = e.clientX - tabStartX + (finalScrollLeft - tabStartScrollLeft);
+            
+            let moveSteps = Math.round(finalDeltaX / tabWidth);
             let targetIdx = draggingTabIdx + moveSteps;
             targetIdx = Math.max(0, Math.min(tabElements.length - 1, targetIdx));
             
@@ -950,6 +1102,10 @@
                 appTabs.splice(targetIdx, 0, item);
                 saveTabs();
             }
+        }
+        
+        if (draggingTabIdx !== null && tabElements[draggingTabIdx]) {
+            tabElements[draggingTabIdx].style.backgroundColor = '';
         }
         
         draggingTabIdx = null;
@@ -1000,7 +1156,6 @@
             let currentIndex = appTabs.findIndex(t => t.id === activeTabId);
             appTabs = appTabs.filter(t => t.id !== activeTabId);
             
-            // Focus on the tab immediately to the left
             let newIndex = currentIndex - 1;
             if (newIndex < 0) newIndex = 0;
             
