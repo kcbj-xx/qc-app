@@ -82,9 +82,10 @@
 
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
-        /* --- Re-architected Folder Tabs (No Gray Line) --- */
+        /* --- Folder Tabs (Sitting ON the Line) --- */
         .tabs-container { 
             display: flex; 
+            border-bottom: 2px solid var(--border); /* The continuous gray shelf */
             margin-bottom: 15px; 
             overflow-x: auto; 
             -webkit-overflow-scrolling: touch; 
@@ -98,12 +99,12 @@
             display: flex; 
             gap: 4px; 
             align-items: flex-end; 
-            position: relative;
+            /* No bottom-overlap offsets needed, allowing them to sit flush */
         }
         .tab-btn { 
             background: #f8fafc; 
             border: 1px solid var(--border); 
-            border-bottom: none; /* Removed the gray line */
+            border-bottom: none; /* Removed so the container line shows through */
             padding: 8px 16px; 
             border-radius: 8px 8px 0 0; 
             cursor: pointer; 
@@ -120,7 +121,7 @@
             background: #ffffff; 
             color: var(--primary); 
             border-top: 3px solid var(--primary); 
-            border-bottom: none; /* Removed the white eraser line */
+            border-bottom: none; /* Remains transparent to sit on the line */
             height: 48px; 
             padding-top: 12px; 
             z-index: 2; 
