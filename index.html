@@ -400,7 +400,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v44</div>
+    <div class="footer-version">v45</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -415,7 +415,7 @@
     }
 
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling'];
-    let preventTabClick = false; // Global flag to stop clicks right after dropping a tab
+    let preventTabClick = false; // Global flag to stop ghost clicks
     
     function toggleCard(cardId) {
         const card = document.getElementById(cardId);
@@ -483,22 +483,26 @@
         setupAddButtonHold('pickupTabsList', addNewPickupTab, () => {
             pickupTabs = [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
             activePickupTabId = pickupTabs[0].id;
+            isPickupTabMenuOpen = false; // Force menu closed
             savePickupTabs();
             renderPickupTabs();
             loadPickupInputs();
+            updatePickupTabMenuState(); // Update UI
         }, "Delete ALL samples from the Pickup Calculator? This cannot be undone.");
         
         setupAddButtonHold('tabsList', addNewTab, () => {
             appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
             activeTabId = appTabs[0].id;
+            isTabMenuOpen = false; // Force menu closed
             saveTabs();
             renderTabs();
             renderList();
+            updateTabMenuState(); // Update UI
         }, "Delete ALL samples from Sum & Averaging? This cannot be undone.");
     });
 
     // ==========================================
-    // ---- ROBUST TAB DRAG ENGINE (v43/v44) ----
+    // ---- ROBUST TAB DRAG ENGINE --------------
     // ==========================================
     function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn) {
         const list = document.getElementById(listId);
@@ -552,7 +556,6 @@
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
             if (!isDragging && holdTimer) {
-                // If moving significantly before 400ms, it's a native scroll! Cancel drag prep.
                 if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
                     clearTimeout(holdTimer);
                     holdTimer = null;
@@ -561,7 +564,7 @@
             }
 
             if (isDragging) {
-                e.preventDefault(); // Stop native scrolling ONLY while actively dragging
+                e.preventDefault(); 
                 const deltaX = clientX - startX;
                 const scrollShift = container.scrollLeft - startScrollLeft;
                 const totalMove = deltaX + scrollShift;
@@ -583,7 +586,6 @@
                     }
                 });
 
-                // Edge Scroll Trigger (Only fires while you actively wiggle/move near the edge)
                 const rect = container.getBoundingClientRect();
                 if (clientX < rect.left + 50) container.scrollLeft -= 7;
                 else if (clientX > rect.right - 50) container.scrollLeft += 7;
@@ -597,7 +599,7 @@
             if (isDragging) {
                 isDragging = false;
                 preventTabClick = true;
-                setTimeout(() => preventTabClick = false, 100);
+                setTimeout(() => preventTabClick = false, 150);
 
                 const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
                 const deltaX = clientX - startX;
@@ -653,7 +655,12 @@
                 clearTimeout(holdTimer);
                 holdTimer = null;
                 const btn = e.target.closest('.add-tab-btn');
-                if (btn && !isHold) addAction(); // Fire add only if it was a quick tap
+                if (btn && !isHold) {
+                    // Activate blocker to stop ghost clicks on the new tab
+                    preventTabClick = true;
+                    setTimeout(() => preventTabClick = false, 150);
+                    addAction(); 
+                }
             }
         };
 
@@ -691,7 +698,7 @@
             const btn = document.createElement('button');
             btn.className = `tab-btn ${tab.id === activePickupTabId ? 'active' : ''}`;
             btn.innerText = tab.name;
-            btn.dataset.id = tab.id; // Crucial for drag manager tracking
+            btn.dataset.id = tab.id; 
             
             if (tab.id === activePickupTabId) activeBtnElement = btn;
 
@@ -874,7 +881,7 @@
             const btn = document.createElement('button');
             btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
             btn.innerText = tab.name;
-            btn.dataset.id = tab.id; // Crucial for drag manager tracking
+            btn.dataset.id = tab.id; 
             
             if (tab.id === activeTabId) activeBtnElement = btn;
 
