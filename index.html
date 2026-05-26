@@ -82,14 +82,67 @@
 
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
-        /* --- Tabs Styling --- */
-        .tabs-container { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-behavior: smooth; }
+        /* --- Re-architected Folder Tabs --- */
+        .tabs-container { 
+            display: flex; 
+            border-bottom: 2px solid var(--border); 
+            margin-bottom: 15px; 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+            scrollbar-width: none; 
+            scroll-behavior: smooth;
+            align-items: flex-end; 
+            padding-top: 15px; /* Ample space for the active tab to pop up */
+        }
         .tabs-container::-webkit-scrollbar { display: none; }
-        .tabs-list { display: flex; gap: 4px; padding-top: 5px; align-items: flex-end; }
-        .tab-btn { background: #f8fafc; border: 1px solid var(--border); border-bottom: none; padding: 10px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #64748b; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent;}
-        .tab-btn.active { background: #ffffff; color: var(--primary); border-top: 3px solid var(--primary); margin-bottom: -2px; padding-bottom: 12px; z-index: 2; border-left: 1px solid var(--border); border-right: 1px solid var(--border);}
-        
-        .add-tab-btn { background: transparent; color: #94a3b8; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px 15px 8px 15px; font-weight: bold; transition: color 0.2s; -webkit-tap-highlight-color: transparent; line-height: 1;}
+        .tabs-list { 
+            display: flex; 
+            gap: 4px; 
+            align-items: flex-end; 
+            position: relative;
+            top: 2px; /* Pulls the entire list down to perfectly overlap the container border */
+        }
+        .tab-btn { 
+            background: #f8fafc; 
+            border: 1px solid var(--border); 
+            border-bottom: 2px solid var(--border); /* Matches the container border */
+            padding: 8px 16px; 
+            border-radius: 8px 8px 0 0; 
+            cursor: pointer; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            color: #64748b; 
+            white-space: nowrap; 
+            transition: all 0.2s ease; 
+            -webkit-tap-highlight-color: transparent;
+            height: 38px; /* Fixed height for inactive state */
+            box-sizing: border-box;
+        }
+        .tab-btn.active { 
+            background: #ffffff; 
+            color: var(--primary); 
+            border-top: 3px solid var(--primary); 
+            border-bottom: 2px solid #ffffff; /* Becomes white to act as an eraser over the container border */
+            height: 48px; /* Shoots up 10px higher than inactive tabs */
+            padding-top: 12px; 
+            z-index: 2; 
+        }
+        .add-tab-btn { 
+            background: transparent; 
+            color: #94a3b8; 
+            border: none; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            padding: 0 15px; 
+            font-weight: bold; 
+            transition: color 0.2s; 
+            -webkit-tap-highlight-color: transparent; 
+            height: 38px; /* Matched exactly to inactive tabs */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 4px; /* Optical adjustment to center the plus symbol */
+        }
         .add-tab-btn:hover { color: var(--primary); }
 
         /* --- Inline Tab Options Menu --- */
@@ -317,7 +370,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v35</div>
+    <div class="footer-version">v36</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -448,7 +501,6 @@
         addBtn.onclick = addNewTab;
         list.appendChild(addBtn);
         
-        // Ensure active tab centers cleanly in the scroll view when rendered
         setTimeout(() => {
             if (activeBtnElement) {
                 activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
@@ -498,10 +550,22 @@
     }
 
     function addNewTab() {
-        const newTab = { id: 'tab_' + Date.now(), name: `Untitled`, data: [] };
+        // Smart Naming: Finds the highest existing "Sheet X" number to prevent duplicates
+        let maxNum = 0;
+        appTabs.forEach(t => {
+            const match = t.name.match(/^Sheet (\d+)$/i);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num > maxNum) maxNum = num;
+            }
+        });
+        const nextNum = maxNum > 0 ? maxNum + 1 : appTabs.length + 1;
+        
+        const newTab = { id: 'tab_' + Date.now(), name: `Sheet ${nextNum}`, data: [] };
         appTabs.push(newTab);
         activeTabId = newTab.id;
         isTabMenuOpen = false;
+        
         const display = document.getElementById('lastAddedDisplay');
         display.innerHTML = ''; 
         saveTabs();
@@ -923,7 +987,6 @@
         container.style.display = arr.length ? "flex" : "none";
         clearBtn.style.display = arr.length ? "block" : "none";
         
-        // Dynamically update the clear button text
         if (activeTab) {
             clearBtn.innerText = `Clear ${activeTab.name}`;
         }
