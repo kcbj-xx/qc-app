@@ -82,14 +82,29 @@
 
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
-        /* --- Tabs Styling --- */
-        .tabs-container { display: flex; align-items: center; border-bottom: 2px solid var(--border); margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        /* --- Updated Tabs Styling --- */
+        .tabs-container { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .tabs-container::-webkit-scrollbar { display: none; }
-        .tabs-list { display: flex; gap: 4px; padding-top: 5px;}
+        .tabs-list { display: flex; gap: 4px; padding-top: 5px; align-items: flex-end; }
         .tab-btn { background: #f8fafc; border: 1px solid var(--border); border-bottom: none; padding: 10px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #64748b; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent;}
         .tab-btn.active { background: #ffffff; color: var(--primary); border-top: 3px solid var(--primary); margin-bottom: -2px; padding-bottom: 12px; z-index: 2; border-left: 1px solid var(--border); border-right: 1px solid var(--border);}
-        .add-tab-btn { background: transparent; color: #94a3b8; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px 15px; font-weight: bold; transition: color 0.2s; -webkit-tap-highlight-color: transparent;}
+        
+        /* Ensures the plus button stays snug against the last tab */
+        .add-tab-btn { background: transparent; color: #94a3b8; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px 15px 8px 15px; font-weight: bold; transition: color 0.2s; -webkit-tap-highlight-color: transparent; line-height: 1;}
         .add-tab-btn:hover { color: var(--primary); }
+
+        /* --- Inline Tab Options Menu --- */
+        .tab-options-panel {
+            display: none; 
+            flex-direction: column; 
+            background: #f8fafc; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 15px;
+            animation: fadeIn 0.2s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
         .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .row { display: flex; gap: 15px; } .row .input-group { flex: 1; }
@@ -167,9 +182,17 @@
             </h2>
             <div class="card-body">
                 
-                <div class="tabs-container">
+                <div class="tabs-container" id="tabsContainer">
                     <div id="tabsList" class="tabs-list"></div>
-                    <button class="add-tab-btn" onclick="addNewTab()">+</button>
+                    </div>
+
+                <div id="tabOptionsPanel" class="tab-options-panel">
+                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sheet</label>
+                    <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
+                        <input type="text" id="renameTabInput" placeholder="Sheet Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        <button onclick="saveTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                    </div>
+                    <button onclick="confirmDeleteTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sheet</button>
                 </div>
 
                 <div class="stats-grid">
@@ -295,7 +318,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v33</div>
+    <div class="footer-version">v34</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -379,6 +402,7 @@
     // ---- TABS SYSTEM LOGIC ----
     let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sheet 1', data: [] }];
     let activeTabId = appTabs[0].id;
+    let isTabMenuOpen = false;
 
     function saveTabs() {
         localStorage.setItem('qc_tabs_data', JSON.stringify(appTabs));
@@ -391,6 +415,7 @@
     function renderTabs() {
         const list = document.getElementById('tabsList');
         list.innerHTML = '';
+        
         appTabs.forEach(tab => {
             const btn = document.createElement('button');
             btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
@@ -398,47 +423,85 @@
             
             btn.onclick = () => {
                 if (activeTabId === tab.id) {
-                    const newName = prompt("Rename tab (Clear text to delete):", tab.name);
-                    if (newName !== null) {
-                        if (newName.trim() === '') {
-                            if (appTabs.length > 1 && confirm(`Permanently delete tab "${tab.name}"?`)) {
-                                appTabs = appTabs.filter(t => t.id !== tab.id);
-                                activeTabId = appTabs[0].id;
-                            } else if (appTabs.length === 1) {
-                                alert("You must have at least one sheet.");
-                            }
-                        } else {
-                            tab.name = newName.trim();
-                        }
-                        saveTabs();
-                        renderTabs();
-                        renderList();
-                    }
+                    // Toggle options menu if tapping the active tab
+                    isTabMenuOpen = !isTabMenuOpen;
+                    updateTabMenuState();
                 } else {
+                    // Switch to different tab and close menu
                     activeTabId = tab.id;
-                    const display = document.getElementById('lastAddedDisplay');
-                    display.innerHTML = ''; 
+                    isTabMenuOpen = false;
+                    document.getElementById('lastAddedDisplay').innerHTML = ''; 
                     renderTabs();
                     renderList();
+                    updateTabMenuState();
                 }
             };
             list.appendChild(btn);
         });
         
-        // Auto-scroll tab bar to the end if a new tab is added
-        const container = document.querySelector('.tabs-container');
+        // Injecting the Add Button inside the flex list keeps it snug!
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-tab-btn';
+        addBtn.innerText = '+';
+        addBtn.onclick = addNewTab;
+        list.appendChild(addBtn);
+        
+        // Auto-scroll tab bar to the end
+        const container = document.getElementById('tabsContainer');
         container.scrollLeft = container.scrollWidth;
+    }
+
+    function updateTabMenuState() {
+        const panel = document.getElementById('tabOptionsPanel');
+        if (isTabMenuOpen) {
+            const activeTab = appTabs.find(t => t.id === activeTabId);
+            document.getElementById('renameTabInput').value = activeTab.name;
+            panel.style.display = 'flex';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    function saveTabName() {
+        const newName = document.getElementById('renameTabInput').value.trim();
+        if (newName !== '') {
+            const tab = appTabs.find(t => t.id === activeTabId);
+            tab.name = newName;
+            saveTabs();
+            isTabMenuOpen = false;
+            renderTabs();
+            updateTabMenuState();
+        }
+    }
+
+    function confirmDeleteTab() {
+        const tab = appTabs.find(t => t.id === activeTabId);
+        if (appTabs.length === 1) {
+            alert("You must have at least one sheet.");
+            return;
+        }
+        if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
+            appTabs = appTabs.filter(t => t.id !== activeTabId);
+            activeTabId = appTabs[0].id; 
+            isTabMenuOpen = false;
+            saveTabs();
+            renderTabs();
+            renderList();
+            updateTabMenuState();
+        }
     }
 
     function addNewTab() {
         const newTab = { id: 'tab_' + Date.now(), name: `Sheet ${appTabs.length + 1}`, data: [] };
         appTabs.push(newTab);
         activeTabId = newTab.id;
+        isTabMenuOpen = false;
         const display = document.getElementById('lastAddedDisplay');
         display.innerHTML = ''; 
         saveTabs();
         renderTabs();
         renderList();
+        updateTabMenuState();
     }
 
     // ---- GENERAL APP LOGIC ----
