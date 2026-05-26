@@ -123,7 +123,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
-            touch-action: pan-x pan-y; /* Allows native scroll completely */
+            touch-action: pan-x pan-y; 
         }
         .tab-btn.active { 
             background: #ffffff; 
@@ -400,7 +400,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v43</div>
+    <div class="footer-version">v44</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -479,14 +479,14 @@
         setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, savePickupTabs, renderPickupTabs);
         setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveTabs, renderTabs);
         
-        // Attach Hold-to-delete-all logic to buttons container 
+        // Attach Hold-to-delete-all logic to buttons container with custom messages
         setupAddButtonHold('pickupTabsList', addNewPickupTab, () => {
             pickupTabs = [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
             activePickupTabId = pickupTabs[0].id;
             savePickupTabs();
             renderPickupTabs();
             loadPickupInputs();
-        });
+        }, "Delete ALL samples from the Pickup Calculator? This cannot be undone.");
         
         setupAddButtonHold('tabsList', addNewTab, () => {
             appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
@@ -494,11 +494,11 @@
             saveTabs();
             renderTabs();
             renderList();
-        });
+        }, "Delete ALL samples from Sum & Averaging? This cannot be undone.");
     });
 
     // ==========================================
-    // ---- ROBUST TAB DRAG ENGINE (v43) --------
+    // ---- ROBUST TAB DRAG ENGINE (v43/v44) ----
     // ==========================================
     function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn) {
         const list = document.getElementById(listId);
@@ -627,7 +627,7 @@
         document.addEventListener('touchcancel', endDrag);
     }
 
-    function setupAddButtonHold(listId, addAction, resetAction) {
+    function setupAddButtonHold(listId, addAction, resetAction, promptMessage) {
         const list = document.getElementById(listId);
         let holdTimer = null;
         let isHold = false;
@@ -644,7 +644,7 @@
             holdTimer = setTimeout(() => {
                 isHold = true;
                 if (navigator.vibrate) navigator.vibrate(50);
-                if (confirm("Delete ALL samples? This cannot be undone.")) resetAction();
+                if (confirm(promptMessage)) resetAction();
             }, 800);
         };
 
