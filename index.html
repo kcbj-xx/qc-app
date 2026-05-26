@@ -82,7 +82,7 @@
 
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
-        /* --- Folder Tabs (Consistent Height) --- */
+        /* --- Folder Tabs (Consistent Height, Draggable) --- */
         .tabs-container { 
             display: flex; 
             border-bottom: 2px solid var(--border); 
@@ -102,6 +102,7 @@
             margin: 0; 
             padding: 0;
             margin-bottom: -2px; /* Pulls the tabs flush onto the line */
+            position: relative;
         }
         .tab-btn { 
             margin: 0; 
@@ -120,14 +121,17 @@
             height: 38px; /* Consistent height for all tabs */
             box-sizing: border-box;
             line-height: 1.2;
+            touch-action: pan-y; /* Crucial: Allows drag without locking browser vertical scroll */
+            user-select: none;
+            -webkit-user-select: none;
         }
         .tab-btn.active { 
             background: #ffffff; 
             color: var(--primary); 
             border-top: 3px solid var(--primary); 
             border-bottom: none; 
-            height: 38px; /* Remains the same height */
-            padding-top: 8px; /* Consistent padding */
+            height: 38px; 
+            padding-top: 8px; 
             z-index: 2; 
         }
         .add-tab-btn { 
@@ -233,7 +237,7 @@
                 <button class="pin-btn" onclick="togglePin(event, 'card-averaging')" title="Pin Tool">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
                 </button>
-                <div class="card-title-text">Averaging & Sum</div>
+                <div class="card-title-text">Sum & Averaging</div>
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
@@ -243,12 +247,12 @@
                 </div>
 
                 <div id="tabOptionsPanel" class="tab-options-panel">
-                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sheet</label>
+                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
                     <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                        <input type="text" id="renameTabInput" placeholder="Sheet Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        <input type="text" id="renameTabInput" placeholder="Sample Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
                         <button onclick="saveTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
                     </div>
-                    <button onclick="confirmDeleteTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sheet</button>
+                    <button onclick="confirmDeleteTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
                 </div>
 
                 <div class="stats-grid">
@@ -265,7 +269,7 @@
                     <div class="last-added-text" id="lastAddedDisplay"></div>
                 </div>
                 <div id="numberList" class="drag-container"></div>
-                <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear Current Sheet</button>
+                <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear Current Sample</button>
             </div>
         </div>
 
@@ -374,7 +378,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v36</div>
+    <div class="footer-version">v37</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -456,9 +460,16 @@
     });
 
     // ---- TABS SYSTEM LOGIC ----
-    let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sheet 1', data: [] }];
+    let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
     let activeTabId = appTabs[0].id;
     let isTabMenuOpen = false;
+
+    // Tab Dragging Variables
+    let draggingTabIdx = null;
+    let tabStartX = 0;
+    let tabWidth = 0;
+    let tabElements = [];
+    let isTabDragging = false;
 
     function saveTabs() {
         localStorage.setItem('qc_tabs_data', JSON.stringify(appTabs));
@@ -474,7 +485,7 @@
         
         let activeBtnElement = null;
 
-        appTabs.forEach(tab => {
+        appTabs.forEach((tab, index) => {
             const btn = document.createElement('button');
             btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
             btn.innerText = tab.name;
@@ -482,8 +493,38 @@
             if (tab.id === activeTabId) {
                 activeBtnElement = btn;
             }
+
+            // --- Horizontal Drag Logic for Tabs ---
+            btn.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                
+                draggingTabIdx = appTabs.findIndex(t => t.id === tab.id);
+                tabStartX = e.clientX;
+                tabElements = Array.from(list.children).filter(el => el.classList.contains('tab-btn'));
+                isTabDragging = false;
+                
+                const gap = parseInt(window.getComputedStyle(list).gap) || 4;
+                tabWidth = tabElements[0].offsetWidth + gap;
+                
+                tabElements.forEach(el => {
+                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+                    el.dataset.offset = 0;
+                });
+                
+                document.addEventListener('pointermove', onTabPointerMove);
+                document.addEventListener('pointerup', onTabPointerUp);
+                document.addEventListener('pointercancel', onTabPointerUp);
+            });
             
-            btn.onclick = () => {
+            btn.onclick = (e) => {
+                // If it was a drag, block the standard click action completely
+                if (isTabDragging) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+
+                // Normal Click Actions
                 if (activeTabId === tab.id) {
                     isTabMenuOpen = !isTabMenuOpen;
                     updateTabMenuState();
@@ -496,6 +537,7 @@
                     updateTabMenuState();
                 }
             };
+
             list.appendChild(btn);
         });
         
@@ -506,10 +548,78 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement) {
+            if (activeBtnElement && !isTabDragging) {
                 activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }
         }, 10);
+    }
+
+    function onTabPointerMove(e) {
+        if (draggingTabIdx === null) return;
+        const deltaX = e.clientX - tabStartX;
+        
+        // Threshold to initiate drag instead of accidental click
+        if (!isTabDragging && Math.abs(deltaX) > 8) {
+            isTabDragging = true;
+            const draggedEl = tabElements[draggingTabIdx];
+            draggedEl.style.transition = 'none';
+            draggedEl.style.zIndex = 100;
+            draggedEl.style.opacity = 0.8;
+            isTabMenuOpen = false; // Hide menu during drag
+            updateTabMenuState();
+        }
+        
+        if (!isTabDragging) return;
+        
+        const draggedEl = tabElements[draggingTabIdx];
+        draggedEl.style.transform = `translateX(${deltaX}px)`;
+        
+        let moveSteps = Math.round(deltaX / tabWidth);
+        let targetIdx = draggingTabIdx + moveSteps;
+        targetIdx = Math.max(0, Math.min(tabElements.length - 1, targetIdx));
+        
+        tabElements.forEach((el, idx) => {
+            if (idx === draggingTabIdx) return;
+            let offset = 0;
+            if (idx > draggingTabIdx && idx <= targetIdx) offset = -tabWidth;
+            else if (idx < draggingTabIdx && idx >= targetIdx) offset = tabWidth;
+            
+            if (el.dataset.offset != offset) {
+                el.style.transform = `translateX(${offset}px)`;
+                el.dataset.offset = offset;
+            }
+        });
+    }
+
+    function onTabPointerUp(e) {
+        if (draggingTabIdx === null) return;
+        
+        let wasDragging = isTabDragging;
+
+        if (isTabDragging) {
+            const deltaX = e.clientX - tabStartX;
+            let moveSteps = Math.round(deltaX / tabWidth);
+            let targetIdx = draggingTabIdx + moveSteps;
+            targetIdx = Math.max(0, Math.min(tabElements.length - 1, targetIdx));
+            
+            if (draggingTabIdx !== targetIdx) {
+                const item = appTabs.splice(draggingTabIdx, 1)[0];
+                appTabs.splice(targetIdx, 0, item);
+                saveTabs();
+            }
+        }
+        
+        draggingTabIdx = null;
+        document.removeEventListener('pointermove', onTabPointerMove);
+        document.removeEventListener('pointerup', onTabPointerUp);
+        document.removeEventListener('pointercancel', onTabPointerUp);
+        
+        if (wasDragging) {
+            setTimeout(() => {
+                isTabDragging = false;
+                renderTabs();
+            }, 10);
+        }
     }
 
     function updateTabMenuState() {
@@ -539,7 +649,7 @@
     function confirmDeleteTab() {
         const tab = appTabs.find(t => t.id === activeTabId);
         if (appTabs.length === 1) {
-            alert("You must have at least one sheet.");
+            alert("You must have at least one sample.");
             return;
         }
         if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
@@ -554,10 +664,9 @@
     }
 
     function addNewTab() {
-        // Smart Naming: Finds the highest existing "Sheet X" number to prevent duplicates
         let maxNum = 0;
         appTabs.forEach(t => {
-            const match = t.name.match(/^Sheet (\d+)$/i);
+            const match = t.name.match(/^Sample (\d+)$/i);
             if (match) {
                 const num = parseInt(match[1]);
                 if (num > maxNum) maxNum = num;
@@ -565,7 +674,7 @@
         });
         const nextNum = maxNum > 0 ? maxNum + 1 : appTabs.length + 1;
         
-        const newTab = { id: 'tab_' + Date.now(), name: `Sheet ${nextNum}`, data: [] };
+        const newTab = { id: 'tab_' + Date.now(), name: `Sample ${nextNum}`, data: [] };
         appTabs.push(newTab);
         activeTabId = newTab.id;
         isTabMenuOpen = false;
@@ -891,11 +1000,11 @@
         document.getElementById('clearPickupBtn').style.display = 'none';
     }
 
-    // Tabs version of number list
-    let draggingIdx = null;
-    let startY = 0;
-    let rowHeight = 0;
-    let elements = [];
+    // List Items Drag Variables
+    let listDraggingIdx = null;
+    let listStartY = 0;
+    let listRowHeight = 0;
+    let listElements = [];
 
     function addNumber() {
         const inp = document.getElementById('numberInput');
@@ -937,21 +1046,21 @@
         renderList();
     }
 
-    function onPointerMove(e) {
-        if (draggingIdx === null) return;
-        const deltaY = e.clientY - startY;
-        const draggedEl = elements[draggingIdx];
+    function onListPointerMove(e) {
+        if (listDraggingIdx === null) return;
+        const deltaY = e.clientY - listStartY;
+        const draggedEl = listElements[listDraggingIdx];
         draggedEl.style.transform = `translateY(${deltaY}px)`;
 
-        let moveSteps = Math.round(deltaY / rowHeight);
-        let targetIdx = draggingIdx + moveSteps;
-        targetIdx = Math.max(0, Math.min(elements.length - 1, targetIdx));
+        let moveSteps = Math.round(deltaY / listRowHeight);
+        let targetIdx = listDraggingIdx + moveSteps;
+        targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
 
-        elements.forEach((el, idx) => {
-            if (idx === draggingIdx) return;
+        listElements.forEach((el, idx) => {
+            if (idx === listDraggingIdx) return;
             let offset = 0;
-            if (idx > draggingIdx && idx <= targetIdx) offset = -rowHeight;
-            else if (idx < draggingIdx && idx >= targetIdx) offset = rowHeight;
+            if (idx > listDraggingIdx && idx <= targetIdx) offset = -listRowHeight;
+            else if (idx < listDraggingIdx && idx >= targetIdx) offset = listRowHeight;
             
             if (el.dataset.offset != offset) {
                 el.style.transform = `translateY(${offset}px)`;
@@ -960,24 +1069,24 @@
         });
     }
 
-    function onPointerUp(e) {
-        if (draggingIdx === null) return;
-        const deltaY = e.clientY - startY;
-        let moveSteps = Math.round(deltaY / rowHeight);
-        let targetIdx = draggingIdx + moveSteps;
-        targetIdx = Math.max(0, Math.min(elements.length - 1, targetIdx));
+    function onListPointerUp(e) {
+        if (listDraggingIdx === null) return;
+        const deltaY = e.clientY - listStartY;
+        let moveSteps = Math.round(deltaY / listRowHeight);
+        let targetIdx = listDraggingIdx + moveSteps;
+        targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
 
-        if (draggingIdx !== targetIdx) {
+        if (listDraggingIdx !== targetIdx) {
             const arr = getActiveData();
-            const item = arr.splice(draggingIdx, 1)[0];
+            const item = arr.splice(listDraggingIdx, 1)[0];
             arr.splice(targetIdx, 0, item);
             saveTabs();
         }
 
-        draggingIdx = null;
-        document.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('pointerup', onPointerUp);
-        document.removeEventListener('pointercancel', onPointerUp);
+        listDraggingIdx = null;
+        document.removeEventListener('pointermove', onListPointerMove);
+        document.removeEventListener('pointerup', onListPointerUp);
+        document.removeEventListener('pointercancel', onListPointerUp);
         renderList();
     }
 
@@ -1009,14 +1118,14 @@
 
             handle.addEventListener('pointerdown', (e) => {
                 document.activeElement.blur(); 
-                draggingIdx = i;
-                startY = e.clientY;
-                elements = Array.from(container.children);
+                listDraggingIdx = i;
+                listStartY = e.clientY;
+                listElements = Array.from(container.children);
                 
                 const gap = parseInt(window.getComputedStyle(container).gap) || 8;
-                rowHeight = elements[0].offsetHeight + gap;
+                listRowHeight = listElements[0].offsetHeight + gap;
                 
-                elements.forEach((el) => {
+                listElements.forEach((el) => {
                     el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
                     el.dataset.offset = 0;
                 });
@@ -1025,9 +1134,9 @@
                 div.classList.add('dragging');
                 inputField.style.pointerEvents = 'none'; 
                 
-                document.addEventListener('pointermove', onPointerMove);
-                document.addEventListener('pointerup', onPointerUp);
-                document.addEventListener('pointercancel', onPointerUp);
+                document.addEventListener('pointermove', onListPointerMove);
+                document.addEventListener('pointerup', onListPointerUp);
+                document.addEventListener('pointercancel', onListPointerUp);
             });
 
             container.appendChild(div);
