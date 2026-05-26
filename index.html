@@ -101,7 +101,7 @@
             align-items: flex-end; 
             margin: 0; 
             padding: 0;
-            margin-bottom: -2px; /* Pulls the tabs flush onto the line */
+            margin-bottom: -2px; 
             position: relative;
         }
         .tab-btn { 
@@ -118,10 +118,10 @@
             white-space: nowrap; 
             transition: all 0.2s ease; 
             -webkit-tap-highlight-color: transparent;
-            height: 38px; /* Consistent height for all tabs */
+            height: 38px; 
             box-sizing: border-box;
             line-height: 1.2;
-            touch-action: pan-y; /* Crucial: Allows drag without locking browser vertical scroll */
+            touch-action: pan-y; 
             user-select: none;
             -webkit-user-select: none;
         }
@@ -220,15 +220,35 @@
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
-                <form onsubmit="event.preventDefault(); calculatePickup();">
-                    <div class="row">
-                        <div class="input-group"><label>Pre-sample</label><input type="number" step="any" id="preSampleVal" inputmode="decimal"></div>
-                        <div class="input-group"><label>Post-sample</label><input type="number" step="any" id="postSampleVal" inputmode="decimal"></div>
+
+                <div class="tabs-container" id="pickupTabsContainer">
+                    <div id="pickupTabsList" class="tabs-list"></div>
+                </div>
+
+                <div id="pickupTabOptionsPanel" class="tab-options-panel">
+                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
+                    <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
+                        <input type="text" id="renamePickupTabInput" placeholder="Sample Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        <button onclick="savePickupTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
                     </div>
-                    <button type="submit">Compute Pickup</button>
+                    <button onclick="confirmDeletePickupTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
+                </div>
+
+                <form onsubmit="event.preventDefault();">
+                    <div class="row">
+                        <div class="input-group">
+                            <label>Pre-sample</label>
+                            <input type="number" step="any" id="preSampleVal" inputmode="decimal" oninput="savePickupInputs()">
+                        </div>
+                        <div class="input-group">
+                            <label>Post-sample</label>
+                            <input type="number" step="any" id="postSampleVal" inputmode="decimal" oninput="savePickupInputs()">
+                        </div>
+                    </div>
                 </form>
-                <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none;">Clear</button>
-                <div class="result" id="pickupResult" style="display: none;"></div>
+                
+                <div class="result" id="pickupResult" style="display: none; margin-top: 0;"></div>
+                <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none; margin-top: 15px;">Clear Current Sample</button>
             </div>
         </div>
 
@@ -378,7 +398,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v37</div>
+    <div class="footer-version">v38</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -454,17 +474,292 @@
         
         reorderCards();
         
-        // Initialize Tabs System
+        // Initialize Both Tab Systems
         renderTabs();
         renderList();
+        renderPickupTabs();
+        loadPickupInputs();
     });
 
-    // ---- TABS SYSTEM LOGIC ----
+    // ==========================================
+    // ---- PICKUP TABS SYSTEM LOGIC ----
+    // ==========================================
+    let pickupTabs = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
+    let activePickupTabId = pickupTabs[0].id;
+    let isPickupTabMenuOpen = false;
+
+    let draggingPickupTabIdx = null;
+    let pickupTabStartX = 0;
+    let pickupTabWidth = 0;
+    let pickupTabElements = [];
+    let isPickupTabDragging = false;
+
+    function savePickupTabs() {
+        localStorage.setItem('qc_pickup_tabs_data', JSON.stringify(pickupTabs));
+    }
+
+    function renderPickupTabs() {
+        const list = document.getElementById('pickupTabsList');
+        list.innerHTML = '';
+        
+        let activeBtnElement = null;
+
+        pickupTabs.forEach((tab) => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${tab.id === activePickupTabId ? 'active' : ''}`;
+            btn.innerText = tab.name;
+            
+            if (tab.id === activePickupTabId) {
+                activeBtnElement = btn;
+            }
+
+            btn.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                
+                draggingPickupTabIdx = pickupTabs.findIndex(t => t.id === tab.id);
+                pickupTabStartX = e.clientX;
+                pickupTabElements = Array.from(list.children).filter(el => el.classList.contains('tab-btn'));
+                isPickupTabDragging = false;
+                
+                const gap = parseInt(window.getComputedStyle(list).gap) || 4;
+                pickupTabWidth = pickupTabElements[0].offsetWidth + gap;
+                
+                pickupTabElements.forEach(el => {
+                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+                    el.dataset.offset = 0;
+                });
+                
+                document.addEventListener('pointermove', onPickupTabPointerMove);
+                document.addEventListener('pointerup', onPickupTabPointerUp);
+                document.addEventListener('pointercancel', onPickupTabPointerUp);
+            });
+            
+            btn.onclick = (e) => {
+                if (isPickupTabDragging) {
+                    e.preventDefault(); e.stopPropagation(); return;
+                }
+                if (activePickupTabId === tab.id) {
+                    isPickupTabMenuOpen = !isPickupTabMenuOpen;
+                    updatePickupTabMenuState();
+                } else {
+                    activePickupTabId = tab.id;
+                    isPickupTabMenuOpen = false;
+                    renderPickupTabs();
+                    loadPickupInputs();
+                    updatePickupTabMenuState();
+                }
+            };
+            list.appendChild(btn);
+        });
+        
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-tab-btn';
+        addBtn.innerText = '+';
+        addBtn.onclick = addNewPickupTab;
+        list.appendChild(addBtn);
+        
+        setTimeout(() => {
+            if (activeBtnElement && !isPickupTabDragging) {
+                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }, 10);
+    }
+
+    function onPickupTabPointerMove(e) {
+        if (draggingPickupTabIdx === null) return;
+        const deltaX = e.clientX - pickupTabStartX;
+        
+        if (!isPickupTabDragging && Math.abs(deltaX) > 8) {
+            isPickupTabDragging = true;
+            const draggedEl = pickupTabElements[draggingPickupTabIdx];
+            draggedEl.style.transition = 'none';
+            draggedEl.style.zIndex = 100;
+            draggedEl.style.opacity = 0.8;
+            isPickupTabMenuOpen = false; 
+            updatePickupTabMenuState();
+        }
+        
+        if (!isPickupTabDragging) return;
+        
+        const draggedEl = pickupTabElements[draggingPickupTabIdx];
+        draggedEl.style.transform = `translateX(${deltaX}px)`;
+        
+        let moveSteps = Math.round(deltaX / pickupTabWidth);
+        let targetIdx = draggingPickupTabIdx + moveSteps;
+        targetIdx = Math.max(0, Math.min(pickupTabElements.length - 1, targetIdx));
+        
+        pickupTabElements.forEach((el, idx) => {
+            if (idx === draggingPickupTabIdx) return;
+            let offset = 0;
+            if (idx > draggingPickupTabIdx && idx <= targetIdx) offset = -pickupTabWidth;
+            else if (idx < draggingPickupTabIdx && idx >= targetIdx) offset = pickupTabWidth;
+            
+            if (el.dataset.offset != offset) {
+                el.style.transform = `translateX(${offset}px)`;
+                el.dataset.offset = offset;
+            }
+        });
+    }
+
+    function onPickupTabPointerUp(e) {
+        if (draggingPickupTabIdx === null) return;
+        let wasDragging = isPickupTabDragging;
+
+        if (isPickupTabDragging) {
+            const deltaX = e.clientX - pickupTabStartX;
+            let moveSteps = Math.round(deltaX / pickupTabWidth);
+            let targetIdx = draggingPickupTabIdx + moveSteps;
+            targetIdx = Math.max(0, Math.min(pickupTabElements.length - 1, targetIdx));
+            
+            if (draggingPickupTabIdx !== targetIdx) {
+                const item = pickupTabs.splice(draggingPickupTabIdx, 1)[0];
+                pickupTabs.splice(targetIdx, 0, item);
+                savePickupTabs();
+            }
+        }
+        
+        draggingPickupTabIdx = null;
+        document.removeEventListener('pointermove', onPickupTabPointerMove);
+        document.removeEventListener('pointerup', onPickupTabPointerUp);
+        document.removeEventListener('pointercancel', onPickupTabPointerUp);
+        
+        if (wasDragging) {
+            setTimeout(() => {
+                isPickupTabDragging = false;
+                renderPickupTabs();
+            }, 10);
+        }
+    }
+
+    function updatePickupTabMenuState() {
+        const panel = document.getElementById('pickupTabOptionsPanel');
+        if (isPickupTabMenuOpen) {
+            const activeTab = pickupTabs.find(t => t.id === activePickupTabId);
+            document.getElementById('renamePickupTabInput').value = activeTab.name;
+            panel.style.display = 'flex';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    function savePickupTabName() {
+        const newName = document.getElementById('renamePickupTabInput').value.trim();
+        if (newName !== '') {
+            const tab = pickupTabs.find(t => t.id === activePickupTabId);
+            tab.name = newName;
+            savePickupTabs();
+            isPickupTabMenuOpen = false;
+            renderPickupTabs();
+            calculatePickup(); // Refreshes the clear button text
+            updatePickupTabMenuState();
+        }
+    }
+
+    function confirmDeletePickupTab() {
+        const tab = pickupTabs.find(t => t.id === activePickupTabId);
+        if (pickupTabs.length === 1) {
+            alert("You must have at least one sample.");
+            return;
+        }
+        if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
+            pickupTabs = pickupTabs.filter(t => t.id !== activePickupTabId);
+            activePickupTabId = pickupTabs[0].id; 
+            isPickupTabMenuOpen = false;
+            savePickupTabs();
+            renderPickupTabs();
+            loadPickupInputs();
+            updatePickupTabMenuState();
+        }
+    }
+
+    function addNewPickupTab() {
+        let maxNum = 0;
+        pickupTabs.forEach(t => {
+            const match = t.name.match(/^Sample (\d+)$/i);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num > maxNum) maxNum = num;
+            }
+        });
+        const nextNum = maxNum > 0 ? maxNum + 1 : pickupTabs.length + 1;
+        
+        const newTab = { id: 'ptab_' + Date.now(), name: `Sample ${nextNum}`, pre: '', post: '' };
+        pickupTabs.push(newTab);
+        activePickupTabId = newTab.id;
+        isPickupTabMenuOpen = false;
+        
+        savePickupTabs();
+        renderPickupTabs();
+        loadPickupInputs();
+        updatePickupTabMenuState();
+    }
+
+    function savePickupInputs() {
+        const pre = document.getElementById('preSampleVal').value;
+        const post = document.getElementById('postSampleVal').value;
+        const tab = pickupTabs.find(t => t.id === activePickupTabId);
+        if (tab) {
+            tab.pre = pre;
+            tab.post = post;
+            savePickupTabs();
+            calculatePickup();
+        }
+    }
+
+    function loadPickupInputs() {
+        const tab = pickupTabs.find(t => t.id === activePickupTabId);
+        if (tab) {
+            document.getElementById('preSampleVal').value = tab.pre || '';
+            document.getElementById('postSampleVal').value = tab.post || '';
+            calculatePickup();
+        }
+    }
+
+    function calculatePickup() {
+        const preStr = document.getElementById('preSampleVal').value;
+        const postStr = document.getElementById('postSampleVal').value;
+        const pre = parseFloat(preStr);
+        const post = parseFloat(postStr);
+        
+        const res = document.getElementById('pickupResult');
+        const clearBtn = document.getElementById('clearPickupBtn');
+        const activeTab = pickupTabs.find(t => t.id === activePickupTabId);
+        
+        if (activeTab) {
+            clearBtn.innerText = `Clear ${activeTab.name}`;
+        }
+
+        // If missing valid numbers, hide result but show clear button if ANY data exists
+        if(isNaN(pre) || isNaN(post) || pre === 0) {
+            res.style.display = "none";
+            clearBtn.style.display = (preStr !== '' || postStr !== '') ? "block" : "none";
+            return;
+        }
+        
+        const dec = (pre - post) / pre;
+        res.style.display = "block";
+        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="pickup-pct">${(dec * 100).toFixed(2)}%</span>`;
+        clearBtn.style.display = 'block';
+    }
+
+    function resetPickup() {
+        const tab = pickupTabs.find(t => t.id === activePickupTabId);
+        if (confirm(`Are you sure you want to clear inputs in "${tab.name}"?`)) {
+            tab.pre = '';
+            tab.post = '';
+            savePickupTabs();
+            loadPickupInputs(); // Will clear UI and hide buttons/results
+        }
+    }
+
+
+    // ==========================================
+    // ---- SUM & AVERAGING TABS SYSTEM LOGIC ---
+    // ==========================================
     let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
     let activeTabId = appTabs[0].id;
     let isTabMenuOpen = false;
 
-    // Tab Dragging Variables
     let draggingTabIdx = null;
     let tabStartX = 0;
     let tabWidth = 0;
@@ -485,7 +780,7 @@
         
         let activeBtnElement = null;
 
-        appTabs.forEach((tab, index) => {
+        appTabs.forEach((tab) => {
             const btn = document.createElement('button');
             btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
             btn.innerText = tab.name;
@@ -494,7 +789,6 @@
                 activeBtnElement = btn;
             }
 
-            // --- Horizontal Drag Logic for Tabs ---
             btn.addEventListener('pointerdown', (e) => {
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
                 
@@ -517,14 +811,9 @@
             });
             
             btn.onclick = (e) => {
-                // If it was a drag, block the standard click action completely
                 if (isTabDragging) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
+                    e.preventDefault(); e.stopPropagation(); return;
                 }
-
-                // Normal Click Actions
                 if (activeTabId === tab.id) {
                     isTabMenuOpen = !isTabMenuOpen;
                     updateTabMenuState();
@@ -537,7 +826,6 @@
                     updateTabMenuState();
                 }
             };
-
             list.appendChild(btn);
         });
         
@@ -558,14 +846,13 @@
         if (draggingTabIdx === null) return;
         const deltaX = e.clientX - tabStartX;
         
-        // Threshold to initiate drag instead of accidental click
         if (!isTabDragging && Math.abs(deltaX) > 8) {
             isTabDragging = true;
             const draggedEl = tabElements[draggingTabIdx];
             draggedEl.style.transition = 'none';
             draggedEl.style.zIndex = 100;
             draggedEl.style.opacity = 0.8;
-            isTabMenuOpen = false; // Hide menu during drag
+            isTabMenuOpen = false; 
             updateTabMenuState();
         }
         
@@ -593,7 +880,6 @@
 
     function onTabPointerUp(e) {
         if (draggingTabIdx === null) return;
-        
         let wasDragging = isTabDragging;
 
         if (isTabDragging) {
@@ -687,7 +973,9 @@
         updateTabMenuState();
     }
 
-    // ---- GENERAL APP LOGIC ----
+    // ==========================================
+    // ---- LIST DRAG & GENERAL LOGIC ----
+    // ==========================================
 
     let lastGeneratedTimeStr = "";
     let targetTimeObject = null;
@@ -701,19 +989,11 @@
         const clearBtn = document.getElementById('clearTempBtn');
         
         if (source === 'C') {
-            if (cInput.value === '') { 
-                fInput.value = ''; 
-                clearBtn.style.display = 'none'; 
-                return; 
-            }
+            if (cInput.value === '') { fInput.value = ''; clearBtn.style.display = 'none'; return; }
             const c = parseFloat(cInput.value);
             fInput.value = ((c * 9/5) + 32).toFixed(2).replace(/\.00$/, '');
         } else {
-            if (fInput.value === '') { 
-                cInput.value = ''; 
-                clearBtn.style.display = 'none'; 
-                return; 
-            }
+            if (fInput.value === '') { cInput.value = ''; clearBtn.style.display = 'none'; return; }
             const f = parseFloat(fInput.value);
             cInput.value = ((f - 32) * 5/9).toFixed(2).replace(/\.00$/, '');
         }
@@ -736,9 +1016,7 @@
 
     function updateStopwatch() {
         let diff = swElapsed;
-        if (isSwRunning) {
-            diff += (Date.now() - swStartTime);
-        }
+        if (isSwRunning) { diff += (Date.now() - swStartTime); }
         const m = Math.floor(diff / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         const ms = Math.floor((diff % 1000) / 10);
@@ -767,9 +1045,7 @@
         }
     }
 
-    holdBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault(); 
-    }, { passive: false });
+    holdBtn.addEventListener('touchstart', (e) => { e.preventDefault(); }, { passive: false });
 
     holdBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault(); 
@@ -982,25 +1258,7 @@
         targetTimeObject = null;
     }
 
-    function calculatePickup() {
-        const pre = parseFloat(document.getElementById('preSampleVal').value);
-        const post = parseFloat(document.getElementById('postSampleVal').value);
-        if(!pre || !post) return;
-        const dec = (pre - post) / pre;
-        const res = document.getElementById('pickupResult');
-        res.style.display = "block";
-        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="pickup-pct">${(dec * 100).toFixed(2)}%</span>`;
-        document.getElementById('clearPickupBtn').style.display = 'block';
-    }
-
-    function resetPickup() {
-        document.getElementById('preSampleVal').value = ''; 
-        document.getElementById('postSampleVal').value = '';
-        document.getElementById('pickupResult').style.display = 'none'; 
-        document.getElementById('clearPickupBtn').style.display = 'none';
-    }
-
-    // List Items Drag Variables
+    // Number List Logic
     let listDraggingIdx = null;
     let listStartY = 0;
     let listRowHeight = 0;
