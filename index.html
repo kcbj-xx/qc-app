@@ -82,14 +82,13 @@
 
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
-        /* --- Updated Tabs Styling --- */
-        .tabs-container { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        /* --- Tabs Styling --- */
+        .tabs-container { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-behavior: smooth; }
         .tabs-container::-webkit-scrollbar { display: none; }
         .tabs-list { display: flex; gap: 4px; padding-top: 5px; align-items: flex-end; }
         .tab-btn { background: #f8fafc; border: 1px solid var(--border); border-bottom: none; padding: 10px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #64748b; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent;}
         .tab-btn.active { background: #ffffff; color: var(--primary); border-top: 3px solid var(--primary); margin-bottom: -2px; padding-bottom: 12px; z-index: 2; border-left: 1px solid var(--border); border-right: 1px solid var(--border);}
         
-        /* Ensures the plus button stays snug against the last tab */
         .add-tab-btn { background: transparent; color: #94a3b8; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px 15px 8px 15px; font-weight: bold; transition: color 0.2s; -webkit-tap-highlight-color: transparent; line-height: 1;}
         .add-tab-btn:hover { color: var(--primary); }
 
@@ -184,7 +183,7 @@
                 
                 <div class="tabs-container" id="tabsContainer">
                     <div id="tabsList" class="tabs-list"></div>
-                    </div>
+                </div>
 
                 <div id="tabOptionsPanel" class="tab-options-panel">
                     <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sheet</label>
@@ -318,7 +317,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v34</div>
+    <div class="footer-version">v35</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -416,18 +415,22 @@
         const list = document.getElementById('tabsList');
         list.innerHTML = '';
         
+        let activeBtnElement = null;
+
         appTabs.forEach(tab => {
             const btn = document.createElement('button');
             btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
             btn.innerText = tab.name;
             
+            if (tab.id === activeTabId) {
+                activeBtnElement = btn;
+            }
+            
             btn.onclick = () => {
                 if (activeTabId === tab.id) {
-                    // Toggle options menu if tapping the active tab
                     isTabMenuOpen = !isTabMenuOpen;
                     updateTabMenuState();
                 } else {
-                    // Switch to different tab and close menu
                     activeTabId = tab.id;
                     isTabMenuOpen = false;
                     document.getElementById('lastAddedDisplay').innerHTML = ''; 
@@ -439,16 +442,18 @@
             list.appendChild(btn);
         });
         
-        // Injecting the Add Button inside the flex list keeps it snug!
         const addBtn = document.createElement('button');
         addBtn.className = 'add-tab-btn';
         addBtn.innerText = '+';
         addBtn.onclick = addNewTab;
         list.appendChild(addBtn);
         
-        // Auto-scroll tab bar to the end
-        const container = document.getElementById('tabsContainer');
-        container.scrollLeft = container.scrollWidth;
+        // Ensure active tab centers cleanly in the scroll view when rendered
+        setTimeout(() => {
+            if (activeBtnElement) {
+                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }, 10);
     }
 
     function updateTabMenuState() {
@@ -470,6 +475,7 @@
             saveTabs();
             isTabMenuOpen = false;
             renderTabs();
+            renderList();
             updateTabMenuState();
         }
     }
@@ -492,7 +498,7 @@
     }
 
     function addNewTab() {
-        const newTab = { id: 'tab_' + Date.now(), name: `Sheet ${appTabs.length + 1}`, data: [] };
+        const newTab = { id: 'tab_' + Date.now(), name: `Untitled`, data: [] };
         appTabs.push(newTab);
         activeTabId = newTab.id;
         isTabMenuOpen = false;
@@ -911,10 +917,16 @@
         const container = document.getElementById('numberList');
         const clearBtn = document.getElementById('clearAllBtn');
         const arr = getActiveData();
+        const activeTab = appTabs.find(t => t.id === activeTabId);
         
         container.innerHTML = '';
         container.style.display = arr.length ? "flex" : "none";
         clearBtn.style.display = arr.length ? "block" : "none";
+        
+        // Dynamically update the clear button text
+        if (activeTab) {
+            clearBtn.innerText = `Clear ${activeTab.name}`;
+        }
         
         arr.forEach((n, i) => {
             const div = document.createElement('div');
@@ -957,8 +969,8 @@
     }
 
     function clearNumbers() { 
-        if (confirm("Clear all numbers in this specific sheet?")) { 
-            const tab = appTabs.find(t => t.id === activeTabId);
+        const tab = appTabs.find(t => t.id === activeTabId);
+        if (confirm(`Are you sure you want to clear all data in "${tab.name}"?`)) { 
             tab.data = [];
             saveTabs();
             const display = document.getElementById('lastAddedDisplay');
