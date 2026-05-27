@@ -174,6 +174,20 @@
         
         input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit; width: 100%; max-width: 100%; min-height: 46px; box-sizing: border-box; transition: border-color 0.3s ease; margin: 0; display: block; -webkit-appearance: none; appearance: none; }
         input.input-error { border: 2px solid var(--error); background-color: #fff1f2; }
+        
+        /* Specific override so checkboxes aren't giant blocks */
+        input[type="checkbox"].tick-box {
+            width: 24px !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            padding: 0 !important;
+            margin: 0 12px 0 0 !important;
+            -webkit-appearance: auto !important;
+            appearance: auto !important;
+            display: inline-block !important;
+            cursor: pointer;
+        }
+
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 8px; }
         button:hover { background-color: var(--primary-hover); }
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
@@ -213,6 +227,62 @@
     <div id="pinned-divider" class="divider" style="display: none;">Tools</div>
     <div id="unpinned-section" class="section-container">
         
+        <div class="card" id="card-estimator">
+            <h2 onclick="toggleCard('card-estimator')">
+                <button class="pin-btn" onclick="togglePin(event, 'card-estimator')" title="Pin Tool">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
+                </button>
+                <div class="card-title-text">Production Estimator</div>
+                <div class="chevron">&#9660;</div>
+            </h2>
+            <div class="card-body">
+
+                <div class="tabs-container" id="estimatorTabsContainer">
+                    <div id="estimatorTabsList" class="tabs-list"></div>
+                </div>
+
+                <div id="estimatorTabOptionsPanel" class="tab-options-panel">
+                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Line</label>
+                    <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
+                        <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        <button onclick="saveEstimatorTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                    </div>
+                    <button onclick="confirmDeleteEstimatorTab()" class="secondary" style="margin:0; min-height:40px;">Delete Line</button>
+                </div>
+
+                <div class="input-group">
+                    <label>What are we counting?</label>
+                    <input type="text" id="estimatorUnitInput" placeholder="e.g. Pallets, Trays, Packs" oninput="updateEstimatorUnit()">
+                </div>
+
+                <form onsubmit="event.preventDefault(); addEstimatorEntry();">
+                    <div class="row">
+                        <div class="input-group">
+                            <label>Amount (<span id="lblEstimatorUnit">Units</span>)</label>
+                            <input type="number" id="estAmountInput" step="any" placeholder="Total Count" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Clock Time</label>
+                            <input type="time" id="estTimeInput" required>
+                        </div>
+                    </div>
+                    <button type="submit">Add Log</button>
+                </form>
+
+                <div id="estimatorList" class="drag-container" style="gap:4px; max-height:280px; padding-top: 10px;"></div>
+
+                <div class="result" id="estimatorPaceResult" style="display: none; margin-top: 15px;"></div>
+
+                <div id="estimatorForecastBox" style="display:none; margin-top:15px; border-top:2px solid var(--border); padding-top:15px;">
+                    <label style="font-weight:bold; color:var(--primary); margin-bottom:10px; display:block;">Forecast Finish Time</label>
+                    <div class="input-group">
+                        <input type="number" id="estRemainingInput" placeholder="Remaining Amount" step="any" oninput="calculateEstimatorPace()">
+                    </div>
+                    <div class="result" id="estimatorForecastResult" style="display: none; margin-top: 5px; background-color:#eff6ff; border-color:#bfdbfe;"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="card" id="card-pickup">
             <h2 onclick="toggleCard('card-pickup')">
                 <button class="pin-btn" onclick="togglePin(event, 'card-pickup')" title="Pin Tool">
@@ -400,7 +470,7 @@
         </div>
 
     </div>
-    <div class="footer-version">v45</div>
+    <div class="footer-version">v46</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -414,8 +484,8 @@
         });
     }
 
-    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling'];
-    let preventTabClick = false; // Global flag to stop ghost clicks
+    const allCardIds = ['card-estimator', 'card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling'];
+    let preventTabClick = false; 
     
     function toggleCard(cardId) {
         const card = document.getElementById(cardId);
@@ -469,35 +539,50 @@
         
         reorderCards();
         
-        // Initialize Both Tab Systems
+        // Initialize Tab Systems
+        renderEstimatorTabs();
+        loadEstimatorInputs();
+        
         renderTabs();
         renderList();
+        
         renderPickupTabs();
         loadPickupInputs();
 
         // Attach Tab Drag Engines once
+        setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveEstimatorTabs, renderEstimatorTabs);
         setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, savePickupTabs, renderPickupTabs);
         setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveTabs, renderTabs);
         
-        // Attach Hold-to-delete-all logic to buttons container with custom messages
+        // Attach Hold-to-delete-all logic
+        setupAddButtonHold('estimatorTabsList', addNewEstimatorTab, () => {
+            estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', remaining: '', data: [] }];
+            activeEstimatorTabId = estimatorTabs[0].id;
+            isEstimatorTabMenuOpen = false;
+            saveEstimatorTabs();
+            renderEstimatorTabs();
+            loadEstimatorInputs();
+            updateEstimatorTabMenuState();
+        }, "Delete ALL records from the Production Estimator? This cannot be undone.");
+
         setupAddButtonHold('pickupTabsList', addNewPickupTab, () => {
             pickupTabs = [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
             activePickupTabId = pickupTabs[0].id;
-            isPickupTabMenuOpen = false; // Force menu closed
+            isPickupTabMenuOpen = false; 
             savePickupTabs();
             renderPickupTabs();
             loadPickupInputs();
-            updatePickupTabMenuState(); // Update UI
+            updatePickupTabMenuState(); 
         }, "Delete ALL samples from the Pickup Calculator? This cannot be undone.");
         
         setupAddButtonHold('tabsList', addNewTab, () => {
             appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
             activeTabId = appTabs[0].id;
-            isTabMenuOpen = false; // Force menu closed
+            isTabMenuOpen = false; 
             saveTabs();
             renderTabs();
             renderList();
-            updateTabMenuState(); // Update UI
+            updateTabMenuState(); 
         }, "Delete ALL samples from Sum & Averaging? This cannot be undone.");
     });
 
@@ -656,7 +741,6 @@
                 holdTimer = null;
                 const btn = e.target.closest('.add-tab-btn');
                 if (btn && !isHold) {
-                    // Activate blocker to stop ghost clicks on the new tab
                     preventTabClick = true;
                     setTimeout(() => preventTabClick = false, 150);
                     addAction(); 
@@ -675,6 +759,289 @@
         list.addEventListener('touchend', cancelHold);
         list.addEventListener('mouseup', cancelHold);
         list.addEventListener('touchcancel', () => clearTimeout(holdTimer));
+    }
+
+
+    // ==========================================
+    // ---- PRODUCTION ESTIMATOR LOGIC ----------
+    // ==========================================
+    let estimatorTabs = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', remaining: '', data: [] }];
+    let activeEstimatorTabId = estimatorTabs[0].id;
+    let isEstimatorTabMenuOpen = false;
+
+    function saveEstimatorTabs() { localStorage.setItem('qc_estimator_tabs_data', JSON.stringify(estimatorTabs)); }
+    function getActiveEstimator() { return estimatorTabs.find(t => t.id === activeEstimatorTabId); }
+
+    function renderEstimatorTabs() {
+        const list = document.getElementById('estimatorTabsList');
+        list.innerHTML = '';
+        let activeBtnElement = null;
+
+        estimatorTabs.forEach((tab) => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${tab.id === activeEstimatorTabId ? 'active' : ''}`;
+            btn.innerText = tab.name;
+            btn.dataset.id = tab.id; 
+            
+            if (tab.id === activeEstimatorTabId) activeBtnElement = btn;
+
+            btn.onclick = (e) => {
+                if (preventTabClick) { e.preventDefault(); e.stopPropagation(); return; }
+
+                if (activeEstimatorTabId === tab.id) {
+                    isEstimatorTabMenuOpen = !isEstimatorTabMenuOpen;
+                    updateEstimatorTabMenuState();
+                } else {
+                    activeEstimatorTabId = tab.id;
+                    isEstimatorTabMenuOpen = false;
+                    renderEstimatorTabs();
+                    loadEstimatorInputs();
+                    updateEstimatorTabMenuState();
+                }
+            };
+            list.appendChild(btn);
+        });
+        
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-tab-btn';
+        addBtn.innerText = '+';
+        list.appendChild(addBtn);
+        
+        setTimeout(() => {
+            if (activeBtnElement && !preventTabClick) {
+                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }, 10);
+    }
+
+    function updateEstimatorTabMenuState() {
+        const panel = document.getElementById('estimatorTabOptionsPanel');
+        if (isEstimatorTabMenuOpen) {
+            const activeTab = getActiveEstimator();
+            document.getElementById('renameEstimatorTabInput').value = activeTab.name;
+            panel.style.display = 'flex';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    function saveEstimatorTabName() {
+        const newName = document.getElementById('renameEstimatorTabInput').value.trim();
+        if (newName !== '') {
+            const tab = getActiveEstimator();
+            tab.name = newName;
+            saveEstimatorTabs();
+            isEstimatorTabMenuOpen = false;
+            renderEstimatorTabs();
+            updateEstimatorTabMenuState();
+        }
+    }
+
+    function confirmDeleteEstimatorTab() {
+        const tab = getActiveEstimator();
+        if (estimatorTabs.length === 1) {
+            alert("You must have at least one line tracked.");
+            return;
+        }
+        if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
+            let currentIndex = estimatorTabs.findIndex(t => t.id === activeEstimatorTabId);
+            estimatorTabs = estimatorTabs.filter(t => t.id !== activeEstimatorTabId);
+            let newIndex = currentIndex - 1;
+            if (newIndex < 0) newIndex = 0; 
+            
+            activeEstimatorTabId = estimatorTabs[newIndex].id; 
+            isEstimatorTabMenuOpen = false;
+            saveEstimatorTabs();
+            renderEstimatorTabs();
+            loadEstimatorInputs();
+            updateEstimatorTabMenuState();
+        }
+    }
+
+    function addNewEstimatorTab() {
+        let maxNum = 0;
+        estimatorTabs.forEach(t => {
+            const match = t.name.match(/^Line (\d+)$/i);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num > maxNum) maxNum = num;
+            }
+        });
+        const nextNum = maxNum > 0 ? maxNum + 1 : estimatorTabs.length + 1;
+        
+        const newTab = { id: 'etab_' + Date.now(), name: `Line ${nextNum}`, unit: 'Pallets', remaining: '', data: [] };
+        estimatorTabs.push(newTab);
+        activeEstimatorTabId = newTab.id;
+        isEstimatorTabMenuOpen = false;
+        
+        saveEstimatorTabs();
+        renderEstimatorTabs();
+        loadEstimatorInputs();
+        updateEstimatorTabMenuState();
+    }
+
+    function updateEstimatorUnit() {
+        const val = document.getElementById('estimatorUnitInput').value || 'Units';
+        document.getElementById('lblEstimatorUnit').innerText = val;
+        const tab = getActiveEstimator();
+        tab.unit = val;
+        saveEstimatorTabs();
+        renderEstimatorList(); // Refresh labels in list
+    }
+
+    function loadEstimatorInputs() {
+        const tab = getActiveEstimator();
+        document.getElementById('estimatorUnitInput').value = tab.unit === 'Pallets' ? '' : tab.unit;
+        document.getElementById('lblEstimatorUnit').innerText = tab.unit || 'Units';
+        document.getElementById('estRemainingInput').value = tab.remaining || '';
+        
+        // Auto-populate time to right now
+        setCurrentTime('estTimeInput');
+        document.getElementById('estAmountInput').value = '';
+        renderEstimatorList();
+    }
+
+    function setCurrentTime(id) {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById(id).value = `${h}:${m}`;
+    }
+
+    function addEstimatorEntry() {
+        const amount = parseFloat(document.getElementById('estAmountInput').value);
+        const time = document.getElementById('estTimeInput').value;
+        if (isNaN(amount) || !time) return;
+
+        const tab = getActiveEstimator();
+        tab.data.push({ id: Date.now(), amount, time, checked: true });
+        saveEstimatorTabs();
+        
+        document.getElementById('estAmountInput').value = '';
+        setCurrentTime('estTimeInput'); 
+        document.getElementById('estAmountInput').focus();
+        
+        renderEstimatorList();
+    }
+
+    function toggleEstimatorCheck(id) {
+        const tab = getActiveEstimator();
+        const entry = tab.data.find(e => e.id === id);
+        if (entry) {
+            entry.checked = !entry.checked;
+            saveEstimatorTabs();
+            renderEstimatorList();
+        }
+    }
+
+    function removeEstimatorEntry(id) {
+        const tab = getActiveEstimator();
+        tab.data = tab.data.filter(e => e.id !== id);
+        saveEstimatorTabs();
+        renderEstimatorList();
+    }
+
+    function parseTimeToMinutes(timeStr) {
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function formatMinutesToTime(totalMins) {
+        let h = Math.floor(totalMins / 60) % 24;
+        let m = Math.floor(totalMins % 60);
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    function renderEstimatorList() {
+        const container = document.getElementById('estimatorList');
+        const tab = getActiveEstimator();
+        container.innerHTML = '';
+        
+        if (tab.data.length === 0) {
+            container.style.display = 'none';
+            calculateEstimatorPace();
+            return;
+        }
+        
+        container.style.display = 'flex';
+
+        // Sort data chronologically for clean visual output
+        const sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+
+        sortedData.forEach((entry) => {
+            const div = document.createElement('div');
+            div.className = 'number-item';
+            div.style.padding = '8px';
+            
+            div.innerHTML = `
+                <input type="checkbox" class="tick-box" ${entry.checked ? 'checked' : ''} onchange="toggleEstimatorCheck(${entry.id})">
+                <div style="flex:1; display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size: 1.1rem;">
+                    <span>${entry.amount} <span style="font-size:0.8rem; color:#64748b;">${tab.unit}</span></span>
+                    <span style="color:var(--primary); font-family:monospace;">${entry.time}</span>
+                </div>
+                <button class="remove-btn" onclick="removeEstimatorEntry(${entry.id})" title="Remove" style="margin-left:10px;">&times;</button>
+            `;
+            container.appendChild(div);
+        });
+        
+        calculateEstimatorPace();
+    }
+
+    function calculateEstimatorPace() {
+        const tab = getActiveEstimator();
+        const checkedEntries = tab.data.filter(e => e.checked);
+        const paceRes = document.getElementById('estimatorPaceResult');
+        const forecastBox = document.getElementById('estimatorForecastBox');
+        const forecastRes = document.getElementById('estimatorForecastResult');
+        
+        const remInput = document.getElementById('estRemainingInput').value;
+        tab.remaining = remInput;
+        saveEstimatorTabs();
+
+        if (checkedEntries.length < 2) {
+            paceRes.style.display = 'block';
+            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires at least 2 checked points to calculate live pace.</span>`;
+            forecastBox.style.display = 'none';
+            return;
+        }
+
+        checkedEntries.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        
+        const first = checkedEntries[0];
+        const last = checkedEntries[checkedEntries.length - 1];
+        
+        let timeDiffMins = parseTimeToMinutes(last.time) - parseTimeToMinutes(first.time);
+        if (timeDiffMins <= 0) timeDiffMins += 24 * 60; // Handle Midnight roll-over
+        
+        const amountDiff = last.amount - first.amount;
+        
+        if (timeDiffMins === 0 || amountDiff === 0) {
+            paceRes.style.display = 'block';
+            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Pace is stalled. Time/Amount hasn't changed.</span>`;
+            forecastBox.style.display = 'none';
+            return;
+        }
+        
+        const pacePerHour = (amountDiff / timeDiffMins) * 60;
+        
+        paceRes.style.display = 'block';
+        paceRes.innerHTML = `Live Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
+        
+        forecastBox.style.display = 'block';
+        
+        const remaining = parseFloat(remInput);
+        if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
+            const minsNeeded = (remaining / pacePerHour) * 60;
+            const finishTimeMins = parseTimeToMinutes(last.time) + minsNeeded;
+            
+            let finishStr = formatMinutesToTime(finishTimeMins);
+            let dayStr = finishTimeMins >= 24 * 60 ? " <span style='font-size:0.75rem; color:#64748b;'>(Tomorrow)</span>" : "";
+            
+            forecastRes.style.display = 'block';
+            forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${finishStr}</strong>${dayStr}`;
+        } else {
+            forecastRes.style.display = 'none';
+        }
     }
 
 
