@@ -226,63 +226,7 @@
     <div id="pinned-section" class="section-container" style="display: none;"></div>
     <div id="pinned-divider" class="divider" style="display: none;">Tools</div>
     <div id="unpinned-section" class="section-container">
-        
-        <div class="card" id="card-estimator">
-            <h2 onclick="toggleCard('card-estimator')">
-                <button class="pin-btn" onclick="togglePin(event, 'card-estimator')" title="Pin Tool">
-                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
-                </button>
-                <div class="card-title-text">Production Estimator</div>
-                <div class="chevron">&#9660;</div>
-            </h2>
-            <div class="card-body">
-
-                <div class="tabs-container" id="estimatorTabsContainer">
-                    <div id="estimatorTabsList" class="tabs-list"></div>
-                </div>
-
-                <div id="estimatorTabOptionsPanel" class="tab-options-panel">
-                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Line</label>
-                    <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                        <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                        <button onclick="saveEstimatorTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
-                    </div>
-                    <button onclick="confirmDeleteEstimatorTab()" class="secondary" style="margin:0; min-height:40px;">Delete Line</button>
-                </div>
-
-                <div class="input-group">
-                    <label>What are we counting?</label>
-                    <input type="text" id="estimatorUnitInput" placeholder="e.g. Pallets, Trays, Packs" oninput="updateEstimatorUnit()">
-                </div>
-
-                <form onsubmit="event.preventDefault(); addEstimatorEntry();">
-                    <div class="row">
-                        <div class="input-group">
-                            <label>Amount (<span id="lblEstimatorUnit">Units</span>)</label>
-                            <input type="number" id="estAmountInput" step="any" placeholder="Total Count" required>
-                        </div>
-                        <div class="input-group">
-                            <label>Clock Time</label>
-                            <input type="time" id="estTimeInput" required>
-                        </div>
-                    </div>
-                    <button type="submit">Add Log</button>
-                </form>
-
-                <div id="estimatorList" class="drag-container" style="gap:4px; max-height:280px; padding-top: 10px;"></div>
-
-                <div class="result" id="estimatorPaceResult" style="display: none; margin-top: 15px;"></div>
-
-                <div id="estimatorForecastBox" style="display:none; margin-top:15px; border-top:2px solid var(--border); padding-top:15px;">
-                    <label style="font-weight:bold; color:var(--primary); margin-bottom:10px; display:block;">Forecast Finish Time</label>
-                    <div class="input-group">
-                        <input type="number" id="estRemainingInput" placeholder="Remaining Amount" step="any" oninput="calculateEstimatorPace()">
-                    </div>
-                    <div class="result" id="estimatorForecastResult" style="display: none; margin-top: 5px; background-color:#eff6ff; border-color:#bfdbfe;"></div>
-                </div>
-            </div>
-        </div>
-
+    
         <div class="card" id="card-pickup">
             <h2 onclick="toggleCard('card-pickup')">
                 <button class="pin-btn" onclick="togglePin(event, 'card-pickup')" title="Pin Tool">
@@ -468,7 +412,62 @@
                 <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
             </div>
         </div>
+        
+        <div class="card" id="card-estimator">
+            <h2 onclick="toggleCard('card-estimator')">
+                <button class="pin-btn" onclick="togglePin(event, 'card-estimator')" title="Pin Tool">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
+                </button>
+                <div class="card-title-text">Production Estimator</div>
+                <div class="chevron">&#9660;</div>
+            </h2>
+            <div class="card-body">
 
+                <div class="tabs-container" id="estimatorTabsContainer">
+                    <div id="estimatorTabsList" class="tabs-list"></div>
+                </div>
+
+                <div id="estimatorTabOptionsPanel" class="tab-options-panel">
+                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Line</label>
+                    <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
+                        <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        <button onclick="saveEstimatorTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                    </div>
+                    <button onclick="confirmDeleteEstimatorTab()" class="secondary" style="margin:0; min-height:40px;">Delete Line</button>
+                </div>
+
+                <div class="input-group">
+                    <label>What are we counting?</label>
+                    <input type="text" id="estimatorUnitInput" placeholder="e.g. Pallets, Trays, Packs" oninput="updateEstimatorUnit()">
+                </div>
+
+                <form onsubmit="event.preventDefault(); addEstimatorEntry();">
+                    <div class="row">
+                        <div class="input-group">
+                            <label>Amount (<span id="lblEstimatorUnit">Units</span>)</label>
+                            <input type="number" id="estAmountInput" step="any" placeholder="Total Count" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Clock Time</label>
+                            <input type="time" id="estTimeInput" required>
+                        </div>
+                    </div>
+                    <button type="submit">Add Log</button>
+                </form>
+
+                <div id="estimatorList" class="drag-container" style="gap:4px; max-height:280px; padding-top: 10px;"></div>
+
+                <div class="result" id="estimatorPaceResult" style="display: none; margin-top: 15px;"></div>
+
+                <div id="estimatorForecastBox" style="display:none; margin-top:15px; border-top:2px solid var(--border); padding-top:15px;">
+                    <label style="font-weight:bold; color:var(--primary); margin-bottom:10px; display:block;">Forecast Finish Time</label>
+                    <div class="input-group">
+                        <input type="number" id="estRemainingInput" placeholder="Remaining Amount" step="any" oninput="calculateEstimatorPace()">
+                    </div>
+                    <div class="result" id="estimatorForecastResult" style="display: none; margin-top: 5px; background-color:#eff6ff; border-color:#bfdbfe;"></div>
+                </div>
+            </div>
+        </div>    
     </div>
     <div class="footer-version">v46</div>
 </div>
