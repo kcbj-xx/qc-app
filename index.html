@@ -999,7 +999,7 @@
 
         if (checkedEntries.length < 2) {
             paceRes.style.display = 'block';
-            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires at least 2 checked points to calculate live pace.</span>`;
+            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Need 2+ checked logs for pace.</span>`;
             forecastBox.style.display = 'none';
             return;
         }
@@ -1014,17 +1014,11 @@
         
         const amountDiff = last.amount - first.amount;
         
-        if (timeDiffMins === 0 || amountDiff === 0) {
-            paceRes.style.display = 'block';
-            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Pace is stalled. Time/Amount hasn't changed.</span>`;
-            forecastBox.style.display = 'none';
-            return;
-        }
-        
-        const pacePerHour = (amountDiff / timeDiffMins) * 60;
+        // Show pace even if it's slow/stalled
+        const pacePerHour = timeDiffMins > 0 ? (amountDiff / timeDiffMins) * 60 : 0;
         
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Live Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
+        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
         
         forecastBox.style.display = 'block';
         
@@ -1034,7 +1028,7 @@
             const finishTimeMins = parseTimeToMinutes(last.time) + minsNeeded;
             
             let finishStr = formatMinutesToTime(finishTimeMins);
-            let dayStr = finishTimeMins >= 24 * 60 ? " <span style='font-size:0.75rem; color:#64748b;'>(Tomorrow)</span>" : "";
+            let dayStr = finishTimeMins >= 24 * 60 ? " <span style='font-size:0.75rem; color:#64748b;'>(Next Day)</span>" : "";
             
             forecastRes.style.display = 'block';
             forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${finishStr}</strong>${dayStr}`;
@@ -1042,6 +1036,7 @@
             forecastRes.style.display = 'none';
         }
     }
+    
 
 
     // ==========================================
