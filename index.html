@@ -924,7 +924,7 @@
         tab.data.push({ id: Date.now(), amount, time, checked: true });
         saveEstimatorTabs();
         
-        // --- Last Added Functionality ---
+        // Last Added Functionality
         const displayUnit = tab.unit || 'Units';
         const display = document.getElementById('lastAddedEstDisplay');
         display.innerHTML = `Last added: ${amount} <span style="font-size:0.8rem; margin:0 3px;">${displayUnit}</span> at ${time}`;
@@ -932,7 +932,9 @@
         
         document.getElementById('estAmountInput').value = '';
         setCurrentTime('estTimeInput'); 
-        document.getElementById('estAmountInput').focus();
+        
+        // UX FIX: Force the mobile keyboard to close
+        document.activeElement.blur();
         
         renderEstimatorList();
     }
@@ -1016,46 +1018,39 @@
         tab.remaining = remInput;
         saveEstimatorTabs();
 
-        // If nothing is checked, hide results
-        if (checked.length === 0) {
-            paceRes.style.display = 'none';
+        // UX FIX: Reverted to requiring a minimum of 2 entries
+        if (checked.length < 2) {
+            paceRes.style.display = 'block';
+            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires at least 2 checked logs to calculate pace.</span>`;
             forecastBox.style.display = 'none';
             return;
         }
 
-        // Sum all amounts logged
-        const totalAmount = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-
-        // Time calculation: Always consider the first entry done in 1 hour
-        let totalHours = 1; 
+        // Math Logic: Sum all amounts / (Total elapsed time + 1 hour baseline)
+        const firstTime = parseTimeToMinutes(checked[0].time);
+        const lastEntry = checked[checked.length - 1];
+        const lastTime = parseTimeToMinutes(lastEntry.time);
         
-        if (checked.length > 1) {
-            const firstTime = parseTimeToMinutes(checked[0].time);
-            const lastTime = parseTimeToMinutes(checked[checked.length - 1].time);
-            
-            let timeDiffMins = lastTime - firstTime;
-            
-            // Handle midnight roll-over just in case
-            if (timeDiffMins < 0) {
-                timeDiffMins += 24 * 60; 
-            }
-            
-            totalHours += (timeDiffMins / 60);
-        }
-
-        // Compute pace regardless of constraints
+        let timeDiffMins = lastTime - firstTime;
+        if (timeDiffMins < 0) timeDiffMins += 24 * 60; // Midnight rollover safe
+        
+        let totalHours = (timeDiffMins / 60) + 1; // Always add the 1-hour baseline
+        
+        const totalAmount = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
         const pacePerHour = totalAmount / totalHours;
 
+        const displayUnit = tab.unit || 'Units';
+
+        // UI Improvement: Made the Pace number slightly larger and blue to stand out
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${tab.unit}/hr</span></strong>`;
+        paceRes.innerHTML = `Avg Pace: <strong style="font-size:1.15rem; color:var(--primary);">${pacePerHour.toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${displayUnit}/hr</span></strong>`;
         
         forecastBox.style.display = 'block';
         
         const remaining = parseFloat(remInput);
         if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
             const hoursNeeded = remaining / pacePerHour;
-            const lastEntryTime = parseTimeToMinutes(checked[checked.length - 1].time);
-            const finishTimeMins = lastEntryTime + (hoursNeeded * 60);
+            const finishTimeMins = lastTime + (hoursNeeded * 60);
             
             forecastRes.style.display = 'block';
             forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${formatMinutesToTime(finishTimeMins)}</strong>`;
