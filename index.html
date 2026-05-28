@@ -986,7 +986,7 @@
         calculateEstimatorPace();
     }
 
-    function calculateEstimatorPace() {
+        function calculateEstimatorPace() {
         const tab = getActiveEstimator();
         const checkedEntries = tab.data.filter(e => e.checked).sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
         const paceRes = document.getElementById('estimatorPaceResult');
@@ -997,38 +997,42 @@
         tab.remaining = remInput;
         saveEstimatorTabs();
 
-        // Allow calculation with 1+ entries
-        if (checkedEntries.length < 1) {
-            paceRes.style.display = 'none';
+        // Reverted to 2-entry minimum requirement
+        if (checkedEntries.length < 2) {
+            paceRes.style.display = 'block';
+            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires at least 2 checked logs to calculate pace.</span>`;
             forecastBox.style.display = 'none';
             return;
         }
 
-        let pacePerHour = 0;
-        let lastEntry = checkedEntries[checkedEntries.length - 1];
-
-        if (checkedEntries.length >= 2) {
-            const first = checkedEntries[0];
-            let timeDiffMins = parseTimeToMinutes(lastEntry.time) - parseTimeToMinutes(first.time);
-            if (timeDiffMins <= 0) timeDiffMins += 24 * 60;
-            const amountDiff = lastEntry.amount - first.amount;
-            pacePerHour = (amountDiff / timeDiffMins) * 60;
-        }
-
+        const first = checkedEntries[0];
+        const last = checkedEntries[checkedEntries.length - 1];
+        
+        let timeDiffMins = parseTimeToMinutes(last.time) - parseTimeToMinutes(first.time);
+        if (timeDiffMins <= 0) timeDiffMins += 24 * 60; // Handle Midnight roll-over
+        
+        const amountDiff = last.amount - first.amount;
+        
+        // Pace calculation
+        const pacePerHour = (amountDiff / timeDiffMins) * 60;
+        
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Live Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
+        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
+        
         forecastBox.style.display = 'block';
         
         const remaining = parseFloat(remInput);
         if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
             const minsNeeded = (remaining / pacePerHour) * 60;
-            const finishTimeMins = parseTimeToMinutes(lastEntry.time) + minsNeeded;
+            const finishTimeMins = parseTimeToMinutes(last.time) + minsNeeded;
+            
             forecastRes.style.display = 'block';
             forecastRes.innerHTML = `Projected Finish: <strong>${formatMinutesToTime(finishTimeMins)}</strong>`;
         } else {
             forecastRes.style.display = 'none';
         }
     }
+
 
     // ==========================================
     // ---- PICKUP TABS SYSTEM LOGIC ----
