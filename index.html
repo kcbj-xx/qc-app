@@ -444,7 +444,7 @@
                 <form onsubmit="event.preventDefault(); addEstimatorEntry();">
                     <div class="row">
                         <div class="input-group">
-                            <label>Amount (<span id="lblEstimatorUnit"></span>)</label>
+                            <label>Amount (<span id="lblEstimatorUnit">Units</span>)</label>
                             <input type="number" id="estAmountInput" step="any" placeholder="Total Count" required>
                         </div>
                         <div class="input-group">
@@ -452,7 +452,8 @@
                             <input type="time" id="estTimeInput" required>
                         </div>
                     </div>
-                    <button type="submit">Add Log</button>
+                    <button type="submit" style="margin-bottom: 0;">Add Log</button>
+                    <div class="last-added-text" id="lastAddedEstDisplay" style="margin-top: 8px;"></div>
                 </form>
 
                 <div id="estimatorList" class="drag-container" style="gap:4px; max-height:280px; padding-top: 10px;"></div>
@@ -894,13 +895,16 @@
         
         // Leave the input blank if no unit is set
         document.getElementById('estimatorUnitInput').value = tab.unit || '';
-        
         // Ensure the label falls back to 'Units' visually
         document.getElementById('lblEstimatorUnit').innerText = tab.unit || 'Units';
         
         document.getElementById('estRemainingInput').value = tab.remaining || '';
         setCurrentTime('estTimeInput');
         document.getElementById('estAmountInput').value = '';
+        
+        // --- Clear Last Added Display on tab switch ---
+        document.getElementById('lastAddedEstDisplay').innerHTML = '';
+        
         renderEstimatorList();
     }
 
@@ -919,6 +923,12 @@
         const tab = getActiveEstimator();
         tab.data.push({ id: Date.now(), amount, time, checked: true });
         saveEstimatorTabs();
+        
+        // --- Last Added Functionality ---
+        const displayUnit = tab.unit || 'Units';
+        const display = document.getElementById('lastAddedEstDisplay');
+        display.innerHTML = `Last added: ${amount} <span style="font-size:0.8rem; margin:0 3px;">${displayUnit}</span> at ${time}`;
+        display.style.color = 'var(--success)';
         
         document.getElementById('estAmountInput').value = '';
         setCurrentTime('estTimeInput'); 
