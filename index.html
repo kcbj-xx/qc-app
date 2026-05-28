@@ -1027,7 +1027,7 @@
             return;
         }
 
-        // Math Logic: Sum all amounts / (Total elapsed time + 1 hour baseline)
+        // Math Logic: Sum all amounts / Total elapsed time
         const firstTime = parseTimeToMinutes(checked[0].time);
         const lastEntry = checked[checked.length - 1];
         const lastTime = parseTimeToMinutes(lastEntry.time);
@@ -1035,7 +1035,11 @@
         let timeDiffMins = lastTime - firstTime;
         if (timeDiffMins < 0) timeDiffMins += 24 * 60; // Midnight rollover safe
         
-        let totalHours = (timeDiffMins / 60) + 1; // Always add the 1-hour baseline
+        // Prevent division by zero if entries happen at the exact same time
+        if (timeDiffMins === 0) timeDiffMins = 1;
+        
+        // Removed the + 1 hour baseline
+        let totalHours = timeDiffMins / 60; 
         
         const totalAmount = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
         const pacePerHour = totalAmount / totalHours;
