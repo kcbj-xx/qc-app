@@ -997,43 +997,37 @@
         tab.remaining = remInput;
         saveEstimatorTabs();
 
-        if (checked.length < 2) {
-            paceRes.style.display = 'block';
-            paceRes.innerHTML = `Need 2+ entries to calculate pace.`;
+        if (checked.length === 0) {
+            paceRes.style.display = 'none';
             forecastBox.style.display = 'none';
             return;
         }
 
-        // Linear Regression (Least Squares) to find Pace (Units per Minute)
-        let n = checked.length;
-        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        // Logic: 
+        // 1. If 1 entry: Pace = Amount / 1 hour (as requested)
+        // 2. If 2+ entries: Pace = Total Sum of amounts / Total hours passed
         
-        // X = time in minutes from the first entry, Y = amount
-        const startTime = parseTimeToMinutes(checked[0].time);
+        const firstTime = parseTimeToMinutes(checked[0].time);
+        const lastEntry = checked[checked.length - 1];
+        const lastTime = parseTimeToMinutes(lastEntry.time);
         
-        checked.forEach(e => {
-            let x = parseTimeToMinutes(e.time) - startTime;
-            let y = e.amount;
-            sumX += x;
-            sumY += y;
-            sumXY += x * y;
-            sumXX += x * x;
-        });
-
-        // Slope (Units per Minute) = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX)
-        let slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        let pacePerHour = slope * 60;
+        let totalHours = (lastTime - firstTime) / 60;
+        if (totalHours <= 0) totalHours = 1; // "Always consider the first entry done in an hour"
+        
+        // Sum all amounts logged
+        const totalAmount = checked.reduce((sum, e) => sum + e.amount, 0);
+        
+        const pacePerHour = totalAmount / totalHours;
 
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Avg Pace: <strong>${Math.max(pacePerHour, 0).toFixed(2)} ${tab.unit} / hr</strong>`;
+        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
         
         forecastBox.style.display = 'block';
         
         const remaining = parseFloat(remInput);
         if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
-            const minsNeeded = remaining / slope; // slope is units per minute
-            const lastEntryTime = parseTimeToMinutes(checked[checked.length - 1].time);
-            const finishTimeMins = lastEntryTime + minsNeeded;
+            const hoursNeeded = remaining / pacePerHour;
+            const finishTimeMins = lastTime + (hoursNeeded * 60);
             
             forecastRes.style.display = 'block';
             forecastRes.innerHTML = `Projected Finish: <strong>${formatMinutesToTime(finishTimeMins)}</strong>`;
