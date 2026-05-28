@@ -986,9 +986,9 @@
         calculateEstimatorPace();
     }
 
-        function calculateEstimatorPace() {
+    function calculateEstimatorPace() {
         const tab = getActiveEstimator();
-        const checkedEntries = tab.data.filter(e => e.checked).sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        const checked = tab.data.filter(e => e.checked).sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
         const paceRes = document.getElementById('estimatorPaceResult');
         const forecastBox = document.getElementById('estimatorForecastBox');
         const forecastRes = document.getElementById('estimatorForecastResult');
@@ -997,34 +997,43 @@
         tab.remaining = remInput;
         saveEstimatorTabs();
 
-        // Reverted to 2-entry minimum requirement
-        if (checkedEntries.length < 2) {
+        if (checked.length < 2) {
             paceRes.style.display = 'block';
-            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires at least 2 checked logs to calculate pace.</span>`;
+            paceRes.innerHTML = `Need 2+ entries to calculate pace.`;
             forecastBox.style.display = 'none';
             return;
         }
 
-        const first = checkedEntries[0];
-        const last = checkedEntries[checkedEntries.length - 1];
+        // Linear Regression (Least Squares) to find Pace (Units per Minute)
+        let n = checked.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
         
-        let timeDiffMins = parseTimeToMinutes(last.time) - parseTimeToMinutes(first.time);
-        if (timeDiffMins <= 0) timeDiffMins += 24 * 60; // Handle Midnight roll-over
+        // X = time in minutes from the first entry, Y = amount
+        const startTime = parseTimeToMinutes(checked[0].time);
         
-        const amountDiff = last.amount - first.amount;
-        
-        // Pace calculation
-        const pacePerHour = (amountDiff / timeDiffMins) * 60;
-        
+        checked.forEach(e => {
+            let x = parseTimeToMinutes(e.time) - startTime;
+            let y = e.amount;
+            sumX += x;
+            sumY += y;
+            sumXY += x * y;
+            sumXX += x * x;
+        });
+
+        // Slope (Units per Minute) = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX)
+        let slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        let pacePerHour = slope * 60;
+
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
+        paceRes.innerHTML = `Avg Pace: <strong>${Math.max(pacePerHour, 0).toFixed(2)} ${tab.unit} / hr</strong>`;
         
         forecastBox.style.display = 'block';
         
         const remaining = parseFloat(remInput);
         if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
-            const minsNeeded = (remaining / pacePerHour) * 60;
-            const finishTimeMins = parseTimeToMinutes(last.time) + minsNeeded;
+            const minsNeeded = remaining / slope; // slope is units per minute
+            const lastEntryTime = parseTimeToMinutes(checked[checked.length - 1].time);
+            const finishTimeMins = lastEntryTime + minsNeeded;
             
             forecastRes.style.display = 'block';
             forecastRes.innerHTML = `Projected Finish: <strong>${formatMinutesToTime(finishTimeMins)}</strong>`;
@@ -1032,7 +1041,6 @@
             forecastRes.style.display = 'none';
         }
     }
-
 
     // ==========================================
     // ---- PICKUP TABS SYSTEM LOGIC ----
