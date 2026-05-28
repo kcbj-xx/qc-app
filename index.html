@@ -880,21 +880,25 @@
     }
 
     function updateEstimatorUnit() {
-        const val = document.getElementById('estimatorUnitInput').value || 'Units';
-        document.getElementById('lblEstimatorUnit').innerText = val;
+        const val = document.getElementById('estimatorUnitInput').value; // Get exactly what is typed
+        document.getElementById('lblEstimatorUnit').innerText = val || 'Units'; // Fallback visually
+        
         const tab = getActiveEstimator();
-        tab.unit = val;
+        tab.unit = val; // Save the empty string if they cleared it
         saveEstimatorTabs();
-        renderEstimatorList(); // Refresh labels in list
+        renderEstimatorList(); 
     }
 
     function loadEstimatorInputs() {
         const tab = getActiveEstimator();
-        document.getElementById('estimatorUnitInput').value = tab.unit === 'Pallets' ? '' : tab.unit;
-        document.getElementById('lblEstimatorUnit').innerText = tab.unit || 'Units';
-        document.getElementById('estRemainingInput').value = tab.remaining || '';
         
-        // Auto-populate time to right now
+        // Leave the input blank if no unit is set
+        document.getElementById('estimatorUnitInput').value = tab.unit || '';
+        
+        // Ensure the label falls back to 'Units' visually
+        document.getElementById('lblEstimatorUnit').innerText = tab.unit || 'Units';
+        
+        document.getElementById('estRemainingInput').value = tab.remaining || '';
         setCurrentTime('estTimeInput');
         document.getElementById('estAmountInput').value = '';
         renderEstimatorList();
@@ -954,6 +958,7 @@
     function renderEstimatorList() {
         const container = document.getElementById('estimatorList');
         const tab = getActiveEstimator();
+        
         container.innerHTML = '';
         
         if (tab.data.length === 0) {
@@ -963,23 +968,27 @@
         }
         
         container.style.display = 'flex';
+        
+        // Create a fallback unit for display purposes if the input is blank
+        const displayUnit = tab.unit || 'Units';
 
-        // Sort data chronologically for clean visual output
-        const sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        // Automatically sort data chronologically so manual dragging isn't needed
+        const sortedData = [...tab.data].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
         sortedData.forEach((entry) => {
             const div = document.createElement('div');
             div.className = 'number-item';
-            div.style.padding = '8px';
+            div.style.padding = '8px 12px'; // Slightly adjusted padding for a cleaner look
             
             div.innerHTML = `
                 <input type="checkbox" class="tick-box" ${entry.checked ? 'checked' : ''} onchange="toggleEstimatorCheck(${entry.id})">
-                <div style="flex:1; display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size: 1.1rem;">
-                    <span>${entry.amount} <span style="font-size:0.8rem; color:#64748b;">${tab.unit}</span></span>
-                    <span style="color:var(--primary); font-family:monospace;">${entry.time}</span>
+                <div style="flex:1; display:flex; justify-content:space-between; align-items:center; font-size: 1.1rem;">
+                    <span><strong>${entry.amount}</strong> <span style="font-size:0.85rem; color:#64748b;">${displayUnit}</span></span>
+                    <span style="color:var(--primary); font-family:monospace; font-weight:bold;">${entry.time}</span>
                 </div>
                 <button class="remove-btn" onclick="removeEstimatorEntry(${entry.id})" title="Remove" style="margin-left:10px;">&times;</button>
             `;
+            
             container.appendChild(div);
         });
         
