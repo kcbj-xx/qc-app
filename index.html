@@ -988,7 +988,7 @@
 
     function calculateEstimatorPace() {
         const tab = getActiveEstimator();
-        const checkedEntries = tab.data.filter(e => e.checked);
+        const checkedEntries = tab.data.filter(e => e.checked).sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
         const paceRes = document.getElementById('estimatorPaceResult');
         const forecastBox = document.getElementById('estimatorForecastBox');
         const forecastRes = document.getElementById('estimatorForecastResult');
@@ -997,47 +997,38 @@
         tab.remaining = remInput;
         saveEstimatorTabs();
 
-        if (checkedEntries.length < 2) {
-            paceRes.style.display = 'block';
-            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Need 2+ checked logs for pace.</span>`;
+        // Allow calculation with 1+ entries
+        if (checkedEntries.length < 1) {
+            paceRes.style.display = 'none';
             forecastBox.style.display = 'none';
             return;
         }
 
-        checkedEntries.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-        
-        const first = checkedEntries[0];
-        const last = checkedEntries[checkedEntries.length - 1];
-        
-        let timeDiffMins = parseTimeToMinutes(last.time) - parseTimeToMinutes(first.time);
-        if (timeDiffMins <= 0) timeDiffMins += 24 * 60; // Handle Midnight roll-over
-        
-        const amountDiff = last.amount - first.amount;
-        
-        // Show pace even if it's slow/stalled
-        const pacePerHour = timeDiffMins > 0 ? (amountDiff / timeDiffMins) * 60 : 0;
-        
+        let pacePerHour = 0;
+        let lastEntry = checkedEntries[checkedEntries.length - 1];
+
+        if (checkedEntries.length >= 2) {
+            const first = checkedEntries[0];
+            let timeDiffMins = parseTimeToMinutes(lastEntry.time) - parseTimeToMinutes(first.time);
+            if (timeDiffMins <= 0) timeDiffMins += 24 * 60;
+            const amountDiff = lastEntry.amount - first.amount;
+            pacePerHour = (amountDiff / timeDiffMins) * 60;
+        }
+
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
-        
+        paceRes.innerHTML = `Live Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
         forecastBox.style.display = 'block';
         
         const remaining = parseFloat(remInput);
         if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
             const minsNeeded = (remaining / pacePerHour) * 60;
-            const finishTimeMins = parseTimeToMinutes(last.time) + minsNeeded;
-            
-            let finishStr = formatMinutesToTime(finishTimeMins);
-            let dayStr = finishTimeMins >= 24 * 60 ? " <span style='font-size:0.75rem; color:#64748b;'>(Next Day)</span>" : "";
-            
+            const finishTimeMins = parseTimeToMinutes(lastEntry.time) + minsNeeded;
             forecastRes.style.display = 'block';
-            forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${finishStr}</strong>${dayStr}`;
+            forecastRes.innerHTML = `Projected Finish: <strong>${formatMinutesToTime(finishTimeMins)}</strong>`;
         } else {
             forecastRes.style.display = 'none';
         }
     }
-    
-
 
     // ==========================================
     // ---- PICKUP TABS SYSTEM LOGIC ----
