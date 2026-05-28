@@ -997,44 +997,54 @@
         tab.remaining = remInput;
         saveEstimatorTabs();
 
+        // If nothing is checked, hide results
         if (checked.length === 0) {
             paceRes.style.display = 'none';
             forecastBox.style.display = 'none';
             return;
         }
 
-        // Logic: 
-        // 1. If 1 entry: Pace = Amount / 1 hour (as requested)
-        // 2. If 2+ entries: Pace = Total Sum of amounts / Total hours passed
-        
-        const firstTime = parseTimeToMinutes(checked[0].time);
-        const lastEntry = checked[checked.length - 1];
-        const lastTime = parseTimeToMinutes(lastEntry.time);
-        
-        let totalHours = (lastTime - firstTime) / 60;
-        if (totalHours <= 0) totalHours = 1; // "Always consider the first entry done in an hour"
-        
         // Sum all amounts logged
-        const totalAmount = checked.reduce((sum, e) => sum + e.amount, 0);
+        const totalAmount = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+        // Time calculation: Always consider the first entry done in 1 hour
+        let totalHours = 1; 
         
+        if (checked.length > 1) {
+            const firstTime = parseTimeToMinutes(checked[0].time);
+            const lastTime = parseTimeToMinutes(checked[checked.length - 1].time);
+            
+            let timeDiffMins = lastTime - firstTime;
+            
+            // Handle midnight roll-over just in case
+            if (timeDiffMins < 0) {
+                timeDiffMins += 24 * 60; 
+            }
+            
+            totalHours += (timeDiffMins / 60);
+        }
+
+        // Compute pace regardless of constraints
         const pacePerHour = totalAmount / totalHours;
 
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} ${tab.unit} / hr</strong>`;
+        paceRes.innerHTML = `Avg Pace: <strong>${pacePerHour.toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${tab.unit}/hr</span></strong>`;
         
         forecastBox.style.display = 'block';
         
         const remaining = parseFloat(remInput);
         if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
             const hoursNeeded = remaining / pacePerHour;
-            const finishTimeMins = lastTime + (hoursNeeded * 60);
+            const lastEntryTime = parseTimeToMinutes(checked[checked.length - 1].time);
+            const finishTimeMins = lastEntryTime + (hoursNeeded * 60);
             
             forecastRes.style.display = 'block';
-            forecastRes.innerHTML = `Projected Finish: <strong>${formatMinutesToTime(finishTimeMins)}</strong>`;
+            forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${formatMinutesToTime(finishTimeMins)}</strong>`;
         } else {
             forecastRes.style.display = 'none';
         }
     }
+
 
     // ==========================================
     // ---- PICKUP TABS SYSTEM LOGIC ----
