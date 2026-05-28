@@ -930,11 +930,12 @@
         display.innerHTML = `Last added: ${amount} <span style="font-size:0.8rem; margin:0 3px;">${displayUnit}</span> at ${time}`;
         display.style.color = 'var(--success)';
         
+        // Reset fields for the next entry
         document.getElementById('estAmountInput').value = '';
         setCurrentTime('estTimeInput'); 
         
-        // UX FIX: Force the mobile keyboard to close
-        document.activeElement.blur();
+        // No forced .focus() or .blur() here.
+        // Your phone's native keyboard will now behave normally.
         
         renderEstimatorList();
     }
