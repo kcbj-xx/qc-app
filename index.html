@@ -221,7 +221,6 @@
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
         
-        /* Reverted Margins for drag container */
         .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 4px; }
         .number-item { display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; position: relative; z-index: 1; -webkit-tap-highlight-color: transparent; }
         .number-item.dragging { z-index: 100; opacity: 0.9; }
@@ -450,7 +449,7 @@
                     <button class="secondary" id="stopAlarmBtn" onclick="stopTimer()" style="display: none;">Stop Alarm</button>
                     <button class="secondary" id="cancelTimerBtn" onclick="stopTimer()">Cancel Timer</button>
                 </div>
-                <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear All</button>
+                <button id="clearTimeBtn" class="secondary" onclick="resetSamplingTime()" style="display: none;">Clear Time Data</button>
             </div>
         </div>
         
@@ -500,7 +499,6 @@
                         </div>
                     </div>
                     <button type="submit" style="margin-bottom: 0;">Add Log</button>
-                    <div class="last-added-text" id="lastAddedEstDisplay" style="margin-top: 8px;"></div>
                 </form>
 
                 <div id="estimatorList" class="drag-container" style="gap:4px; max-height:280px; padding-top: 10px;"></div>
@@ -517,7 +515,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v50</div>
+    <div class="footer-version">v51</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -534,7 +532,6 @@
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
     let preventTabClick = false; 
     
-    // NEW FEATURE: Dynamic Header Updater
     function updateBatchTitle() {
         const now = new Date();
         const start = new Date(now.getFullYear(), 0, 0);
@@ -549,7 +546,7 @@
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const dayName = days[now.getDay()];
 
-        document.getElementById('batchTitleDisplay').innerText = `${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
+        document.getElementById('batchTitleDisplay').innerText = `Day ${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
     }
     
     function toggleCard(cardId) {
@@ -754,7 +751,7 @@
 
 
     document.addEventListener('DOMContentLoaded', () => {
-        updateBatchTitle(); // Initialize the custom header
+        updateBatchTitle(); 
         
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
@@ -1179,8 +1176,6 @@
         setCurrentTime('estTimeInput');
         document.getElementById('estAmountInput').value = '';
         
-        document.getElementById('lastAddedEstDisplay').innerHTML = '';
-        
         renderEstimatorList();
     }
 
@@ -1199,11 +1194,6 @@
         const tab = getActiveEstimator();
         tab.data.push({ id: Date.now(), amount, time, checked: true });
         saveEstimatorTabs();
-        
-        const displayUnit = tab.unit || 'Units';
-        const display = document.getElementById('lastAddedEstDisplay');
-        display.innerHTML = `Last added: ${amount} <span style="font-size:0.8rem; margin:0 3px;">${displayUnit}</span> at ${time}`;
-        display.style.color = 'var(--success)';
         
         document.getElementById('estAmountInput').value = '';
         setCurrentTime('estTimeInput'); 
@@ -1225,11 +1215,6 @@
         const tab = getActiveEstimator();
         tab.data = tab.data.filter(e => e.id !== id);
         saveEstimatorTabs();
-        
-        if (tab.data.length === 0) {
-            document.getElementById('lastAddedEstDisplay').innerHTML = '';
-        }
-        
         renderEstimatorList();
     }
 
@@ -1891,12 +1876,11 @@
     }
 
     function resetSamplingTime() {
-        const confirmMsg = timerInterval ? "Cancel current timer and clear data?" : "Are you sure you want to clear all sampling time data?";
+        const confirmMsg = timerInterval ? "Cancel current timer and clear time data?" : "Are you sure you want to clear the sampling time data?";
         if (!confirm(confirmMsg)) return;
         
         stopTimer();
-        document.getElementById('minMinutes').value = '';
-        document.getElementById('maxMinutes').value = '';
+        // Purposefully skipping clear of minMinutes and maxMinutes here
         document.getElementById('startTime').value = '';
         document.getElementById('timeResult').style.display = 'none';
         document.getElementById('timerControls').style.display = 'none';
@@ -2021,7 +2005,6 @@
             const handle = div.querySelector('.drag-handle');
             const inputField = div.querySelector('.edit-input');
 
-            // UX FIX: Added 400ms hold delay for dragging list items
             handle.addEventListener('pointerdown', (e) => {
                 document.activeElement.blur(); 
                 
@@ -2049,10 +2032,9 @@
                     document.addEventListener('pointermove', onListPointerMove);
                     document.addEventListener('pointerup', onListPointerUp);
                     document.addEventListener('pointercancel', onListPointerUp);
-                }, 400); // 400ms delay to prevent accidental dragging while scrolling
+                }, 400); 
 
                 const cancelHold = (eMove) => {
-                    // Only cancel if they scroll/move their finger a lot before the 400ms is up
                     if (eMove.type === 'pointermove' && Math.abs(eMove.clientY - startY) < 10) return;
                     
                     clearTimeout(holdTimer);
