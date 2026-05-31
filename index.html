@@ -90,7 +90,7 @@
             overflow-x: auto; 
             -webkit-overflow-scrolling: touch; 
             scrollbar-width: none; 
-            scroll-behavior: smooth;
+            scroll-behavior: auto;
             align-items: flex-end; 
             padding-top: 15px; 
         }
@@ -123,7 +123,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
-            touch-action: pan-x pan-y; 
+            touch-action: pan-y; 
         }
         .tab-btn.active { 
             background: #ffffff; 
@@ -134,6 +134,10 @@
             padding-top: 8px; 
             z-index: 2; 
         }
+        
+        .parent-tab-btn { background: #e2e8f0; color: #475569; }
+        .parent-tab-btn.active { background: #ffffff; color: var(--accent); border-top: 3px solid var(--accent); }
+
         .add-tab-btn { 
             margin: 0; 
             background: transparent; 
@@ -175,7 +179,6 @@
         input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit; width: 100%; max-width: 100%; min-height: 46px; box-sizing: border-box; transition: border-color 0.3s ease; margin: 0; display: block; -webkit-appearance: none; appearance: none; }
         input.input-error { border: 2px solid var(--error); background-color: #fff1f2; }
         
-        /* Specific override so checkboxes aren't giant blocks */
         input[type="checkbox"].tick-box {
             width: 24px !important;
             height: 24px !important;
@@ -223,6 +226,22 @@
 <body>
 
 <div class="container" id="main-container">
+
+    <div class="card" id="card-parent-group" style="padding-bottom: 5px; background-color: #f1f5f9; border: 1px solid #cbd5e1;">
+        <div style="font-weight: 700; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 1px;">Active Group / Batch</div>
+        <div class="tabs-container" id="parentTabsContainer" style="border-bottom:none; padding-top:10px; margin-bottom: 0;">
+            <div id="parentTabsList" class="tabs-list"></div>
+        </div>
+        <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: #fff;">
+            <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
+            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
+                <input type="text" id="renameParentTabInput" placeholder="Group Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                <button onclick="saveParentTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+            </div>
+            <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire Group</button>
+        </div>
+    </div>
+
     <div id="pinned-section" class="section-container" style="display: none;"></div>
     <div id="pinned-divider" class="divider" style="display: none;">Tools</div>
     <div id="unpinned-section" class="section-container">
@@ -250,6 +269,9 @@
                     <button onclick="confirmDeletePickupTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
                 </div>
 
+                <div class="result" id="pickupResult" style="display: none; margin-top: 0; margin-bottom: 15px;"></div>
+                <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none; margin-top: 0; margin-bottom: 15px;">Clear Current Sample</button>
+
                 <form onsubmit="event.preventDefault();">
                     <div class="row">
                         <div class="input-group">
@@ -262,9 +284,6 @@
                         </div>
                     </div>
                 </form>
-                
-                <div class="result" id="pickupResult" style="display: none; margin-top: 0;"></div>
-                <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none; margin-top: 15px;">Clear Current Sample</button>
             </div>
         </div>
 
@@ -436,9 +455,15 @@
                     <button onclick="confirmDeleteEstimatorTab()" class="secondary" style="margin:0; min-height:40px;">Delete Line</button>
                 </div>
 
-                <div class="input-group">
-                    <label>What are we counting?</label>
-                    <input type="text" id="estimatorUnitInput" placeholder="e.g. Pallets, Trays, Packs" oninput="updateEstimatorUnit()">
+                <div class="row">
+                    <div class="input-group">
+                        <label>What are we counting?</label>
+                        <input type="text" id="estimatorUnitInput" placeholder="e.g. Pallets" oninput="updateEstimatorUnit()">
+                    </div>
+                    <div class="input-group">
+                        <label>Shift Start Time</label>
+                        <input type="time" id="estStartTimeInput" onchange="saveEstimatorStartTime()">
+                    </div>
                 </div>
 
                 <form onsubmit="event.preventDefault(); addEstimatorEntry();">
@@ -470,7 +495,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v46</div>
+    <div class="footer-version">v47</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -529,6 +554,169 @@
         }
     }
     
+    // --- SMART NAMING LOGIC ---
+    function getNextTabName(tabsArray, prefix="Sample") {
+        for (let i = 1; i <= 1000; i++) {
+            if (!tabsArray.find(t => t.name.toLowerCase() === `${prefix.toLowerCase()} ${i}`)) {
+                return `${prefix} ${i}`;
+            }
+        }
+        return `${prefix} New`;
+    }
+
+    // ==========================================
+    // ---- DATA MIGRATION & PARENT GROUPS ------
+    // ==========================================
+    let parentGroups = JSON.parse(localStorage.getItem('qc_parent_groups'));
+    
+    if (!parentGroups) {
+        // First run with update: migrate old data into Group 1
+        let oldPickup = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }];
+        let oldSum = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }];
+        parentGroups = [{
+            id: 'pg_' + Date.now(),
+            name: 'Group 1',
+            pickupTabs: oldPickup,
+            sumTabs: oldSum
+        }];
+        localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
+    }
+
+    let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
+    let isParentTabMenuOpen = false;
+
+    // Derived References for the active group
+    let pickupTabs, appTabs, activePickupTabId, activeTabId;
+
+    function refreshGroupDataReferences() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        pickupTabs = p.pickupTabs;
+        appTabs = p.sumTabs;
+        activePickupTabId = pickupTabs[0]?.id;
+        activeTabId = appTabs[0]?.id;
+    }
+    refreshGroupDataReferences();
+
+    function saveAllGroupData() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.pickupTabs = pickupTabs;
+        p.sumTabs = appTabs;
+        localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
+        localStorage.setItem('qc_active_parent_id', activeParentId);
+    }
+
+    // --- PARENT GROUP UI LOGIC ---
+    function renderParentTabs() {
+        const list = document.getElementById('parentTabsList');
+        list.innerHTML = '';
+        let activeBtnElement = null;
+
+        parentGroups.forEach((tab) => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn parent-tab-btn ${tab.id === activeParentId ? 'active' : ''}`;
+            btn.innerText = tab.name;
+            btn.dataset.id = tab.id; 
+            
+            if (tab.id === activeParentId) activeBtnElement = btn;
+
+            btn.onclick = (e) => {
+                if (preventTabClick) { e.preventDefault(); e.stopPropagation(); return; }
+
+                if (activeParentId === tab.id) {
+                    isParentTabMenuOpen = !isParentTabMenuOpen;
+                    updateParentTabMenuState();
+                } else {
+                    activeParentId = tab.id;
+                    isParentTabMenuOpen = false;
+                    refreshGroupDataReferences();
+                    saveAllGroupData();
+                    
+                    // Re-render everything below
+                    renderParentTabs();
+                    updateParentTabMenuState();
+                    renderPickupTabs(); loadPickupInputs();
+                    renderTabs(); renderList();
+                }
+            };
+            list.appendChild(btn);
+        });
+        
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-tab-btn';
+        addBtn.innerText = '+';
+        list.appendChild(addBtn);
+        
+        setTimeout(() => {
+            if (activeBtnElement && !preventTabClick) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }, 10);
+    }
+
+    function updateParentTabMenuState() {
+        const panel = document.getElementById('parentTabOptionsPanel');
+        if (isParentTabMenuOpen) {
+            const p = parentGroups.find(t => t.id === activeParentId);
+            document.getElementById('renameParentTabInput').value = p.name;
+            panel.style.display = 'flex';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    function saveParentTabName() {
+        const newName = document.getElementById('renameParentTabInput').value.trim();
+        if (newName !== '') {
+            const p = parentGroups.find(t => t.id === activeParentId);
+            p.name = newName;
+            saveAllGroupData();
+            isParentTabMenuOpen = false;
+            renderParentTabs();
+            updateParentTabMenuState();
+        }
+    }
+
+    function confirmDeleteParentTab() {
+        const p = parentGroups.find(t => t.id === activeParentId);
+        if (parentGroups.length === 1) {
+            alert("You must have at least one active group.");
+            return;
+        }
+        if (confirm(`Are you sure you want to delete the entire group "${p.name}"? This removes all Pickup and Sum samples inside it.`)) {
+            let currentIndex = parentGroups.findIndex(t => t.id === activeParentId);
+            parentGroups = parentGroups.filter(t => t.id !== activeParentId);
+            let newIndex = currentIndex - 1;
+            if (newIndex < 0) newIndex = 0; 
+            
+            activeParentId = parentGroups[newIndex].id; 
+            isParentTabMenuOpen = false;
+            refreshGroupDataReferences();
+            saveAllGroupData();
+            
+            renderParentTabs(); updateParentTabMenuState();
+            renderPickupTabs(); loadPickupInputs();
+            renderTabs(); renderList();
+        }
+    }
+
+    function addNewParentGroup() {
+        const newName = getNextTabName(parentGroups, "Group");
+        const newGroup = {
+            id: 'pg_' + Date.now(),
+            name: newName,
+            pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
+            sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }]
+        };
+        parentGroups.push(newGroup);
+        activeParentId = newGroup.id;
+        isParentTabMenuOpen = false;
+        
+        refreshGroupDataReferences();
+        saveAllGroupData();
+        renderParentTabs(); updateParentTabMenuState();
+        renderPickupTabs(); loadPickupInputs();
+        renderTabs(); renderList();
+    }
+
+
     document.addEventListener('DOMContentLoaded', () => {
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
@@ -539,7 +727,8 @@
         
         reorderCards();
         
-        // Initialize Tab Systems
+        renderParentTabs();
+        
         renderEstimatorTabs();
         loadEstimatorInputs();
         
@@ -549,14 +738,30 @@
         renderPickupTabs();
         loadPickupInputs();
 
-        // Attach Tab Drag Engines once
+        // Attach SMOOTH Tab Drag Engines
+        setupTabDragManager('parentTabsContainer', 'parentTabsList', () => parentGroups, saveAllGroupData, renderParentTabs);
         setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveEstimatorTabs, renderEstimatorTabs);
-        setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, savePickupTabs, renderPickupTabs);
-        setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveTabs, renderTabs);
+        setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
+        setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveAllGroupData, renderTabs);
         
-        // Attach Hold-to-delete-all logic
+        setupAddButtonHold('parentTabsList', addNewParentGroup, () => {
+            parentGroups = [{
+                id: 'pg_' + Date.now(),
+                name: 'Group 1',
+                pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
+                sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }]
+            }];
+            activeParentId = parentGroups[0].id;
+            isParentTabMenuOpen = false;
+            refreshGroupDataReferences();
+            saveAllGroupData();
+            renderParentTabs(); updateParentTabMenuState();
+            renderPickupTabs(); loadPickupInputs();
+            renderTabs(); renderList();
+        }, "Delete ALL groups and start completely fresh?");
+
         setupAddButtonHold('estimatorTabsList', addNewEstimatorTab, () => {
-            estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', remaining: '', data: [] }];
+            estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }];
             activeEstimatorTabId = estimatorTabs[0].id;
             isEstimatorTabMenuOpen = false;
             saveEstimatorTabs();
@@ -569,7 +774,7 @@
             pickupTabs = [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
             activePickupTabId = pickupTabs[0].id;
             isPickupTabMenuOpen = false; 
-            savePickupTabs();
+            saveAllGroupData();
             renderPickupTabs();
             loadPickupInputs();
             updatePickupTabMenuState(); 
@@ -579,7 +784,7 @@
             appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
             activeTabId = appTabs[0].id;
             isTabMenuOpen = false; 
-            saveTabs();
+            saveAllGroupData();
             renderTabs();
             renderList();
             updateTabMenuState(); 
@@ -587,7 +792,7 @@
     });
 
     // ==========================================
-    // ---- ROBUST TAB DRAG ENGINE --------------
+    // ---- SMOOTH TAB DRAG ENGINE --------------
     // ==========================================
     function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn) {
         const list = document.getElementById(listId);
@@ -600,6 +805,10 @@
         let itemWidth = 0;
         let elements = [];
         let startScrollLeft = 0;
+        
+        let scrollDirection = 0;
+        let autoScrollInterval = null;
+        let lastClientX = 0;
 
         const startDrag = (e) => {
             const btn = e.target.closest('.tab-btn');
@@ -636,12 +845,35 @@
             }, 400);
         };
 
+        const executeVisualMove = (clientX) => {
+            const deltaX = clientX - startX;
+            const scrollShift = container.scrollLeft - startScrollLeft;
+            const totalMove = deltaX + scrollShift;
+
+            elements[dragIdx].style.transform = `translateX(${totalMove}px) scale(1.05)`;
+
+            let moveSteps = Math.round(totalMove / itemWidth);
+            let targetIdx = Math.max(0, Math.min(elements.length - 1, dragIdx + moveSteps));
+
+            elements.forEach((el, idx) => {
+                if (idx === dragIdx) return;
+                let offset = 0;
+                if (idx > dragIdx && idx <= targetIdx) offset = -itemWidth;
+                else if (idx < dragIdx && idx >= targetIdx) offset = itemWidth;
+                
+                if (el.dataset.offset != offset) {
+                    el.style.transform = `translateX(${offset}px)`;
+                    el.dataset.offset = offset;
+                }
+            });
+        }
+
         const moveDrag = (e) => {
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            lastClientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
             if (!isDragging && holdTimer) {
-                if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
+                if (Math.abs(lastClientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
                     clearTimeout(holdTimer);
                     holdTimer = null;
                 }
@@ -650,36 +882,39 @@
 
             if (isDragging) {
                 e.preventDefault(); 
-                const deltaX = clientX - startX;
-                const scrollShift = container.scrollLeft - startScrollLeft;
-                const totalMove = deltaX + scrollShift;
-
-                elements[dragIdx].style.transform = `translateX(${totalMove}px) scale(1.05)`;
-
-                let moveSteps = Math.round(totalMove / itemWidth);
-                let targetIdx = Math.max(0, Math.min(elements.length - 1, dragIdx + moveSteps));
-
-                elements.forEach((el, idx) => {
-                    if (idx === dragIdx) return;
-                    let offset = 0;
-                    if (idx > dragIdx && idx <= targetIdx) offset = -itemWidth;
-                    else if (idx < dragIdx && idx >= targetIdx) offset = itemWidth;
-                    
-                    if (el.dataset.offset != offset) {
-                        el.style.transform = `translateX(${offset}px)`;
-                        el.dataset.offset = offset;
-                    }
-                });
+                executeVisualMove(lastClientX);
 
                 const rect = container.getBoundingClientRect();
-                if (clientX < rect.left + 50) container.scrollLeft -= 7;
-                else if (clientX > rect.right - 50) container.scrollLeft += 7;
+                
+                if (lastClientX < rect.left + 50) {
+                    scrollDirection = -10;
+                } else if (lastClientX > rect.right - 50) {
+                    scrollDirection = 10;
+                } else {
+                    scrollDirection = 0;
+                }
+
+                if (scrollDirection !== 0 && !autoScrollInterval) {
+                    autoScrollInterval = setInterval(() => {
+                        container.scrollLeft += scrollDirection;
+                        executeVisualMove(lastClientX);
+                    }, 16); 
+                } else if (scrollDirection === 0 && autoScrollInterval) {
+                    clearInterval(autoScrollInterval);
+                    autoScrollInterval = null;
+                }
             }
         };
 
         const endDrag = (e) => {
             clearTimeout(holdTimer);
             holdTimer = null;
+            
+            if (autoScrollInterval) {
+                clearInterval(autoScrollInterval);
+                autoScrollInterval = null;
+            }
+            scrollDirection = 0;
 
             if (isDragging) {
                 isDragging = false;
@@ -765,7 +1000,7 @@
     // ==========================================
     // ---- PRODUCTION ESTIMATOR LOGIC ----------
     // ==========================================
-    let estimatorTabs = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', remaining: '', data: [] }];
+    let estimatorTabs = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }];
     let activeEstimatorTabId = estimatorTabs[0].id;
     let isEstimatorTabMenuOpen = false;
 
@@ -859,17 +1094,8 @@
     }
 
     function addNewEstimatorTab() {
-        let maxNum = 0;
-        estimatorTabs.forEach(t => {
-            const match = t.name.match(/^Line (\d+)$/i);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num > maxNum) maxNum = num;
-            }
-        });
-        const nextNum = maxNum > 0 ? maxNum + 1 : estimatorTabs.length + 1;
-        
-        const newTab = { id: 'etab_' + Date.now(), name: `Line ${nextNum}`, unit: 'Pallets', remaining: '', data: [] };
+        const newName = getNextTabName(estimatorTabs, "Line");
+        const newTab = { id: 'etab_' + Date.now(), name: newName, unit: 'Pallets', startTime: '', remaining: '', data: [] };
         estimatorTabs.push(newTab);
         activeEstimatorTabId = newTab.id;
         isEstimatorTabMenuOpen = false;
@@ -881,28 +1107,34 @@
     }
 
     function updateEstimatorUnit() {
-        const val = document.getElementById('estimatorUnitInput').value; // Get exactly what is typed
-        document.getElementById('lblEstimatorUnit').innerText = val || 'Units'; // Fallback visually
+        const val = document.getElementById('estimatorUnitInput').value; 
+        document.getElementById('lblEstimatorUnit').innerText = val || 'Units';
         
         const tab = getActiveEstimator();
-        tab.unit = val; // Save the empty string if they cleared it
+        tab.unit = val;
         saveEstimatorTabs();
         renderEstimatorList(); 
+    }
+
+    function saveEstimatorStartTime() {
+        const tab = getActiveEstimator();
+        tab.startTime = document.getElementById('estStartTimeInput').value;
+        saveEstimatorTabs();
+        calculateEstimatorPace();
     }
 
     function loadEstimatorInputs() {
         const tab = getActiveEstimator();
         
-        // Leave the input blank if no unit is set
         document.getElementById('estimatorUnitInput').value = tab.unit || '';
-        // Ensure the label falls back to 'Units' visually
         document.getElementById('lblEstimatorUnit').innerText = tab.unit || 'Units';
         
+        document.getElementById('estStartTimeInput').value = tab.startTime || '';
         document.getElementById('estRemainingInput').value = tab.remaining || '';
+        
         setCurrentTime('estTimeInput');
         document.getElementById('estAmountInput').value = '';
         
-        // --- Clear Last Added Display on tab switch ---
         document.getElementById('lastAddedEstDisplay').innerHTML = '';
         
         renderEstimatorList();
@@ -930,12 +1162,8 @@
         display.innerHTML = `Last added: ${amount} <span style="font-size:0.8rem; margin:0 3px;">${displayUnit}</span> at ${time}`;
         display.style.color = 'var(--success)';
         
-        // Reset fields for the next entry
         document.getElementById('estAmountInput').value = '';
         setCurrentTime('estTimeInput'); 
-        
-        // No forced .focus() or .blur() here.
-        // Your phone's native keyboard will now behave normally.
         
         renderEstimatorList();
     }
@@ -954,6 +1182,11 @@
         const tab = getActiveEstimator();
         tab.data = tab.data.filter(e => e.id !== id);
         saveEstimatorTabs();
+        
+        if (tab.data.length === 0) {
+            document.getElementById('lastAddedEstDisplay').innerHTML = '';
+        }
+        
         renderEstimatorList();
     }
 
@@ -981,17 +1214,14 @@
         }
         
         container.style.display = 'flex';
-        
-        // Create a fallback unit for display purposes if the input is blank
         const displayUnit = tab.unit || 'Units';
 
-        // Automatically sort data chronologically so manual dragging isn't needed
         const sortedData = [...tab.data].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
         sortedData.forEach((entry) => {
             const div = document.createElement('div');
             div.className = 'number-item';
-            div.style.padding = '8px 12px'; // Slightly adjusted padding for a cleaner look
+            div.style.padding = '8px 12px'; 
             
             div.innerHTML = `
                 <input type="checkbox" class="tick-box" ${entry.checked ? 'checked' : ''} onchange="toggleEstimatorCheck(${entry.id})">
@@ -1019,26 +1249,29 @@
         tab.remaining = remInput;
         saveEstimatorTabs();
 
-        // UX FIX: Reverted to requiring a minimum of 2 entries
-        if (checked.length < 2) {
-            paceRes.style.display = 'block';
-            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires at least 2 checked logs to calculate pace.</span>`;
+        if (checked.length === 0) {
+            paceRes.style.display = 'none';
             forecastBox.style.display = 'none';
             return;
         }
 
-        // Math Logic: Sum all amounts / Total elapsed time
-        const firstTime = parseTimeToMinutes(checked[0].time);
+        // UX: Need Start Time OR 2+ entries to calculate
+        if (checked.length < 2 && !tab.startTime) {
+            paceRes.style.display = 'block';
+            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires a Start Time or 2 checked logs.</span>`;
+            forecastBox.style.display = 'none';
+            return;
+        }
+
+        const firstTimeMins = tab.startTime ? parseTimeToMinutes(tab.startTime) : parseTimeToMinutes(checked[0].time);
         const lastEntry = checked[checked.length - 1];
-        const lastTime = parseTimeToMinutes(lastEntry.time);
+        const lastTimeMins = parseTimeToMinutes(lastEntry.time);
         
-        let timeDiffMins = lastTime - firstTime;
-        if (timeDiffMins < 0) timeDiffMins += 24 * 60; // Midnight rollover safe
+        let timeDiffMins = lastTimeMins - firstTimeMins;
+        if (timeDiffMins < 0) timeDiffMins += 24 * 60; // Midnight rollover
         
-        // Prevent division by zero if entries happen at the exact same time
         if (timeDiffMins === 0) timeDiffMins = 1;
         
-        // Removed the + 1 hour baseline
         let totalHours = timeDiffMins / 60; 
         
         const totalAmount = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
@@ -1046,7 +1279,6 @@
 
         const displayUnit = tab.unit || 'Units';
 
-        // UI Improvement: Made the Pace number slightly larger and blue to stand out
         paceRes.style.display = 'block';
         paceRes.innerHTML = `Avg Pace: <strong style="font-size:1.15rem; color:var(--primary);">${pacePerHour.toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${displayUnit}/hr</span></strong>`;
         
@@ -1055,7 +1287,7 @@
         const remaining = parseFloat(remInput);
         if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
             const hoursNeeded = remaining / pacePerHour;
-            const finishTimeMins = lastTime + (hoursNeeded * 60);
+            const finishTimeMins = lastTimeMins + (hoursNeeded * 60);
             
             forecastRes.style.display = 'block';
             forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${formatMinutesToTime(finishTimeMins)}</strong>`;
@@ -1068,14 +1300,6 @@
     // ==========================================
     // ---- PICKUP TABS SYSTEM LOGIC ----
     // ==========================================
-    let pickupTabs = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
-    let activePickupTabId = pickupTabs[0].id;
-    let isPickupTabMenuOpen = false;
-
-    function savePickupTabs() {
-        localStorage.setItem('qc_pickup_tabs_data', JSON.stringify(pickupTabs));
-    }
-
     function renderPickupTabs() {
         const list = document.getElementById('pickupTabsList');
         list.innerHTML = '';
@@ -1112,9 +1336,7 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) {
-                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
+            if (activeBtnElement && !preventTabClick) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }, 10);
     }
 
@@ -1134,7 +1356,7 @@
         if (newName !== '') {
             const tab = pickupTabs.find(t => t.id === activePickupTabId);
             tab.name = newName;
-            savePickupTabs();
+            saveAllGroupData();
             isPickupTabMenuOpen = false;
             renderPickupTabs();
             calculatePickup();
@@ -1150,14 +1372,13 @@
         }
         if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
             let currentIndex = pickupTabs.findIndex(t => t.id === activePickupTabId);
-            pickupTabs = pickupTabs.filter(t => t.id !== activePickupTabId);
-            
+            pickupTabs.splice(currentIndex, 1);
             let newIndex = currentIndex - 1;
             if (newIndex < 0) newIndex = 0; 
             
             activePickupTabId = pickupTabs[newIndex].id; 
             isPickupTabMenuOpen = false;
-            savePickupTabs();
+            saveAllGroupData();
             renderPickupTabs();
             loadPickupInputs();
             updatePickupTabMenuState();
@@ -1165,22 +1386,13 @@
     }
 
     function addNewPickupTab() {
-        let maxNum = 0;
-        pickupTabs.forEach(t => {
-            const match = t.name.match(/^Sample (\d+)$/i);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num > maxNum) maxNum = num;
-            }
-        });
-        const nextNum = maxNum > 0 ? maxNum + 1 : pickupTabs.length + 1;
-        
-        const newTab = { id: 'ptab_' + Date.now(), name: `Sample ${nextNum}`, pre: '', post: '' };
+        const newName = getNextTabName(pickupTabs, "Sample");
+        const newTab = { id: 'ptab_' + Date.now(), name: newName, pre: '', post: '' };
         pickupTabs.push(newTab);
         activePickupTabId = newTab.id;
         isPickupTabMenuOpen = false;
         
-        savePickupTabs();
+        saveAllGroupData();
         renderPickupTabs();
         loadPickupInputs();
         updatePickupTabMenuState();
@@ -1193,7 +1405,7 @@
         if (tab) {
             tab.pre = pre;
             tab.post = post;
-            savePickupTabs();
+            saveAllGroupData();
             calculatePickup();
         }
     }
@@ -1238,7 +1450,7 @@
         if (confirm(`Are you sure you want to clear inputs in "${tab.name}"?`)) {
             tab.pre = '';
             tab.post = '';
-            savePickupTabs();
+            saveAllGroupData();
             loadPickupInputs(); 
         }
     }
@@ -1247,14 +1459,6 @@
     // ==========================================
     // ---- SUM & AVERAGING TABS SYSTEM LOGIC ---
     // ==========================================
-    let appTabs = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
-    let activeTabId = appTabs[0].id;
-    let isTabMenuOpen = false;
-
-    function saveTabs() {
-        localStorage.setItem('qc_tabs_data', JSON.stringify(appTabs));
-    }
-
     function getActiveData() {
         return appTabs.find(t => t.id === activeTabId).data;
     }
@@ -1296,9 +1500,7 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) {
-                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
+            if (activeBtnElement && !preventTabClick) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }, 10);
     }
 
@@ -1318,7 +1520,7 @@
         if (newName !== '') {
             const tab = appTabs.find(t => t.id === activeTabId);
             tab.name = newName;
-            saveTabs();
+            saveAllGroupData();
             isTabMenuOpen = false;
             renderTabs();
             renderList();
@@ -1334,14 +1536,14 @@
         }
         if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
             let currentIndex = appTabs.findIndex(t => t.id === activeTabId);
-            appTabs = appTabs.filter(t => t.id !== activeTabId);
+            appTabs.splice(currentIndex, 1);
             
             let newIndex = currentIndex - 1;
             if (newIndex < 0) newIndex = 0;
             
             activeTabId = appTabs[newIndex].id; 
             isTabMenuOpen = false;
-            saveTabs();
+            saveAllGroupData();
             renderTabs();
             renderList();
             updateTabMenuState();
@@ -1349,31 +1551,22 @@
     }
 
     function addNewTab() {
-        let maxNum = 0;
-        appTabs.forEach(t => {
-            const match = t.name.match(/^Sample (\d+)$/i);
-            if (match) {
-                const num = parseInt(match[1]);
-                if (num > maxNum) maxNum = num;
-            }
-        });
-        const nextNum = maxNum > 0 ? maxNum + 1 : appTabs.length + 1;
-        
-        const newTab = { id: 'tab_' + Date.now(), name: `Sample ${nextNum}`, data: [] };
+        const newName = getNextTabName(appTabs, "Sample");
+        const newTab = { id: 'tab_' + Date.now(), name: newName, data: [] };
         appTabs.push(newTab);
         activeTabId = newTab.id;
         isTabMenuOpen = false;
         
         const display = document.getElementById('lastAddedDisplay');
         display.innerHTML = ''; 
-        saveTabs();
+        saveAllGroupData();
         renderTabs();
         renderList();
         updateTabMenuState();
     }
 
     // ==========================================
-    // ---- LIST DRAG & GENERAL LOGIC ----
+    // ---- GENERAL LOGIC ----
     // ==========================================
 
     let lastGeneratedTimeStr = "";
@@ -1657,12 +1850,6 @@
         targetTimeObject = null;
     }
 
-    // Number List Logic
-    let listDraggingIdx = null;
-    let listStartY = 0;
-    let listRowHeight = 0;
-    let listElements = [];
-
     function addNumber() {
         const inp = document.getElementById('numberInput');
         const val = parseFloat(inp.value); if(isNaN(val)) return;
@@ -1672,7 +1859,7 @@
         display.style.color = 'var(--success)';
         
         getActiveData().push(val); 
-        saveTabs();
+        saveAllGroupData();
         inp.value=''; 
         renderList();
         
@@ -1687,7 +1874,7 @@
         const oldVal = arr[index];
         if (newVal !== oldVal) {
             arr[index] = newVal;
-            saveTabs();
+            saveAllGroupData();
             const display = document.getElementById('lastAddedDisplay');
             display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
             display.style.color = 'var(--accent)'; 
@@ -1697,11 +1884,17 @@
 
     function removeNumber(index) {
         getActiveData().splice(index, 1);
-        saveTabs();
+        saveAllGroupData();
         const arr = getActiveData();
         if (arr.length === 0) document.getElementById('lastAddedDisplay').innerHTML = '';
         renderList();
     }
+
+    // List Drag specific vars
+    let listDraggingIdx = null;
+    let listStartY = 0;
+    let listRowHeight = 0;
+    let listElements = [];
 
     function onListPointerMove(e) {
         if (listDraggingIdx === null) return;
@@ -1737,7 +1930,7 @@
             const arr = getActiveData();
             const item = arr.splice(listDraggingIdx, 1)[0];
             arr.splice(targetIdx, 0, item);
-            saveTabs();
+            saveAllGroupData();
         }
 
         listDraggingIdx = null;
@@ -1805,7 +1998,7 @@
         const tab = appTabs.find(t => t.id === activeTabId);
         if (confirm(`Are you sure you want to clear all data in "${tab.name}"?`)) { 
             tab.data = [];
-            saveTabs();
+            saveAllGroupData();
             const display = document.getElementById('lastAddedDisplay');
             display.innerHTML = ''; 
             display.style.color = 'var(--success)';
