@@ -515,7 +515,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v51</div>
+    <div class="footer-version">v52</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -532,6 +532,25 @@
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
     let preventTabClick = false; 
     
+    // --- TIME FORMATTING HELPERS ---
+    function format12Hour(hours, minutes) {
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const h12 = hours % 12 || 12;
+        return `${h12}:${String(minutes).padStart(2,'0')} ${ampm}`;
+    }
+
+    function formatTimeStringTo12Hour(timeStr) {
+        if (!timeStr) return '';
+        const [h, m] = timeStr.split(':').map(Number);
+        return format12Hour(h, m);
+    }
+
+    function formatMinutesTo12Hour(totalMins) {
+        let h = Math.floor(totalMins / 60) % 24;
+        let m = Math.floor(totalMins % 60);
+        return format12Hour(h, m);
+    }
+
     function updateBatchTitle() {
         const now = new Date();
         const start = new Date(now.getFullYear(), 0, 0);
@@ -546,7 +565,7 @@
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const dayName = days[now.getDay()];
 
-        document.getElementById('batchTitleDisplay').innerText = `Day ${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
+        document.getElementById('batchTitleDisplay').innerText = `Day: ${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
     }
     
     function toggleCard(cardId) {
@@ -555,16 +574,38 @@
         localStorage.setItem(cardId + '_collapsed', card.classList.contains('collapsed') ? '1' : '0');
     }
     
+    // Updated togglePin to use batch-specific pinned arrays
     function togglePin(event, cardId) {
         event.stopPropagation(); 
-        const card = document.getElementById(cardId);
-        if (card.classList.contains('pinned')) {
-            card.classList.remove('pinned');
-            localStorage.setItem(cardId + '_pinned', '0');
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (!p.pinnedCards) p.pinnedCards = [];
+
+        if (p.pinnedCards.includes(cardId)) {
+            p.pinnedCards = p.pinnedCards.filter(id => id !== cardId);
+            document.getElementById(cardId).classList.remove('pinned');
         } else {
-            card.classList.add('pinned');
-            localStorage.setItem(cardId + '_pinned', '1');
+            p.pinnedCards.push(cardId);
+            document.getElementById(cardId).classList.add('pinned');
         }
+        
+        saveAllGroupData();
+        reorderCards();
+    }
+
+    // New function to apply batch-specific pins to the screen
+    function applyPinnedCardsToDOM() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const pinned = p.pinnedCards || [];
+        
+        allCardIds.forEach(id => {
+            const card = document.getElementById(id);
+            if (pinned.includes(id)) {
+                card.classList.add('pinned');
+            } else {
+                card.classList.remove('pinned');
+            }
+        });
+        
         reorderCards();
     }
     
@@ -573,6 +614,7 @@
         const unpinnedContainer = document.getElementById('unpinned-section');
         const divider = document.getElementById('pinned-divider');
         let pinnedCount = 0;
+        
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
             if (card.classList.contains('pinned')) {
@@ -582,6 +624,7 @@
                 unpinnedContainer.appendChild(card);
             }
         });
+        
         if (pinnedCount > 0) {
             pinnedContainer.style.display = 'flex';
             divider.style.display = 'flex';
@@ -612,9 +655,13 @@
             id: 'pg_' + Date.now(),
             name: 'Group 1',
             pickupTabs: oldPickup,
-            sumTabs: oldSum
+            sumTabs: oldSum,
+            pinnedCards: [] // Added pinnedCards initialized array
         }];
         localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
+    } else {
+        // Retrofit missing pinnedCards array for older stored groups
+        parentGroups.forEach(g => { if (!g.pinnedCards) g.pinnedCards = []; });
     }
 
     let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
@@ -635,6 +682,7 @@
         const p = parentGroups.find(g => g.id === activeParentId);
         p.pickupTabs = pickupTabs;
         p.sumTabs = appTabs;
+        // Pinned cards are directly updated onto `p` inside `togglePin` and saved here
         localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
         localStorage.setItem('qc_active_parent_id', activeParentId);
     }
@@ -663,6 +711,8 @@
                     isParentTabMenuOpen = false;
                     refreshGroupDataReferences();
                     saveAllGroupData();
+                    
+                    applyPinnedCardsToDOM(); 
                     
                     renderParentTabs();
                     updateParentTabMenuState();
@@ -724,6 +774,8 @@
             refreshGroupDataReferences();
             saveAllGroupData();
             
+            applyPinnedCardsToDOM();
+            
             renderParentTabs(); updateParentTabMenuState();
             renderPickupTabs(); loadPickupInputs();
             renderTabs(); renderList();
@@ -736,7 +788,8 @@
             id: 'pg_' + Date.now(),
             name: newName,
             pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
-            sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }]
+            sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }],
+            pinnedCards: [] // Reset pinned cards for new group
         };
         parentGroups.push(newGroup);
         activeParentId = newGroup.id;
@@ -744,6 +797,8 @@
         
         refreshGroupDataReferences();
         saveAllGroupData();
+        applyPinnedCardsToDOM();
+        
         renderParentTabs(); updateParentTabMenuState();
         renderPickupTabs(); loadPickupInputs();
         renderTabs(); renderList();
@@ -755,12 +810,12 @@
         
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
-            if (localStorage.getItem(id + '_pinned') === '1') card.classList.add('pinned');
             const savedState = localStorage.getItem(id + '_collapsed');
             if (savedState === '1' || savedState === null) card.classList.add('collapsed');
         });
         
-        reorderCards();
+        // This sets the pinned states appropriately for the loaded batch
+        applyPinnedCardsToDOM(); 
         
         renderParentTabs();
         
@@ -783,12 +838,14 @@
                 id: 'pg_' + Date.now(),
                 name: 'Group 1',
                 pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
-                sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }]
+                sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }],
+                pinnedCards: []
             }];
             activeParentId = parentGroups[0].id;
             isParentTabMenuOpen = false;
             refreshGroupDataReferences();
             saveAllGroupData();
+            applyPinnedCardsToDOM();
             renderParentTabs(); updateParentTabMenuState();
             renderPickupTabs(); loadPickupInputs();
             renderTabs(); renderList();
@@ -1254,7 +1311,10 @@
                 <input type="checkbox" class="tick-box" ${entry.checked ? 'checked' : ''} onchange="toggleEstimatorCheck(${entry.id})">
                 <div style="flex:1; display:flex; justify-content:space-between; align-items:center; font-size: 1.1rem;">
                     <span><strong>${entry.amount}</strong> <span style="font-size:0.85rem; color:#64748b;">${displayUnit}</span></span>
-                    <span style="color:var(--primary); font-family:monospace; font-weight:bold;">${entry.time}</span>
+                    <div style="text-align: right; line-height: 1.2;">
+                        <div style="color:var(--primary); font-family:monospace; font-weight:bold;">${entry.time}</div>
+                        <div style="font-size:0.75rem; color:var(--accent); font-weight:bold;">${formatTimeStringTo12Hour(entry.time)}</div>
+                    </div>
                 </div>
                 <button class="remove-btn" onclick="removeEstimatorEntry(${entry.id})" title="Remove" style="margin-left:10px;">&times;</button>
             `;
@@ -1315,8 +1375,11 @@
             const hoursNeeded = remaining / pacePerHour;
             const finishTimeMins = lastTimeMins + (hoursNeeded * 60);
             
+            const time24 = formatMinutesToTime(finishTimeMins);
+            const time12 = formatMinutesTo12Hour(finishTimeMins);
+            
             forecastRes.style.display = 'block';
-            forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${formatMinutesToTime(finishTimeMins)}</strong>`;
+            forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${time24}</strong> <span style="font-size:1rem; color:var(--accent); font-weight:bold; margin-left:5px;">(${time12})</span>`;
         } else {
             forecastRes.style.display = 'none';
         }
@@ -1718,12 +1781,6 @@
             swElapsed = 0;
             swDisplay.innerText = "00:00.00";
         }
-    }
-
-    function format12Hour(hours, minutes) {
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const h12 = hours % 12 || 12;
-        return `${h12}:${String(minutes).padStart(2,'0')} ${ampm}`;
     }
 
     function generateTime(isRecursive) {
