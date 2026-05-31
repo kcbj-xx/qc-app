@@ -104,6 +104,7 @@
             margin-bottom: -2px; 
             position: relative;
         }
+        
         .tab-btn { 
             margin: 0; 
             background: #f8fafc; 
@@ -123,7 +124,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
-            touch-action: pan-y; 
+            touch-action: pan-x pan-y; /* UX FIX: Re-enabled native horizontal scrolling */
         }
         .tab-btn.active { 
             background: #ffffff; 
@@ -135,8 +136,22 @@
             z-index: 2; 
         }
         
-        .parent-tab-btn { background: #e2e8f0; color: #475569; }
-        .parent-tab-btn.active { background: #ffffff; color: var(--accent); border-top: 3px solid var(--accent); }
+        /* UI FIX: Simple Pill styling for the Master Batch Manager */
+        .parent-tab-btn { 
+            background: #e2e8f0; 
+            color: #475569; 
+            border: none; 
+            border-radius: 20px; 
+            padding: 8px 16px; 
+            height: 35px; 
+            margin-bottom: 2px;
+        }
+        .parent-tab-btn.active { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding-top: 8px; 
+        }
 
         .add-tab-btn { 
             margin: 0; 
@@ -201,7 +216,6 @@
         .timer-active { border-color: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
         .timer-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
         .result { margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid var(--border); font-size: 1.1rem; text-align: center; }
-        .pickup-pct { color: var(--accent); font-weight: 800; font-size: 1.3rem; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 15px 0; text-align: center; }
         .stat-box { background-color: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
@@ -227,12 +241,12 @@
 
 <div class="container" id="main-container">
 
-    <div class="card" id="card-parent-group" style="padding-bottom: 5px; background-color: #f1f5f9; border: 1px solid #cbd5e1;">
-        <div style="font-weight: 700; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 1px;">Active Group / Batch</div>
-        <div class="tabs-container" id="parentTabsContainer" style="border-bottom:none; padding-top:10px; margin-bottom: 0;">
-            <div id="parentTabsList" class="tabs-list"></div>
+    <div id="batch-header" style="width: 100%; text-align: center; margin-bottom: 5px; padding-top: 10px;">
+        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">Active Group / Batch</div>
+        <div class="tabs-container" id="parentTabsContainer" style="border-bottom: none; padding: 0; margin: 0; justify-content: center;">
+            <div id="parentTabsList" class="tabs-list" style="margin: 0 auto; gap: 8px; padding-bottom: 10px;"></div>
         </div>
-        <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: #fff;">
+        <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
             <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
                 <input type="text" id="renameParentTabInput" placeholder="Group Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
@@ -269,8 +283,10 @@
                     <button onclick="confirmDeletePickupTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
                 </div>
 
-                <div class="result" id="pickupResult" style="display: none; margin-top: 0; margin-bottom: 15px;"></div>
-                <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none; margin-top: 0; margin-bottom: 15px;">Clear Current Sample</button>
+                <div class="stats-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 15px;">
+                    <div class="stat-box"><div class="stat-label">Decimal</div><div class="stat-value" id="pickupDec">0.0000</div></div>
+                    <div class="stat-box"><div class="stat-label">Percentage</div><div class="stat-value" id="pickupPct" style="color: var(--text);">0.00%</div></div>
+                </div>
 
                 <form onsubmit="event.preventDefault();">
                     <div class="row">
@@ -284,6 +300,8 @@
                         </div>
                     </div>
                 </form>
+                
+                <button id="clearPickupBtn" class="secondary" onclick="resetPickup()" style="display: none; margin-top: 5px;">Clear Current Sample</button>
             </div>
         </div>
 
@@ -495,7 +513,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v47</div>
+    <div class="footer-version">v48</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -554,7 +572,6 @@
         }
     }
     
-    // --- SMART NAMING LOGIC ---
     function getNextTabName(tabsArray, prefix="Sample") {
         for (let i = 1; i <= 1000; i++) {
             if (!tabsArray.find(t => t.name.toLowerCase() === `${prefix.toLowerCase()} ${i}`)) {
@@ -570,7 +587,6 @@
     let parentGroups = JSON.parse(localStorage.getItem('qc_parent_groups'));
     
     if (!parentGroups) {
-        // First run with update: migrate old data into Group 1
         let oldPickup = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }];
         let oldSum = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }];
         parentGroups = [{
@@ -585,7 +601,6 @@
     let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
     let isParentTabMenuOpen = false;
 
-    // Derived References for the active group
     let pickupTabs, appTabs, activePickupTabId, activeTabId;
 
     function refreshGroupDataReferences() {
@@ -605,7 +620,6 @@
         localStorage.setItem('qc_active_parent_id', activeParentId);
     }
 
-    // --- PARENT GROUP UI LOGIC ---
     function renderParentTabs() {
         const list = document.getElementById('parentTabsList');
         list.innerHTML = '';
@@ -631,7 +645,6 @@
                     refreshGroupDataReferences();
                     saveAllGroupData();
                     
-                    // Re-render everything below
                     renderParentTabs();
                     updateParentTabMenuState();
                     renderPickupTabs(); loadPickupInputs();
@@ -642,7 +655,8 @@
         });
         
         const addBtn = document.createElement('button');
-        addBtn.className = 'add-tab-btn';
+        addBtn.className = 'add-tab-btn parent-tab-btn';
+        addBtn.style.padding = '8px 16px';
         addBtn.innerText = '+';
         list.appendChild(addBtn);
         
@@ -738,7 +752,6 @@
         renderPickupTabs();
         loadPickupInputs();
 
-        // Attach SMOOTH Tab Drag Engines
         setupTabDragManager('parentTabsContainer', 'parentTabsList', () => parentGroups, saveAllGroupData, renderParentTabs);
         setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveEstimatorTabs, renderEstimatorTabs);
         setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
@@ -1156,7 +1169,6 @@
         tab.data.push({ id: Date.now(), amount, time, checked: true });
         saveEstimatorTabs();
         
-        // Last Added Functionality
         const displayUnit = tab.unit || 'Units';
         const display = document.getElementById('lastAddedEstDisplay');
         display.innerHTML = `Last added: ${amount} <span style="font-size:0.8rem; margin:0 3px;">${displayUnit}</span> at ${time}`;
@@ -1255,7 +1267,6 @@
             return;
         }
 
-        // UX: Need Start Time OR 2+ entries to calculate
         if (checked.length < 2 && !tab.startTime) {
             paceRes.style.display = 'block';
             paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires a Start Time or 2 checked logs.</span>`;
@@ -1425,7 +1436,8 @@
         const pre = parseFloat(preStr);
         const post = parseFloat(postStr);
         
-        const res = document.getElementById('pickupResult');
+        const decEl = document.getElementById('pickupDec');
+        const pctEl = document.getElementById('pickupPct');
         const clearBtn = document.getElementById('clearPickupBtn');
         const activeTab = pickupTabs.find(t => t.id === activePickupTabId);
         
@@ -1434,14 +1446,17 @@
         }
 
         if(isNaN(pre) || isNaN(post) || pre === 0) {
-            res.style.display = "none";
+            decEl.innerText = "0.0000";
+            pctEl.innerText = "0.00%";
+            pctEl.style.color = "var(--text)";
             clearBtn.style.display = (preStr !== '' || postStr !== '') ? "block" : "none";
             return;
         }
         
         const dec = (pre - post) / pre;
-        res.style.display = "block";
-        res.innerHTML = `Decimal: <strong>${dec.toFixed(4)}</strong> | <span class="pickup-pct">${(dec * 100).toFixed(2)}%</span>`;
+        decEl.innerText = dec.toFixed(4);
+        pctEl.innerText = (dec * 100).toFixed(2) + "%";
+        pctEl.style.color = "var(--accent)";
         clearBtn.style.display = 'block';
     }
 
