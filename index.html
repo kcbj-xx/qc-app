@@ -1244,6 +1244,15 @@
     }
 
     function addEstimatorEntry() {
+        const startTimeInput = document.getElementById('estStartTimeInput');
+        
+        // Check if the Shift Start Time is empty
+        if (!startTimeInput.value) {
+            startTimeInput.classList.add('input-error'); // Flash the box red
+            setTimeout(() => startTimeInput.classList.remove('input-error'), 3000); // Remove red after 3 seconds
+            return; // Stop the function so the log isn't added
+        }
+
         const amount = parseFloat(document.getElementById('estAmountInput').value);
         const time = document.getElementById('estTimeInput').value;
         if (isNaN(amount) || !time) return;
