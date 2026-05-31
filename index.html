@@ -221,7 +221,8 @@
         .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; }
         .stat-value { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
         
-        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 20px; max-height: 350px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 4px; }
+        /* Reverted Margins for drag container */
+        .drag-container { display: none; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 350px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 4px; }
         .number-item { display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; gap: 10px; position: relative; z-index: 1; -webkit-tap-highlight-color: transparent; }
         .number-item.dragging { z-index: 100; opacity: 0.9; }
         .drag-handle { color: #94a3b8; font-size: 1.5rem; cursor: grab; padding: 10px; margin-left: -5px; display: flex; align-items: center; user-select: none; -webkit-user-select: none; touch-action: none; transition: color 0.2s; -webkit-tap-highlight-color: transparent; }
@@ -241,8 +242,9 @@
 <div class="container" id="main-container">
 
     <div id="batch-header" style="width: 100%; text-align: center; margin-bottom: 5px; padding-top: 10px;">
-        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">Active Group / Batch</div>
-        <div class="tabs-container" id="parentTabsContainer" style="border-bottom: none; padding: 0; margin: 0; justify-content: center;">
+        <div id="batchTitleDisplay" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">Active Group / Batch</div>
+        
+        <div class="tabs-container" id="parentTabsContainer" style="border-bottom: none; padding: 0; margin: 0; justify-content: flex-start;">
             <div id="parentTabsList" class="tabs-list" style="margin: 0 auto; gap: 8px; padding-bottom: 10px;"></div>
         </div>
         <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
@@ -515,7 +517,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v49</div>
+    <div class="footer-version">v50</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -531,6 +533,24 @@
 
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
     let preventTabClick = false; 
+    
+    // NEW FEATURE: Dynamic Header Updater
+    function updateBatchTitle() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), 0, 0);
+        const diff = now - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const julian = Math.floor(diff / oneDay).toString().padStart(3, '0');
+
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = days[now.getDay()];
+
+        document.getElementById('batchTitleDisplay').innerText = `${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
+    }
     
     function toggleCard(cardId) {
         const card = document.getElementById(cardId);
@@ -734,6 +754,8 @@
 
 
     document.addEventListener('DOMContentLoaded', () => {
+        updateBatchTitle(); // Initialize the custom header
+        
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
             if (localStorage.getItem(id + '_pinned') === '1') card.classList.add('pinned');
@@ -851,9 +873,8 @@
                 btn.style.transition = 'none';
                 btn.style.zIndex = '100';
                 btn.style.transform = 'scale(1.05)';
-                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; // Add depth when dragging
+                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; 
                 
-                // UX FIX: Special styles for the parent pill when dragged
                 if (btn.classList.contains('parent-tab-btn') && btn.classList.contains('active')) {
                     btn.style.backgroundColor = 'var(--primary-hover)';
                     btn.style.color = 'white';
@@ -1715,7 +1736,6 @@
         }
     }
 
-    // UX FIX: Small helper for AM/PM formatting
     function format12Hour(hours, minutes) {
         const ampm = hours >= 12 ? 'PM' : 'AM';
         const h12 = hours % 12 || 12;
@@ -1765,7 +1785,6 @@
         targetTimeObject = target;
         lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
         
-        // UX FIX: Formatting 12-hour values for display
         const ref12 = format12Hour(h, m);
         const target12 = format12Hour(target.getHours(), target.getMinutes());
         
@@ -1994,7 +2013,7 @@
             const div = document.createElement('div');
             div.className = 'number-item';
             div.innerHTML = `
-                <div class="drag-handle" title="Drag to reorder">&#x2261;</div>
+                <div class="drag-handle" title="Hold to reorder">&#x2261;</div>
                 <input type="number" class="edit-input" value="${n}" onchange="updateNumber(${i}, this); this.blur();" inputmode="decimal">
                 <button class="remove-btn" onclick="removeNumber(${i})" title="Remove">&times;</button>
             `;
@@ -2002,27 +2021,49 @@
             const handle = div.querySelector('.drag-handle');
             const inputField = div.querySelector('.edit-input');
 
+            // UX FIX: Added 400ms hold delay for dragging list items
             handle.addEventListener('pointerdown', (e) => {
                 document.activeElement.blur(); 
-                listDraggingIdx = i;
-                listStartY = e.clientY;
-                listElements = Array.from(container.children);
                 
-                const gap = parseInt(window.getComputedStyle(container).gap) || 8;
-                listRowHeight = listElements[0].offsetHeight + gap;
+                let startY = e.clientY;
                 
-                listElements.forEach((el) => {
-                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
-                    el.dataset.offset = 0;
-                });
-                
-                div.style.transition = 'none'; 
-                div.classList.add('dragging');
-                inputField.style.pointerEvents = 'none'; 
-                
-                document.addEventListener('pointermove', onListPointerMove);
-                document.addEventListener('pointerup', onListPointerUp);
-                document.addEventListener('pointercancel', onListPointerUp);
+                let holdTimer = setTimeout(() => {
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    
+                    listDraggingIdx = i;
+                    listStartY = startY;
+                    listElements = Array.from(container.children);
+                    
+                    const gap = parseInt(window.getComputedStyle(container).gap) || 8;
+                    listRowHeight = listElements[0].offsetHeight + gap;
+                    
+                    listElements.forEach((el) => {
+                        el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+                        el.dataset.offset = 0;
+                    });
+                    
+                    div.style.transition = 'none'; 
+                    div.classList.add('dragging');
+                    inputField.style.pointerEvents = 'none'; 
+                    
+                    document.addEventListener('pointermove', onListPointerMove);
+                    document.addEventListener('pointerup', onListPointerUp);
+                    document.addEventListener('pointercancel', onListPointerUp);
+                }, 400); // 400ms delay to prevent accidental dragging while scrolling
+
+                const cancelHold = (eMove) => {
+                    // Only cancel if they scroll/move their finger a lot before the 400ms is up
+                    if (eMove.type === 'pointermove' && Math.abs(eMove.clientY - startY) < 10) return;
+                    
+                    clearTimeout(holdTimer);
+                    document.removeEventListener('pointermove', cancelHold);
+                    document.removeEventListener('pointerup', cancelHold);
+                    document.removeEventListener('pointercancel', cancelHold);
+                };
+
+                document.addEventListener('pointermove', cancelHold);
+                document.addEventListener('pointerup', cancelHold);
+                document.addEventListener('pointercancel', cancelHold);
             });
 
             container.appendChild(div);
@@ -2050,7 +2091,6 @@
         document.getElementById('statAvg').innerText = (arr.length ? (sum / arr.length) : 0).toFixed(2).replace(/\.00$/, '');
     }
 
-    // UX FIX: Real-time calculation logic for the new Salinity stats-grid
     function calculateSalinity() {
         const brixStr = document.getElementById('brixVal').value;
         const brix = parseFloat(brixStr);
