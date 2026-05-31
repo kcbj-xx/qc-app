@@ -124,7 +124,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
-            touch-action: pan-x pan-y; /* UX FIX: Re-enabled native horizontal scrolling */
+            touch-action: pan-x pan-y; 
         }
         .tab-btn.active { 
             background: #ffffff; 
@@ -136,7 +136,6 @@
             z-index: 2; 
         }
         
-        /* UI FIX: Simple Pill styling for the Master Batch Manager */
         .parent-tab-btn { 
             background: #e2e8f0; 
             color: #475569; 
@@ -341,7 +340,7 @@
                     </form>
                     <div class="last-added-text" id="lastAddedDisplay"></div>
                 </div>
-                <div id="numberList" class="drag-container"></div>
+                <div id="numberList" class="drag-container" style="padding-left: 40px;"></div>
                 <button id="clearAllBtn" class="secondary" onclick="clearNumbers()" style="display:none;">Clear Current Sample</button>
             </div>
         </div>
@@ -355,15 +354,18 @@
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
-                <form onsubmit="event.preventDefault(); calculateSalinity();">
+                <div class="stats-grid" style="grid-template-columns: 1fr; margin-bottom: 15px;">
+                    <div class="stat-box"><div class="stat-label">Salinity Percentage</div><div class="stat-value" id="salinityPct" style="color: var(--text);">0.00%</div></div>
+                </div>
+
+                <form onsubmit="event.preventDefault();">
                     <div class="input-group">
                         <label>Brix Value</label>
-                        <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix">
+                        <input type="number" step="any" id="brixVal" inputmode="decimal" placeholder="Enter Brix" oninput="calculateSalinity()">
                     </div>
-                    <button type="submit">Calculate Salinity</button>
                 </form>
-                <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none;">Clear</button>
-                <div class="result" id="salinityResult" style="display: none;"></div>
+                
+                <button id="clearSalinityBtn" class="secondary" onclick="resetSalinity()" style="display: none; margin-top: 5px;">Clear</button>
             </div>
         </div>
 
@@ -513,7 +515,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v48</div>
+    <div class="footer-version">v49</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -849,7 +851,15 @@
                 btn.style.transition = 'none';
                 btn.style.zIndex = '100';
                 btn.style.transform = 'scale(1.05)';
-                btn.style.backgroundColor = '#f1f5f9';
+                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; // Add depth when dragging
+                
+                // UX FIX: Special styles for the parent pill when dragged
+                if (btn.classList.contains('parent-tab-btn') && btn.classList.contains('active')) {
+                    btn.style.backgroundColor = 'var(--primary-hover)';
+                    btn.style.color = 'white';
+                } else {
+                    btn.style.backgroundColor = '#f1f5f9';
+                }
 
                 elements.forEach(el => {
                     if (el !== btn) el.style.transition = 'transform 0.2s ease';
@@ -1705,6 +1715,13 @@
         }
     }
 
+    // UX FIX: Small helper for AM/PM formatting
+    function format12Hour(hours, minutes) {
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const h12 = hours % 12 || 12;
+        return `${h12}:${String(minutes).padStart(2,'0')} ${ampm}`;
+    }
+
     function generateTime(isRecursive) {
         const minInput = document.getElementById('minMinutes');
         const maxInput = document.getElementById('maxMinutes');
@@ -1748,11 +1765,15 @@
         targetTimeObject = target;
         lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
         
+        // UX FIX: Formatting 12-hour values for display
+        const ref12 = format12Hour(h, m);
+        const target12 = format12Hour(target.getHours(), target.getMinutes());
+        
         res.style.display = "block";
         res.innerHTML = `
-            <div style="font-size:0.85rem;color:#64748b;">Reference: ${startStr} (+${rand}m)</div>
-            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem;">Target: ${lastGeneratedTimeStr}</div>
-            <button class="btn-recursive" onclick="generateTime(true)">Next window from ${lastGeneratedTimeStr}</button>
+            <div style="font-size:0.85rem;color:#64748b; margin-bottom:5px;">Reference: ${startStr} <span style="font-weight:bold; color:#475569;">(${ref12})</span> <span style="font-size:0.75rem;">(+${rand}m)</span></div>
+            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem; margin-bottom:10px;">Target: ${lastGeneratedTimeStr} <span style="font-size:1.1rem; color:var(--accent);">(${target12})</span></div>
+            <button class="btn-recursive" onclick="generateTime(true)" style="margin:0;">Next window from ${lastGeneratedTimeStr}</button>
         `;
         
         document.getElementById('timerControls').style.display = 'block';
@@ -2029,16 +2050,29 @@
         document.getElementById('statAvg').innerText = (arr.length ? (sum / arr.length) : 0).toFixed(2).replace(/\.00$/, '');
     }
 
+    // UX FIX: Real-time calculation logic for the new Salinity stats-grid
     function calculateSalinity() {
-        const brix = parseFloat(document.getElementById('brixVal').value); if (isNaN(brix)) return;
-        const res = document.getElementById('salinityResult'); res.style.display = "block";
-        res.innerHTML = `Salinity: <strong>${((brix / 26.4) * 100).toFixed(2)}%</strong>`;
-        document.getElementById('clearSalinityBtn').style.display = 'block';
+        const brixStr = document.getElementById('brixVal').value;
+        const brix = parseFloat(brixStr);
+        const pctEl = document.getElementById('salinityPct');
+        const clearBtn = document.getElementById('clearSalinityBtn');
+        
+        if (isNaN(brix) || brixStr === '') {
+            pctEl.innerText = "0.00%";
+            pctEl.style.color = "var(--text)";
+            clearBtn.style.display = "none";
+            return;
+        }
+        
+        const salinity = (brix / 26.4) * 100;
+        pctEl.innerText = salinity.toFixed(2) + "%";
+        pctEl.style.color = "var(--accent)";
+        clearBtn.style.display = 'block';
     }
 
     function resetSalinity() {
-        document.getElementById('brixVal').value = ''; document.getElementById('salinityResult').style.display = 'none';
-        document.getElementById('clearSalinityBtn').style.display = 'none';
+        document.getElementById('brixVal').value = ''; 
+        calculateSalinity();
     }
 </script>
 </body>
