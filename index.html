@@ -744,7 +744,13 @@
             if (tab.id === activeParentId) activeBtnElement = btn;
 
             btn.onclick = (e) => {
+                // 1. Block clicks if we are in the middle of a drag action
                 if (preventTabClick) { e.preventDefault(); e.stopPropagation(); return; }
+
+                // 2. Add a movement check: if the mouse/touch moved significantly 
+                // since the start of the interaction, treat it as a drag, not a tap
+                const moved = Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10;
+                if (moved) return; 
 
                 if (activeParentId === tab.id) {
                     isParentTabMenuOpen = !isParentTabMenuOpen;
