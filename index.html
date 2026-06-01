@@ -1964,7 +1964,7 @@
             document.getElementById('clearTimeBtn').style.display = 'none';
         }
     }
-
+    
     function generateTime(isRecursive) {
         const p = parentGroups.find(g => g.id === activeParentId);
         const minInput = document.getElementById('minMinutes');
@@ -1972,21 +1972,31 @@
         const startTimeInput = document.getElementById('startTime');
         const res = document.getElementById('timeResult');
 
+        // Reset errors
         [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
 
         if (!isRecursive) {
-            let errors = [];
-            // Changed: Only validate Start Time as strictly required
-            if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
-
-            if (errors.length > 0) {
+            // Check only Start Time as required
+            if (!startTimeInput.value) {
+                // Apply the red highlight
+                startTimeInput.classList.add('input-error');
+                
                 res.style.display = "block";
-                res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
+                res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Start Time is required</span>`;
+                
+                // Clear the error state after 3 seconds
+                setTimeout(() => {
+                    startTimeInput.classList.remove('input-error');
+                    if (res.innerHTML.includes("Start Time is required")) {
+                        res.style.display = "none";
+                        res.innerHTML = "";
+                    }
+                }, 3000);
                 return;
             }
         }
 
-        // Parse inputs, treat empty strings as 0
+        // Logic for generating the time
         const min = parseInt(minInput.value) || 0; 
         const max = parseInt(maxInput.value) || 0;
         let startStr = isRecursive ? p.sampling.lastGenStr : startTimeInput.value;
@@ -1995,10 +2005,8 @@
         p.sampling.max = maxInput.value;
         p.sampling.start = startTimeInput.value;
         
-        // Calculate random window: if min > max, use max as range end
         const effectiveMax = Math.max(min, max);
         const rand = Math.floor(Math.random() * (effectiveMax - min + 1)) + min;
-        
         const [h, m] = startStr.split(':').map(Number);
         
         let target = new Date();
