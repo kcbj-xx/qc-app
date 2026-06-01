@@ -912,6 +912,11 @@
         startGlobalStopwatch(); 
         startGlobalSamplingTimer(); 
 
+        updateParentTabMenuState();
+        updateEstimatorTabMenuState();
+        updatePickupTabMenuState();
+        updateTabMenuState();
+        
         setupTabDragManager('parentTabsContainer', 'parentTabsList', () => parentGroups, saveAllGroupData, renderParentTabs);
         setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveAllGroupData, renderEstimatorTabs);
         setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
