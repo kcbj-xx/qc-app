@@ -1981,16 +1981,11 @@
                 // Apply the red highlight
                 startTimeInput.classList.add('input-error');
                 
-                res.style.display = "block";
-                res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Start Time is required</span>`;
+                // --- REMOVED THE res.innerHTML UPDATE HERE ---
                 
                 // Clear the error state after 3 seconds
                 setTimeout(() => {
                     startTimeInput.classList.remove('input-error');
-                    if (res.innerHTML.includes("Start Time is required")) {
-                        res.style.display = "none";
-                        res.innerHTML = "";
-                    }
                 }, 3000);
                 return;
             }
