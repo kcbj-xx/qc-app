@@ -1976,34 +1976,29 @@
 
         if (!isRecursive) {
             let errors = [];
-            if (!minInput.value) { errors.push("Min Minutes"); minInput.classList.add('input-error'); }
-            if (!maxInput.value) { errors.push("Max Minutes"); maxInput.classList.add('input-error'); }
+            // Changed: Only validate Start Time as strictly required
             if (!startTimeInput.value) { errors.push("Start Time"); startTimeInput.classList.add('input-error'); }
 
             if (errors.length > 0) {
                 res.style.display = "block";
                 res.innerHTML = `<span style="color:var(--error); font-weight:bold;">Missing: ${errors.join(', ')}</span>`;
-                
-                setTimeout(() => {
-                    if (res.innerHTML.includes("Missing:")) {
-                        res.style.display = "none";
-                        res.innerHTML = "";
-                        [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
-                    }
-                }, 3500);
                 return;
             }
         }
 
-        const min = parseInt(minInput.value); 
-        const max = parseInt(maxInput.value);
+        // Parse inputs, treat empty strings as 0
+        const min = parseInt(minInput.value) || 0; 
+        const max = parseInt(maxInput.value) || 0;
         let startStr = isRecursive ? p.sampling.lastGenStr : startTimeInput.value;
         
         p.sampling.min = minInput.value;
         p.sampling.max = maxInput.value;
         p.sampling.start = startTimeInput.value;
         
-        const rand = Math.floor(Math.random() * (max - min + 1)) + min;
+        // Calculate random window: if min > max, use max as range end
+        const effectiveMax = Math.max(min, max);
+        const rand = Math.floor(Math.random() * (effectiveMax - min + 1)) + min;
+        
         const [h, m] = startStr.split(':').map(Number);
         
         let target = new Date();
