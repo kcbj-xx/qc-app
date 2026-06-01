@@ -1797,8 +1797,17 @@
 
     function updateTempDOM() {
         const p = parentGroups.find(g => g.id === activeParentId);
-        document.getElementById('celsiusVal').value = p.temp.c;
-        document.getElementById('fahrenheitVal').value = p.temp.f;
+        const cInput = document.getElementById('celsiusVal');
+        const fInput = document.getElementById('fahrenheitVal');
+        
+        // ONLY update the screen value if the user is not actively typing in it right now
+        if (document.activeElement !== cInput) {
+            cInput.value = p.temp.c;
+        }
+        if (document.activeElement !== fInput) {
+            fInput.value = p.temp.f;
+        }
+        
         document.getElementById('clearTempBtn').style.display = (p.temp.c || p.temp.f) ? 'block' : 'none';
     }
 
@@ -2334,7 +2343,12 @@
         const brixStr = p.salinity.brix;
         const brix = parseFloat(brixStr);
         
-        document.getElementById('brixVal').value = brixStr || '';
+        const brixInput = document.getElementById('brixVal');
+        
+        // ONLY update the screen value if the user is not actively typing in it right now
+        if (document.activeElement !== brixInput) {
+            brixInput.value = brixStr || '';
+        }
         
         const pctEl = document.getElementById('salinityPct');
         const clearBtn = document.getElementById('clearSalinityBtn');
