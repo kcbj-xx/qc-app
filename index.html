@@ -515,7 +515,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v52</div>
+    <div class="footer-version">v53</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -531,6 +531,8 @@
 
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
     let preventTabClick = false; 
+    let vibrationInterval = null;
+    const alarm = document.getElementById('alarmSound');
     
     // --- TIME FORMATTING HELPERS ---
     function format12Hour(hours, minutes) {
@@ -571,10 +573,12 @@
     function toggleCard(cardId) {
         const card = document.getElementById(cardId);
         card.classList.toggle('collapsed');
-        localStorage.setItem(cardId + '_collapsed', card.classList.contains('collapsed') ? '1' : '0');
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (!p.collapsedCards) p.collapsedCards = {};
+        p.collapsedCards[cardId] = card.classList.contains('collapsed');
+        saveAllGroupData();
     }
     
-    // Updated togglePin to use batch-specific pinned arrays
     function togglePin(event, cardId) {
         event.stopPropagation(); 
         const p = parentGroups.find(g => g.id === activeParentId);
@@ -592,18 +596,18 @@
         reorderCards();
     }
 
-    // New function to apply batch-specific pins to the screen
-    function applyPinnedCardsToDOM() {
+    function applyCardStatesToDOM() {
         const p = parentGroups.find(g => g.id === activeParentId);
         const pinned = p.pinnedCards || [];
+        const collapsed = p.collapsedCards || {};
         
         allCardIds.forEach(id => {
             const card = document.getElementById(id);
-            if (pinned.includes(id)) {
-                card.classList.add('pinned');
-            } else {
-                card.classList.remove('pinned');
-            }
+            if (pinned.includes(id)) card.classList.add('pinned');
+            else card.classList.remove('pinned');
+            
+            if (collapsed[id]) card.classList.add('collapsed');
+            else card.classList.remove('collapsed');
         });
         
         reorderCards();
@@ -647,6 +651,7 @@
     // ---- DATA MIGRATION & PARENT GROUPS ------
     // ==========================================
     let parentGroups = JSON.parse(localStorage.getItem('qc_parent_groups'));
+    let oldEstimator = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || null;
     
     if (!parentGroups) {
         let oldPickup = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }];
@@ -656,33 +661,67 @@
             name: 'Group 1',
             pickupTabs: oldPickup,
             sumTabs: oldSum,
-            pinnedCards: [] // Added pinnedCards initialized array
+            pinnedCards: [],
+            collapsedCards: {},
+            estimatorTabs: oldEstimator || [{ id: 'etab_'+Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
+            salinity: { brix: '' },
+            temp: { c: '', f: '' },
+            stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
+            sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
         }];
         localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
-    } else {
-        // Retrofit missing pinnedCards array for older stored groups
-        parentGroups.forEach(g => { if (!g.pinnedCards) g.pinnedCards = []; });
     }
+
+    // Migration to ensure all groups have the new fields properly initialized
+    parentGroups.forEach(g => {
+        if (!g.pinnedCards) g.pinnedCards = [];
+        if (!g.collapsedCards) g.collapsedCards = {};
+        if (!g.estimatorTabs) g.estimatorTabs = [{ id: 'etab_' + Date.now() + Math.random(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }];
+        if (!g.salinity) g.salinity = { brix: '' };
+        if (!g.temp) g.temp = { c: '', f: '' };
+        if (!g.stopwatch) g.stopwatch = { elapsed: 0, startTime: 0, isRunning: false, mode: null };
+        if (!g.sampling) g.sampling = { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false };
+        g.sumTabs.forEach(t => { if(t.lastAddedStr === undefined) t.lastAddedStr = ''; });
+    });
 
     let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
     let isParentTabMenuOpen = false;
 
-    let pickupTabs, appTabs, activePickupTabId, activeTabId;
+    let pickupTabs, appTabs, estimatorTabs;
+    let activePickupTabId, activeTabId, activeEstimatorTabId;
+
+    function ensureActiveIds() {
+        parentGroups.forEach(g => {
+            if (!g.activePickupTabId || !g.pickupTabs.find(t => t.id === g.activePickupTabId)) {
+                g.activePickupTabId = g.pickupTabs[0].id;
+            }
+            if (!g.activeTabId || !g.sumTabs.find(t => t.id === g.activeTabId)) {
+                g.activeTabId = g.sumTabs[0].id;
+            }
+            if (!g.activeEstimatorTabId || !g.estimatorTabs.find(t => t.id === g.activeEstimatorTabId)) {
+                g.activeEstimatorTabId = g.estimatorTabs[0].id;
+            }
+        });
+    }
 
     function refreshGroupDataReferences() {
         const p = parentGroups.find(g => g.id === activeParentId);
         pickupTabs = p.pickupTabs;
         appTabs = p.sumTabs;
-        activePickupTabId = pickupTabs[0]?.id;
-        activeTabId = appTabs[0]?.id;
+        estimatorTabs = p.estimatorTabs;
+        activePickupTabId = p.activePickupTabId;
+        activeTabId = p.activeTabId;
+        activeEstimatorTabId = p.activeEstimatorTabId;
     }
-    refreshGroupDataReferences();
 
     function saveAllGroupData() {
         const p = parentGroups.find(g => g.id === activeParentId);
         p.pickupTabs = pickupTabs;
         p.sumTabs = appTabs;
-        // Pinned cards are directly updated onto `p` inside `togglePin` and saved here
+        p.estimatorTabs = estimatorTabs;
+        p.activePickupTabId = activePickupTabId;
+        p.activeTabId = activeTabId;
+        p.activeEstimatorTabId = activeEstimatorTabId;
         localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
         localStorage.setItem('qc_active_parent_id', activeParentId);
     }
@@ -710,13 +749,18 @@
                     activeParentId = tab.id;
                     isParentTabMenuOpen = false;
                     refreshGroupDataReferences();
-                    saveAllGroupData();
                     
-                    applyPinnedCardsToDOM(); 
+                    applyCardStatesToDOM(); 
+                    
+                    updateSalinityDOM();
+                    updateTempDOM();
+                    updateSamplingDOM();
+                    updateStopwatchDOMToggle();
                     
                     renderParentTabs();
                     updateParentTabMenuState();
                     renderPickupTabs(); loadPickupInputs();
+                    renderEstimatorTabs(); loadEstimatorInputs();
                     renderTabs(); renderList();
                 }
             };
@@ -763,7 +807,7 @@
             alert("You must have at least one active group.");
             return;
         }
-        if (confirm(`Are you sure you want to delete the entire group "${p.name}"? This removes all Pickup and Sum samples inside it.`)) {
+        if (confirm(`Are you sure you want to delete the entire group "${p.name}"? This removes all data inside it.`)) {
             let currentIndex = parentGroups.findIndex(t => t.id === activeParentId);
             parentGroups = parentGroups.filter(t => t.id !== activeParentId);
             let newIndex = currentIndex - 1;
@@ -774,10 +818,16 @@
             refreshGroupDataReferences();
             saveAllGroupData();
             
-            applyPinnedCardsToDOM();
+            applyCardStatesToDOM();
+            
+            updateSalinityDOM();
+            updateTempDOM();
+            updateSamplingDOM();
+            updateStopwatchDOMToggle();
             
             renderParentTabs(); updateParentTabMenuState();
             renderPickupTabs(); loadPickupInputs();
+            renderEstimatorTabs(); loadEstimatorInputs();
             renderTabs(); renderList();
         }
     }
@@ -788,36 +838,51 @@
             id: 'pg_' + Date.now(),
             name: newName,
             pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
-            sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }],
-            pinnedCards: [] // Reset pinned cards for new group
+            sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
+            estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
+            pinnedCards: [],
+            collapsedCards: {},
+            salinity: { brix: '' },
+            temp: { c: '', f: '' },
+            stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
+            sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
         };
+        newGroup.activePickupTabId = newGroup.pickupTabs[0].id;
+        newGroup.activeTabId = newGroup.sumTabs[0].id;
+        newGroup.activeEstimatorTabId = newGroup.estimatorTabs[0].id;
+        
         parentGroups.push(newGroup);
         activeParentId = newGroup.id;
         isParentTabMenuOpen = false;
         
         refreshGroupDataReferences();
         saveAllGroupData();
-        applyPinnedCardsToDOM();
+        applyCardStatesToDOM();
+        
+        updateSalinityDOM();
+        updateTempDOM();
+        updateSamplingDOM();
+        updateStopwatchDOMToggle();
         
         renderParentTabs(); updateParentTabMenuState();
         renderPickupTabs(); loadPickupInputs();
+        renderEstimatorTabs(); loadEstimatorInputs();
         renderTabs(); renderList();
     }
 
 
     document.addEventListener('DOMContentLoaded', () => {
         updateBatchTitle(); 
+        ensureActiveIds();
+        refreshGroupDataReferences();
         
-        allCardIds.forEach(id => {
-            const card = document.getElementById(id);
-            const savedState = localStorage.getItem(id + '_collapsed');
-            if (savedState === '1' || savedState === null) card.classList.add('collapsed');
-        });
-        
-        // This sets the pinned states appropriately for the loaded batch
-        applyPinnedCardsToDOM(); 
-        
+        applyCardStatesToDOM(); 
         renderParentTabs();
+        
+        updateSalinityDOM();
+        updateTempDOM();
+        updateSamplingDOM();
+        updateStopwatchDOMToggle();
         
         renderEstimatorTabs();
         loadEstimatorInputs();
@@ -827,9 +892,12 @@
         
         renderPickupTabs();
         loadPickupInputs();
+        
+        startGlobalStopwatch(); 
+        startGlobalSamplingTimer(); 
 
         setupTabDragManager('parentTabsContainer', 'parentTabsList', () => parentGroups, saveAllGroupData, renderParentTabs);
-        setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveEstimatorTabs, renderEstimatorTabs);
+        setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveAllGroupData, renderEstimatorTabs);
         setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
         setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveAllGroupData, renderTabs);
         
@@ -838,31 +906,43 @@
                 id: 'pg_' + Date.now(),
                 name: 'Group 1',
                 pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
-                sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }],
-                pinnedCards: []
+                sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
+                estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
+                pinnedCards: [],
+                collapsedCards: {},
+                salinity: { brix: '' },
+                temp: { c: '', f: '' },
+                stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
+                sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
             }];
+            parentGroups[0].activePickupTabId = parentGroups[0].pickupTabs[0].id;
+            parentGroups[0].activeTabId = parentGroups[0].sumTabs[0].id;
+            parentGroups[0].activeEstimatorTabId = parentGroups[0].estimatorTabs[0].id;
+            
             activeParentId = parentGroups[0].id;
             isParentTabMenuOpen = false;
             refreshGroupDataReferences();
             saveAllGroupData();
-            applyPinnedCardsToDOM();
+            applyCardStatesToDOM();
+            updateSalinityDOM(); updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle();
             renderParentTabs(); updateParentTabMenuState();
             renderPickupTabs(); loadPickupInputs();
+            renderEstimatorTabs(); loadEstimatorInputs();
             renderTabs(); renderList();
         }, "Delete ALL groups and start completely fresh?");
 
         setupAddButtonHold('estimatorTabsList', addNewEstimatorTab, () => {
-            estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }];
+            estimatorTabs.splice(0, estimatorTabs.length, { id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] });
             activeEstimatorTabId = estimatorTabs[0].id;
             isEstimatorTabMenuOpen = false;
-            saveEstimatorTabs();
+            saveAllGroupData();
             renderEstimatorTabs();
             loadEstimatorInputs();
             updateEstimatorTabMenuState();
         }, "Delete ALL records from the Production Estimator? This cannot be undone.");
 
         setupAddButtonHold('pickupTabsList', addNewPickupTab, () => {
-            pickupTabs = [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }];
+            pickupTabs.splice(0, pickupTabs.length, { id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' });
             activePickupTabId = pickupTabs[0].id;
             isPickupTabMenuOpen = false; 
             saveAllGroupData();
@@ -872,7 +952,7 @@
         }, "Delete ALL samples from the Pickup Calculator? This cannot be undone.");
         
         setupAddButtonHold('tabsList', addNewTab, () => {
-            appTabs = [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }];
+            appTabs.splice(0, appTabs.length, { id: 'tab_' + Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' });
             activeTabId = appTabs[0].id;
             isTabMenuOpen = false; 
             saveAllGroupData();
@@ -1098,11 +1178,6 @@
     // ==========================================
     // ---- PRODUCTION ESTIMATOR LOGIC ----------
     // ==========================================
-    let estimatorTabs = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }];
-    let activeEstimatorTabId = estimatorTabs[0].id;
-    let isEstimatorTabMenuOpen = false;
-
-    function saveEstimatorTabs() { localStorage.setItem('qc_estimator_tabs_data', JSON.stringify(estimatorTabs)); }
     function getActiveEstimator() { return estimatorTabs.find(t => t.id === activeEstimatorTabId); }
 
     function renderEstimatorTabs() {
@@ -1127,6 +1202,7 @@
                 } else {
                     activeEstimatorTabId = tab.id;
                     isEstimatorTabMenuOpen = false;
+                    saveAllGroupData();
                     renderEstimatorTabs();
                     loadEstimatorInputs();
                     updateEstimatorTabMenuState();
@@ -1163,7 +1239,7 @@
         if (newName !== '') {
             const tab = getActiveEstimator();
             tab.name = newName;
-            saveEstimatorTabs();
+            saveAllGroupData();
             isEstimatorTabMenuOpen = false;
             renderEstimatorTabs();
             updateEstimatorTabMenuState();
@@ -1178,13 +1254,13 @@
         }
         if (confirm(`Are you sure you want to delete "${tab.name}"?`)) {
             let currentIndex = estimatorTabs.findIndex(t => t.id === activeEstimatorTabId);
-            estimatorTabs = estimatorTabs.filter(t => t.id !== activeEstimatorTabId);
+            estimatorTabs.splice(currentIndex, 1);
             let newIndex = currentIndex - 1;
             if (newIndex < 0) newIndex = 0; 
             
             activeEstimatorTabId = estimatorTabs[newIndex].id; 
             isEstimatorTabMenuOpen = false;
-            saveEstimatorTabs();
+            saveAllGroupData();
             renderEstimatorTabs();
             loadEstimatorInputs();
             updateEstimatorTabMenuState();
@@ -1198,7 +1274,7 @@
         activeEstimatorTabId = newTab.id;
         isEstimatorTabMenuOpen = false;
         
-        saveEstimatorTabs();
+        saveAllGroupData();
         renderEstimatorTabs();
         loadEstimatorInputs();
         updateEstimatorTabMenuState();
@@ -1210,14 +1286,14 @@
         
         const tab = getActiveEstimator();
         tab.unit = val;
-        saveEstimatorTabs();
+        saveAllGroupData();
         renderEstimatorList(); 
     }
 
     function saveEstimatorStartTime() {
         const tab = getActiveEstimator();
         tab.startTime = document.getElementById('estStartTimeInput').value;
-        saveEstimatorTabs();
+        saveAllGroupData();
         calculateEstimatorPace();
     }
 
@@ -1245,12 +1321,10 @@
 
     function addEstimatorEntry() {
         const startTimeInput = document.getElementById('estStartTimeInput');
-        
-        // Check if the Shift Start Time is empty
         if (!startTimeInput.value) {
-            startTimeInput.classList.add('input-error'); // Flash the box red
-            setTimeout(() => startTimeInput.classList.remove('input-error'), 3000); // Remove red after 3 seconds
-            return; // Stop the function so the log isn't added
+            startTimeInput.classList.add('input-error'); 
+            setTimeout(() => startTimeInput.classList.remove('input-error'), 3000); 
+            return; 
         }
 
         const amount = parseFloat(document.getElementById('estAmountInput').value);
@@ -1259,10 +1333,9 @@
 
         const tab = getActiveEstimator();
         tab.data.push({ id: Date.now(), amount, time, checked: true });
-        saveEstimatorTabs();
+        saveAllGroupData();
         
         document.getElementById('estAmountInput').value = '';
-        
         renderEstimatorList();
     }
 
@@ -1271,7 +1344,7 @@
         const entry = tab.data.find(e => e.id === id);
         if (entry) {
             entry.checked = !entry.checked;
-            saveEstimatorTabs();
+            saveAllGroupData();
             renderEstimatorList();
         }
     }
@@ -1279,7 +1352,7 @@
     function removeEstimatorEntry(id) {
         const tab = getActiveEstimator();
         tab.data = tab.data.filter(e => e.id !== id);
-        saveEstimatorTabs();
+        saveAllGroupData();
         renderEstimatorList();
     }
 
@@ -1343,7 +1416,7 @@
         
         const remInput = document.getElementById('estRemainingInput').value;
         tab.remaining = remInput;
-        saveEstimatorTabs();
+        saveAllGroupData();
 
         if (checked.length === 0) {
             paceRes.style.display = 'none';
@@ -1420,6 +1493,7 @@
                 } else {
                     activePickupTabId = tab.id;
                     isPickupTabMenuOpen = false;
+                    saveAllGroupData();
                     renderPickupTabs();
                     loadPickupInputs();
                     updatePickupTabMenuState();
@@ -1587,7 +1661,7 @@
                 } else {
                     activeTabId = tab.id;
                     isTabMenuOpen = false;
-                    document.getElementById('lastAddedDisplay').innerHTML = ''; 
+                    saveAllGroupData();
                     renderTabs();
                     renderList();
                     updateTabMenuState();
@@ -1654,13 +1728,11 @@
 
     function addNewTab() {
         const newName = getNextTabName(appTabs, "Sample");
-        const newTab = { id: 'tab_' + Date.now(), name: newName, data: [] };
+        const newTab = { id: 'tab_' + Date.now(), name: newName, data: [], lastAddedStr: '' };
         appTabs.push(newTab);
         activeTabId = newTab.id;
         isTabMenuOpen = false;
         
-        const display = document.getElementById('lastAddedDisplay');
-        display.innerHTML = ''; 
         saveAllGroupData();
         renderTabs();
         renderList();
@@ -1671,72 +1743,102 @@
     // ---- GENERAL LOGIC ----
     // ==========================================
 
-    let lastGeneratedTimeStr = "";
-    let targetTimeObject = null;
-    let timerInterval = null;
-    let vibrationInterval = null;
-    const alarm = document.getElementById('alarmSound');
-
     function convertTemp(source) {
+        const p = parentGroups.find(g => g.id === activeParentId);
         const cInput = document.getElementById('celsiusVal');
         const fInput = document.getElementById('fahrenheitVal');
-        const clearBtn = document.getElementById('clearTempBtn');
         
         if (source === 'C') {
-            if (cInput.value === '') { fInput.value = ''; clearBtn.style.display = 'none'; return; }
-            const c = parseFloat(cInput.value);
-            fInput.value = ((c * 9/5) + 32).toFixed(2).replace(/\.00$/, '');
+            if (cInput.value === '') { fInput.value = ''; }
+            else { fInput.value = ((parseFloat(cInput.value) * 9/5) + 32).toFixed(2).replace(/\.00$/, ''); }
         } else {
-            if (fInput.value === '') { cInput.value = ''; clearBtn.style.display = 'none'; return; }
-            const f = parseFloat(fInput.value);
-            cInput.value = ((f - 32) * 5/9).toFixed(2).replace(/\.00$/, '');
+            if (fInput.value === '') { cInput.value = ''; }
+            else { cInput.value = ((parseFloat(fInput.value) - 32) * 5/9).toFixed(2).replace(/\.00$/, ''); }
         }
-        clearBtn.style.display = 'block';
+        p.temp.c = cInput.value;
+        p.temp.f = fInput.value;
+        saveAllGroupData();
+        updateTempDOM();
     }
 
     function resetTemp() {
-        document.getElementById('celsiusVal').value = '';
-        document.getElementById('fahrenheitVal').value = '';
-        document.getElementById('clearTempBtn').style.display = 'none';
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.temp.c = '';
+        p.temp.f = '';
+        saveAllGroupData();
+        updateTempDOM();
     }
 
-    let swInterval = null;
-    let swStartTime = 0;
-    let swElapsed = 0;
-    let isSwRunning = false;
-    let swMode = null; 
-    const swDisplay = document.getElementById('stopwatchDisplay');
+    function updateTempDOM() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        document.getElementById('celsiusVal').value = p.temp.c;
+        document.getElementById('fahrenheitVal').value = p.temp.f;
+        document.getElementById('clearTempBtn').style.display = (p.temp.c || p.temp.f) ? 'block' : 'none';
+    }
+
+
     const holdBtn = document.getElementById('holdTimerBtn');
 
-    function updateStopwatch() {
-        let diff = swElapsed;
-        if (isSwRunning) { diff += (Date.now() - swStartTime); }
-        const m = Math.floor(diff / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        const ms = Math.floor((diff % 1000) / 10);
-        swDisplay.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(2,'0')}`;
+    function updateStopwatchDOMToggle() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const toggleBtn = document.getElementById('toggleTimerBtn');
+        
+        if (p.stopwatch.isRunning) {
+            if (p.stopwatch.mode === 'hold') {
+                holdBtn.style.filter = 'brightness(0.8)';
+                holdBtn.style.transform = 'scale(0.98)';
+                toggleBtn.innerText = "Start";
+                toggleBtn.style.backgroundColor = "";
+            } else {
+                holdBtn.style.filter = '';
+                holdBtn.style.transform = 'scale(1)';
+                toggleBtn.innerText = "Stop";
+                toggleBtn.style.backgroundColor = "var(--accent)";
+            }
+        } else {
+            holdBtn.style.filter = '';
+            holdBtn.style.transform = 'scale(1)';
+            toggleBtn.innerText = "Start";
+            toggleBtn.style.backgroundColor = "";
+        }
+    }
+
+    function startGlobalStopwatch() {
+        setInterval(() => {
+            const p = parentGroups.find(g => g.id === activeParentId);
+            if (!p || !p.stopwatch) return;
+            
+            let diff = p.stopwatch.elapsed;
+            if (p.stopwatch.isRunning) { 
+                diff += (Date.now() - p.stopwatch.startTime); 
+            }
+            
+            if (diff > 0 || p.stopwatch.isRunning) {
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                const ms = Math.floor((diff % 1000) / 10);
+                document.getElementById('stopwatchDisplay').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(2,'0')}`;
+            } else {
+                document.getElementById('stopwatchDisplay').innerText = "00:00.00";
+            }
+        }, 10);
     }
 
     function toggleStopwatch() {
-        if (isSwRunning && swMode === 'hold') return; 
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (p.stopwatch.isRunning && p.stopwatch.mode === 'hold') return; 
 
-        const toggleBtn = document.getElementById('toggleTimerBtn');
-        if (isSwRunning) {
-            clearInterval(swInterval);
-            swElapsed += (Date.now() - swStartTime);
-            isSwRunning = false;
-            swMode = null;
-            updateStopwatch();
-            toggleBtn.innerText = "Start";
-            toggleBtn.style.backgroundColor = ""; 
+        if (p.stopwatch.isRunning) {
+            p.stopwatch.elapsed += (Date.now() - p.stopwatch.startTime);
+            p.stopwatch.isRunning = false;
+            p.stopwatch.mode = null;
         } else {
-            swStartTime = Date.now();
-            swInterval = setInterval(updateStopwatch, 10);
-            isSwRunning = true;
-            swMode = 'tap';
-            toggleBtn.innerText = "Stop";
-            toggleBtn.style.backgroundColor = "var(--accent)"; 
+            p.stopwatch.startTime = Date.now();
+            p.stopwatch.isRunning = true;
+            p.stopwatch.mode = 'tap';
         }
+        saveAllGroupData();
+        updateStopwatchDOMToggle();
     }
 
     holdBtn.addEventListener('touchstart', (e) => { e.preventDefault(); }, { passive: false });
@@ -1746,27 +1848,23 @@
         if(e.button !== 0 && e.pointerType === 'mouse') return; 
         try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
         
-        if (isSwRunning) return; 
-        isSwRunning = true;
-        swMode = 'hold';
-        swStartTime = Date.now();
-        swInterval = setInterval(updateStopwatch, 10);
-        
-        holdBtn.style.filter = 'brightness(0.8)';
-        holdBtn.style.transform = 'scale(0.98)';
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (p.stopwatch.isRunning) return; 
+        p.stopwatch.isRunning = true;
+        p.stopwatch.mode = 'hold';
+        p.stopwatch.startTime = Date.now();
+        saveAllGroupData();
+        updateStopwatchDOMToggle();
     });
 
     const stopAction = (e) => {
-        if (!isSwRunning || swMode !== 'hold') return; 
-        clearInterval(swInterval);
-        
-        swElapsed += (Date.now() - swStartTime);
-        isSwRunning = false; 
-        swMode = null;
-        updateStopwatch(); 
-        
-        holdBtn.style.filter = '';
-        holdBtn.style.transform = 'scale(1)';
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (!p.stopwatch.isRunning || p.stopwatch.mode !== 'hold') return; 
+        p.stopwatch.elapsed += (Date.now() - p.stopwatch.startTime);
+        p.stopwatch.isRunning = false; 
+        p.stopwatch.mode = null;
+        saveAllGroupData();
+        updateStopwatchDOMToggle();
         try { holdBtn.releasePointerCapture(e.pointerId); } catch(err){}
     };
 
@@ -1774,25 +1872,66 @@
     holdBtn.addEventListener('pointercancel', stopAction);
 
     function resetStopwatch() {
-        if (swElapsed === 0 && !isSwRunning) return;
-        if (confirm("Reset the stopwatch?")) {
-            if (isSwRunning) {
-                isSwRunning = false;
-                swMode = null;
-                clearInterval(swInterval);
-                holdBtn.style.filter = '';
-                holdBtn.style.transform = 'scale(1)';
-                
-                const toggleBtn = document.getElementById('toggleTimerBtn');
-                toggleBtn.innerText = "Start";
-                toggleBtn.style.backgroundColor = "";
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (p.stopwatch.elapsed === 0 && !p.stopwatch.isRunning) return;
+        if (confirm("Reset the stopwatch for this batch?")) {
+            p.stopwatch.isRunning = false;
+            p.stopwatch.mode = null;
+            p.stopwatch.elapsed = 0;
+            saveAllGroupData();
+            updateStopwatchDOMToggle();
+            document.getElementById('stopwatchDisplay').innerText = "00:00.00";
+        }
+    }
+
+
+    function updateSamplingDOM() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (!p.sampling) return;
+
+        document.getElementById('minMinutes').value = p.sampling.min || '';
+        document.getElementById('maxMinutes').value = p.sampling.max || '';
+        document.getElementById('startTime').value = p.sampling.start || '';
+
+        const res = document.getElementById('timeResult');
+        if (p.sampling.resultHtml) {
+            res.innerHTML = p.sampling.resultHtml;
+            res.style.display = 'block';
+            document.getElementById('timerControls').style.display = p.sampling.timerRunning || p.sampling.timeUp ? 'none' : 'block';
+            document.getElementById('clearTimeBtn').style.display = 'block';
+
+            const activeTimer = document.getElementById('activeTimer');
+            const countdown = document.getElementById('countdown');
+            const cancelBtn = document.getElementById('cancelTimerBtn');
+            const stopBtn = document.getElementById('stopAlarmBtn');
+
+            if (p.sampling.timerRunning) {
+                activeTimer.style.display = 'block';
+                countdown.classList.add('timer-active');
+                countdown.style.color = "#38bdf8";
+                cancelBtn.style.display = 'block';
+                stopBtn.style.display = 'none';
+            } else if (p.sampling.timeUp) {
+                activeTimer.style.display = 'block';
+                countdown.classList.remove('timer-active');
+                countdown.innerText = "TIME UP!";
+                countdown.style.color = "var(--error)";
+                cancelBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+            } else {
+                activeTimer.style.display = 'none';
+                countdown.classList.remove('timer-active');
             }
-            swElapsed = 0;
-            swDisplay.innerText = "00:00.00";
+        } else {
+            res.style.display = 'none';
+            document.getElementById('timerControls').style.display = 'none';
+            document.getElementById('activeTimer').style.display = 'none';
+            document.getElementById('clearTimeBtn').style.display = 'none';
         }
     }
 
     function generateTime(isRecursive) {
+        const p = parentGroups.find(g => g.id === activeParentId);
         const minInput = document.getElementById('minMinutes');
         const maxInput = document.getElementById('maxMinutes');
         const startTimeInput = document.getElementById('startTime');
@@ -1823,7 +1962,11 @@
 
         const min = parseInt(minInput.value); 
         const max = parseInt(maxInput.value);
-        let startStr = isRecursive ? lastGeneratedTimeStr : startTimeInput.value;
+        let startStr = isRecursive ? p.sampling.lastGenStr : startTimeInput.value;
+        
+        p.sampling.min = minInput.value;
+        p.sampling.max = maxInput.value;
+        p.sampling.start = startTimeInput.value;
         
         const rand = Math.floor(Math.random() * (max - min + 1)) + min;
         const [h, m] = startStr.split(':').map(Number);
@@ -1832,66 +1975,67 @@
         target.setHours(h, m + rand, 0, 0);
         if (target < new Date()) { target.setDate(target.getDate() + 1); }
 
-        targetTimeObject = target;
-        lastGeneratedTimeStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
+        p.sampling.targetTime = target.getTime();
+        p.sampling.lastGenStr = `${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
         
         const ref12 = format12Hour(h, m);
         const target12 = format12Hour(target.getHours(), target.getMinutes());
         
-        res.style.display = "block";
-        res.innerHTML = `
+        p.sampling.resultHtml = `
             <div style="font-size:0.85rem;color:#64748b; margin-bottom:5px;">Reference: ${startStr} <span style="font-weight:bold; color:#475569;">(${ref12})</span> <span style="font-size:0.75rem;">(+${rand}m)</span></div>
-            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem; margin-bottom:10px;">Target: ${lastGeneratedTimeStr} <span style="font-size:1.1rem; color:var(--accent);">(${target12})</span></div>
-            <button class="btn-recursive" onclick="generateTime(true)" style="margin:0;">Next window from ${lastGeneratedTimeStr}</button>
+            <div style="font-weight:bold;color:var(--primary);font-size:1.4rem; margin-bottom:10px;">Target: ${p.sampling.lastGenStr} <span style="font-size:1.1rem; color:var(--accent);">(${target12})</span></div>
+            <button class="btn-recursive" onclick="generateTime(true)" style="margin:0;">Next window from ${p.sampling.lastGenStr}</button>
         `;
         
-        document.getElementById('timerControls').style.display = 'block';
-        document.getElementById('clearTimeBtn').style.display = 'block';
+        saveAllGroupData();
+        updateSamplingDOM();
     }
 
     function handleStartTimer() {
+        const p = parentGroups.find(g => g.id === activeParentId);
         if (Notification.permission === "default") Notification.requestPermission();
-        if (timerInterval && !confirm("An active timer is already running. Override it?")) return;
-        if (targetTimeObject) startTimer(targetTimeObject);
+        if (p.sampling.timerRunning && !confirm("An active timer is already running. Override it?")) return;
+        
+        if (p.sampling.targetTime) {
+            p.sampling.timerRunning = true;
+            p.sampling.timeUp = false;
+            saveAllGroupData();
+            updateSamplingDOM();
+        }
     }
 
-    function startTimer(targetDate) {
-        stopTimer();
-        const display = document.getElementById('countdown');
-        const cancelBtn = document.getElementById('cancelTimerBtn');
-        const stopBtn = document.getElementById('stopAlarmBtn');
-        
-        document.getElementById('activeTimer').style.display = 'block';
-        display.classList.add('timer-active');
-        cancelBtn.style.display = 'block';
-        stopBtn.style.display = 'none';
+    function startGlobalSamplingTimer() {
+        setInterval(() => {
+            const now = Date.now();
+            
+            parentGroups.forEach(g => {
+                if (g.sampling && g.sampling.timerRunning && g.sampling.targetTime) {
+                    if (g.sampling.targetTime - now < 0 && !g.sampling.timeUp) {
+                        g.sampling.timerRunning = false;
+                        g.sampling.timeUp = true;
+                        saveAllGroupData();
+                        triggerFinalAlarm(g.name);
+                    }
+                }
+            });
 
-        timerInterval = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = targetDate.getTime() - now;
-
-            if (distance < 0) {
-                triggerFinalAlarm();
-                return;
+            const p = parentGroups.find(g => g.id === activeParentId);
+            if (!p || !p.sampling) return;
+            
+            const display = document.getElementById('countdown');
+            if (p.sampling.timerRunning && p.sampling.targetTime) {
+                const distance = p.sampling.targetTime - now;
+                if (distance >= 0) {
+                    const h = Math.floor((distance % 86400000) / 3600000);
+                    const m = Math.floor((distance % 3600000) / 60000);
+                    const s = Math.floor((distance % 60000) / 1000);
+                    display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                }
             }
-
-            const h = Math.floor((distance % 86400000) / 3600000);
-            const m = Math.floor((distance % 3600000) / 60000);
-            const s = Math.floor((distance % 60000) / 1000);
-            display.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
 
-    async function triggerFinalAlarm() {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        
-        const display = document.getElementById('countdown');
-        display.innerText = "TIME UP!";
-        display.style.color = "var(--error)";
-        document.getElementById('cancelTimerBtn').style.display = 'none';
-        document.getElementById('stopAlarmBtn').style.display = 'block';
-
+    async function triggerFinalAlarm(groupName) {
         alarm.play().catch(e => console.log("Audio block."));
         
         if ("vibrate" in navigator) {
@@ -1904,7 +2048,7 @@
         if (Notification.permission === "granted") {
             try {
                 const reg = await navigator.serviceWorker.ready;
-                await reg.showNotification("QC ALERT: COLLECT SAMPLES!", { 
+                await reg.showNotification(`QC ALERT: ${groupName} SAMPLES!`, { 
                     body: "Tap to stop the alarm.", 
                     requireInteraction: true,
                     vibrate: [500, 200, 500, 200, 500],
@@ -1915,11 +2059,14 @@
                 console.log("Notification failed", err);
             }
         }
+        updateSamplingDOM(); 
     }
 
     async function stopTimer() {
-        clearInterval(timerInterval);
-        timerInterval = null;
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.sampling.timerRunning = false;
+        p.sampling.timeUp = false;
+        saveAllGroupData();
         
         if (vibrationInterval) {
             clearInterval(vibrationInterval);
@@ -1929,38 +2076,39 @@
 
         alarm.pause();
         alarm.currentTime = 0;
-        document.getElementById('activeTimer').style.display = 'none';
-        document.getElementById('countdown').style.color = "#38bdf8";
-        document.getElementById('countdown').classList.remove('timer-active');
         
         try {
             const reg = await navigator.serviceWorker.ready;
             const notifications = await reg.getNotifications({ tag: 'qc-alert' });
             notifications.forEach(n => n.close());
         } catch(e) {}
+        
+        updateSamplingDOM();
     }
 
     function resetSamplingTime() {
-        const confirmMsg = timerInterval ? "Cancel current timer and clear time data?" : "Are you sure you want to clear the sampling time data?";
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const confirmMsg = p.sampling.timerRunning ? "Cancel current timer and clear time data?" : "Are you sure you want to clear the sampling time data?";
         if (!confirm(confirmMsg)) return;
         
         stopTimer();
-        // Purposefully skipping clear of minMinutes and maxMinutes here
-        document.getElementById('startTime').value = '';
-        document.getElementById('timeResult').style.display = 'none';
-        document.getElementById('timerControls').style.display = 'none';
-        document.getElementById('clearTimeBtn').style.display = 'none';
-        lastGeneratedTimeStr = "";
-        targetTimeObject = null;
+        
+        p.sampling.start = '';
+        p.sampling.resultHtml = '';
+        p.sampling.targetTime = null;
+        p.sampling.lastGenStr = '';
+        saveAllGroupData();
+        
+        updateSamplingDOM();
     }
 
     function addNumber() {
         const inp = document.getElementById('numberInput');
         const val = parseFloat(inp.value); if(isNaN(val)) return;
         
-        const display = document.getElementById('lastAddedDisplay');
-        display.innerHTML = `Last added: ${val}`;
-        display.style.color = 'var(--success)';
+        const activeTab = appTabs.find(t => t.id === activeTabId);
+        activeTab.lastAddedStr = `Last added: ${val}`;
+        activeTab.lastAddedColor = 'var(--success)';
         
         getActiveData().push(val); 
         saveAllGroupData();
@@ -1978,11 +2126,14 @@
         const oldVal = arr[index];
         if (newVal !== oldVal) {
             arr[index] = newVal;
+            
+            const activeTab = appTabs.find(t => t.id === activeTabId);
+            activeTab.lastAddedStr = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
+            activeTab.lastAddedColor = 'var(--accent)';
+            
             saveAllGroupData();
-            const display = document.getElementById('lastAddedDisplay');
-            display.innerHTML = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
-            display.style.color = 'var(--accent)'; 
             updateStats();
+            renderList();
         }
     }
 
@@ -1990,7 +2141,10 @@
         getActiveData().splice(index, 1);
         saveAllGroupData();
         const arr = getActiveData();
-        if (arr.length === 0) document.getElementById('lastAddedDisplay').innerHTML = '';
+        if (arr.length === 0) {
+            const activeTab = appTabs.find(t => t.id === activeTabId);
+            activeTab.lastAddedStr = '';
+        }
         renderList();
     }
 
@@ -2053,6 +2207,10 @@
         container.innerHTML = '';
         container.style.display = arr.length ? "flex" : "none";
         clearBtn.style.display = arr.length ? "block" : "none";
+        
+        const display = document.getElementById('lastAddedDisplay');
+        display.innerHTML = activeTab.lastAddedStr || '';
+        display.style.color = activeTab.lastAddedColor || 'var(--success)';
         
         if (activeTab) {
             clearBtn.innerText = `Clear ${activeTab.name}`;
@@ -2122,10 +2280,8 @@
         const tab = appTabs.find(t => t.id === activeTabId);
         if (confirm(`Are you sure you want to clear all data in "${tab.name}"?`)) { 
             tab.data = [];
+            tab.lastAddedStr = '';
             saveAllGroupData();
-            const display = document.getElementById('lastAddedDisplay');
-            display.innerHTML = ''; 
-            display.style.color = 'var(--success)';
             renderList(); 
         } 
     }
@@ -2139,8 +2295,21 @@
     }
 
     function calculateSalinity() {
+        const p = parentGroups.find(g => g.id === activeParentId);
         const brixStr = document.getElementById('brixVal').value;
         const brix = parseFloat(brixStr);
+        p.salinity.brix = brixStr;
+        saveAllGroupData();
+        updateSalinityDOM();
+    }
+
+    function updateSalinityDOM() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const brixStr = p.salinity.brix;
+        const brix = parseFloat(brixStr);
+        
+        document.getElementById('brixVal').value = brixStr || '';
+        
         const pctEl = document.getElementById('salinityPct');
         const clearBtn = document.getElementById('clearSalinityBtn');
         
@@ -2158,8 +2327,10 @@
     }
 
     function resetSalinity() {
-        document.getElementById('brixVal').value = ''; 
-        calculateSalinity();
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.salinity.brix = '';
+        saveAllGroupData();
+        updateSalinityDOM();
     }
 </script>
 </body>
