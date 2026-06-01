@@ -778,7 +778,13 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            if (activeBtnElement && !preventTabClick) {
+                const container = list.parentElement;
+                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
+                const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
+                // Scroll ONLY the container, not the whole page
+                container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+            }
         }, 10);
     }
 
@@ -1222,7 +1228,11 @@
         
         setTimeout(() => {
             if (activeBtnElement && !preventTabClick) {
-                activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                const container = list.parentElement;
+                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
+                const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
+                // Scroll ONLY the container, not the whole page
+                container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
         }, 10);
     }
@@ -1512,7 +1522,13 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            if (activeBtnElement && !preventTabClick) {
+                const container = list.parentElement;
+                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
+                const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
+                // Scroll ONLY the container, not the whole page
+                container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+            }
         }, 10);
     }
 
@@ -1680,7 +1696,13 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) activeBtnElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            if (activeBtnElement && !preventTabClick) {
+                const container = list.parentElement;
+                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
+                const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
+                // Scroll ONLY the container, not the whole page
+                container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+            }
         }, 10);
     }
 
