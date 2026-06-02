@@ -1883,7 +1883,6 @@
     }
     
     function addNewSumGroup() {
-        if (preventTabClick) return;
         const newName = getNextTabName(sumGroups, "Set");
         const newGroup = {
             id: 'sg_' + Date.now(),
@@ -1905,7 +1904,6 @@
         renderTabs();
         renderList();
     }
-
 
     // --- The Samples Inside the Sum Group ---
     function getActiveData() {
