@@ -531,6 +531,7 @@
 
     // --- GLOBALS FOR TAB STATE & GESTURES ---
     let preventTabClick = false; 
+    let isTabDraggingGlobal = false; // <--- NEW: Decouples drag-prevention from click-prevention
     let vibrationInterval = null;
     let startX = 0, startY = 0; 
     let isParentTabMenuOpen = false;
@@ -791,12 +792,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) {
+            if (activeBtnElement && !isTabDraggingGlobal) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 10);
+        }, 50);
     }
 
     function updateParentTabMenuState() {
@@ -1028,6 +1029,7 @@
 
             holdTimer = setTimeout(() => {
                 isDragging = true;
+                isTabDraggingGlobal = true; // Block scroll snapping during drag
                 if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
 
                 elements = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn)'));
@@ -1127,7 +1129,7 @@
             if (isDragging) {
                 isDragging = false;
                 preventTabClick = true;
-                setTimeout(() => preventTabClick = false, 150);
+                setTimeout(() => { preventTabClick = false; isTabDraggingGlobal = false; }, 150);
 
                 const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
                 const deltaX = clientX - startX;
@@ -1251,12 +1253,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) {
+            if (activeBtnElement && !isTabDraggingGlobal) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 10);
+        }, 50);
     }
 
     function updateEstimatorTabMenuState() {
@@ -1548,12 +1550,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) {
+            if (activeBtnElement && !isTabDraggingGlobal) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 10);
+        }, 50);
     }
 
     function updatePickupTabMenuState() {
@@ -1724,12 +1726,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !preventTabClick) {
+            if (activeBtnElement && !isTabDraggingGlobal) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 10);
+        }, 50);
     }
 
     function updateTabMenuState() {
