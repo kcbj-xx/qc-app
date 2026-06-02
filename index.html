@@ -529,10 +529,16 @@
         });
     }
 
-    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
+    // --- GLOBALS FOR TAB STATE & GESTURES ---
     let preventTabClick = false; 
     let vibrationInterval = null;
+    let startX = 0, startY = 0; 
+    let isParentTabMenuOpen = false;
+    let isPickupTabMenuOpen = false;
+    let isTabMenuOpen = false;
+    let isEstimatorTabMenuOpen = false;
     const alarm = document.getElementById('alarmSound');
+    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
     
     // --- TIME FORMATTING HELPERS ---
     function format12Hour(hours, minutes) {
@@ -643,12 +649,16 @@
     }
     
     function getNextTabName(tabsArray, prefix="Sample") {
-        for (let i = 1; i <= 1000; i++) {
-            if (!tabsArray.find(t => t.name.toLowerCase() === `${prefix.toLowerCase()} ${i}`)) {
-                return `${prefix} ${i}`;
+        let maxNum = 0;
+        const regex = new RegExp(`^${prefix}\\s+(\\d+)$`, 'i');
+        tabsArray.forEach(t => {
+            const match = t.name.trim().match(regex);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num > maxNum) maxNum = num;
             }
-        }
-        return `${prefix} New`;
+        });
+        return `${prefix} ${maxNum + 1}`;
     }
 
     // ==========================================
@@ -689,7 +699,6 @@
     });
 
     let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
-    let isParentTabMenuOpen = false;
 
     let pickupTabs, appTabs, estimatorTabs;
     let activePickupTabId, activeTabId, activeEstimatorTabId;
@@ -744,7 +753,11 @@
             if (tab.id === activeParentId) activeBtnElement = btn;
 
             btn.onclick = (e) => {
-                if (preventTabClick) { e.preventDefault(); e.stopPropagation(); return; }
+                const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                
+                if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
 
                 if (activeParentId === tab.id) {
                     isParentTabMenuOpen = !isParentTabMenuOpen;
@@ -780,9 +793,7 @@
         setTimeout(() => {
             if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
-                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
-                // Scroll ONLY the container, not the whole page
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
         }, 10);
@@ -887,21 +898,22 @@
         refreshGroupDataReferences();
         
         applyCardStatesToDOM(); 
-        renderParentTabs();
+        
+        // Ensure menus start closed
+        isParentTabMenuOpen = false;
+        isPickupTabMenuOpen = false;
+        isTabMenuOpen = false;
+        isEstimatorTabMenuOpen = false;
+        
+        renderParentTabs(); updateParentTabMenuState();
+        renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
+        renderTabs(); renderList(); updateTabMenuState();
+        renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
         
         updateSalinityDOM();
         updateTempDOM();
         updateSamplingDOM();
         updateStopwatchDOMToggle();
-        
-        renderEstimatorTabs();
-        loadEstimatorInputs();
-        
-        renderTabs();
-        renderList();
-        
-        renderPickupTabs();
-        loadPickupInputs();
         
         startGlobalStopwatch(); 
         startGlobalSamplingTimer(); 
@@ -970,6 +982,14 @@
             renderList();
             updateTabMenuState(); 
         }, "Delete ALL samples from Sum & Averaging? This cannot be undone.");
+
+        // Force UI Repaint for Manage Tabs fix 
+        setTimeout(() => {
+            ['tabsList', 'estimatorTabsList', 'pickupTabsList'].forEach(id => {
+                const list = document.getElementById(id);
+                if (list) { list.style.display = 'none'; list.offsetHeight; list.style.display = 'flex'; }
+            });
+        }, 100);
     });
 
     // ==========================================
@@ -981,7 +1001,6 @@
         
         let holdTimer = null;
         let isDragging = false;
-        let startX = 0, startY = 0;
         let dragIdx = -1;
         let itemWidth = 0;
         let elements = [];
@@ -999,6 +1018,7 @@
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
+            // Updating Global Variables for clicks
             startX = clientX;
             startY = clientY;
             startScrollLeft = container.scrollLeft;
@@ -1141,15 +1161,15 @@
         const list = document.getElementById(listId);
         let holdTimer = null;
         let isHold = false;
-        let startX = 0, startY = 0;
+        let holdStartX = 0, holdStartY = 0;
 
         const startHold = (e) => {
             const btn = e.target.closest('.add-tab-btn');
             if (!btn || (e.type === 'mousedown' && e.button !== 0)) return;
             
             isHold = false;
-            startX = e.touches ? e.touches[0].clientX : e.clientX; 
-            startY = e.touches ? e.touches[0].clientY : e.clientY;
+            holdStartX = e.touches ? e.touches[0].clientX : e.clientX; 
+            holdStartY = e.touches ? e.touches[0].clientY : e.clientY;
 
             holdTimer = setTimeout(() => {
                 isHold = true;
@@ -1174,7 +1194,7 @@
         list.addEventListener('touchstart', startHold, { passive: true });
         list.addEventListener('mousedown', startHold);
         list.addEventListener('touchmove', (e) => {
-            if (holdTimer && (Math.abs(e.touches[0].clientX - startX) > 10 || Math.abs(e.touches[0].clientY - startY) > 10)) {
+            if (holdTimer && (Math.abs(e.touches[0].clientX - holdStartX) > 10 || Math.abs(e.touches[0].clientY - holdStartY) > 10)) {
                 clearTimeout(holdTimer); holdTimer = null;
             }
         }, { passive: true });
@@ -1204,7 +1224,11 @@
             if (tab.id === activeEstimatorTabId) activeBtnElement = btn;
 
             btn.onclick = (e) => {
-                if (preventTabClick) { e.preventDefault(); e.stopPropagation(); return; }
+                const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                
+                if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
 
                 if (activeEstimatorTabId === tab.id) {
                     isEstimatorTabMenuOpen = !isEstimatorTabMenuOpen;
@@ -1229,9 +1253,7 @@
         setTimeout(() => {
             if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
-                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
-                // Scroll ONLY the container, not the whole page
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
         }, 10);
@@ -1499,7 +1521,11 @@
             if (tab.id === activePickupTabId) activeBtnElement = btn;
 
             btn.onclick = (e) => {
-                if (preventTabClick) { e.preventDefault(); e.stopPropagation(); return; }
+                const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                
+                if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
 
                 if (activePickupTabId === tab.id) {
                     isPickupTabMenuOpen = !isPickupTabMenuOpen;
@@ -1524,9 +1550,7 @@
         setTimeout(() => {
             if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
-                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
-                // Scroll ONLY the container, not the whole page
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
         }, 10);
@@ -1673,7 +1697,11 @@
             if (tab.id === activeTabId) activeBtnElement = btn;
 
             btn.onclick = (e) => {
-                if (preventTabClick) { e.preventDefault(); e.stopPropagation(); return; }
+                const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                
+                if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
 
                 if (activeTabId === tab.id) {
                     isTabMenuOpen = !isTabMenuOpen;
@@ -1698,9 +1726,7 @@
         setTimeout(() => {
             if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
-                // Calculate exactly where to scroll the tab bar horizontally to center the active tab
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
-                // Scroll ONLY the container, not the whole page
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
         }, 10);
@@ -1800,13 +1826,8 @@
         const cInput = document.getElementById('celsiusVal');
         const fInput = document.getElementById('fahrenheitVal');
         
-        // ONLY update the screen value if the user is not actively typing in it right now
-        if (document.activeElement !== cInput) {
-            cInput.value = p.temp.c;
-        }
-        if (document.activeElement !== fInput) {
-            fInput.value = p.temp.f;
-        }
+        if (document.activeElement !== cInput) cInput.value = p.temp.c;
+        if (document.activeElement !== fInput) fInput.value = p.temp.f;
         
         document.getElementById('clearTempBtn').style.display = (p.temp.c || p.temp.f) ? 'block' : 'none';
     }
@@ -1970,28 +1991,17 @@
         const minInput = document.getElementById('minMinutes');
         const maxInput = document.getElementById('maxMinutes');
         const startTimeInput = document.getElementById('startTime');
-        const res = document.getElementById('timeResult');
 
-        // Reset errors
         [minInput, maxInput, startTimeInput].forEach(el => el.classList.remove('input-error'));
 
         if (!isRecursive) {
-            // Check only Start Time as required
             if (!startTimeInput.value) {
-                // Apply the red highlight
                 startTimeInput.classList.add('input-error');
-                
-                // --- REMOVED THE res.innerHTML UPDATE HERE ---
-                
-                // Clear the error state after 3 seconds
-                setTimeout(() => {
-                    startTimeInput.classList.remove('input-error');
-                }, 3000);
+                setTimeout(() => { startTimeInput.classList.remove('input-error'); }, 3000);
                 return;
             }
         }
 
-        // Logic for generating the time
         const min = parseInt(minInput.value) || 0; 
         const max = parseInt(maxInput.value) || 0;
         let startStr = isRecursive ? p.sampling.lastGenStr : startTimeInput.value;
@@ -2181,19 +2191,24 @@
         renderList();
     }
 
-    // List Drag specific vars
+    // --- List Drag & Auto-Scroll Specific Vars ---
     let listDraggingIdx = null;
     let listStartY = 0;
+    let listStartScrollTop = 0;
     let listRowHeight = 0;
     let listElements = [];
+    let listScrollInterval = null;
+    let listScrollDir = 0;
+    let listLastClientY = 0;
 
-    function onListPointerMove(e) {
+    function executeListVisualMove() {
         if (listDraggingIdx === null) return;
-        const deltaY = e.clientY - listStartY;
+        const container = document.getElementById('numberList');
+        const totalMove = (listLastClientY - listStartY) + (container.scrollTop - listStartScrollTop);
         const draggedEl = listElements[listDraggingIdx];
-        draggedEl.style.transform = `translateY(${deltaY}px)`;
+        draggedEl.style.transform = `translateY(${totalMove}px)`;
 
-        let moveSteps = Math.round(deltaY / listRowHeight);
+        let moveSteps = Math.round(totalMove / listRowHeight);
         let targetIdx = listDraggingIdx + moveSteps;
         targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
 
@@ -2210,10 +2225,44 @@
         });
     }
 
+    function onListPointerMove(e) {
+        if (listDraggingIdx === null) return;
+        listLastClientY = e.clientY || (e.touches ? e.touches[0].clientY : listLastClientY);
+        executeListVisualMove();
+
+        const container = document.getElementById('numberList');
+        const rect = container.getBoundingClientRect();
+        
+        if (listLastClientY < rect.top + 40) {
+            listScrollDir = -5;
+        } else if (listLastClientY > rect.bottom - 40) {
+            listScrollDir = 5;
+        } else {
+            listScrollDir = 0;
+        }
+
+        if (listScrollDir !== 0 && !listScrollInterval) {
+            listScrollInterval = setInterval(() => {
+                container.scrollTop += listScrollDir;
+                executeListVisualMove();
+            }, 16);
+        } else if (listScrollDir === 0 && listScrollInterval) {
+            clearInterval(listScrollInterval);
+            listScrollInterval = null;
+        }
+    }
+
     function onListPointerUp(e) {
         if (listDraggingIdx === null) return;
-        const deltaY = e.clientY - listStartY;
-        let moveSteps = Math.round(deltaY / listRowHeight);
+        
+        if (listScrollInterval) {
+            clearInterval(listScrollInterval);
+            listScrollInterval = null;
+        }
+        
+        const container = document.getElementById('numberList');
+        const totalMove = (listLastClientY - listStartY) + (container.scrollTop - listStartScrollTop);
+        let moveSteps = Math.round(totalMove / listRowHeight);
         let targetIdx = listDraggingIdx + moveSteps;
         targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
 
@@ -2228,6 +2277,9 @@
         document.removeEventListener('pointermove', onListPointerMove);
         document.removeEventListener('pointerup', onListPointerUp);
         document.removeEventListener('pointercancel', onListPointerUp);
+        document.removeEventListener('touchmove', onListPointerMove);
+        document.removeEventListener('touchend', onListPointerUp);
+        document.removeEventListener('touchcancel', onListPointerUp);
         renderList();
     }
 
@@ -2264,13 +2316,14 @@
             handle.addEventListener('pointerdown', (e) => {
                 document.activeElement.blur(); 
                 
-                let startY = e.clientY;
+                listStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+                listLastClientY = listStartY;
                 
                 let holdTimer = setTimeout(() => {
                     if (navigator.vibrate) navigator.vibrate(50);
                     
                     listDraggingIdx = i;
-                    listStartY = startY;
+                    listStartScrollTop = container.scrollTop;
                     listElements = Array.from(container.children);
                     
                     const gap = parseInt(window.getComputedStyle(container).gap) || 8;
@@ -2285,23 +2338,35 @@
                     div.classList.add('dragging');
                     inputField.style.pointerEvents = 'none'; 
                     
-                    document.addEventListener('pointermove', onListPointerMove);
+                    document.addEventListener('pointermove', onListPointerMove, { passive: false });
                     document.addEventListener('pointerup', onListPointerUp);
                     document.addEventListener('pointercancel', onListPointerUp);
+                    
+                    // Add touch explicit events for mobile resilience
+                    document.addEventListener('touchmove', onListPointerMove, { passive: false });
+                    document.addEventListener('touchend', onListPointerUp);
+                    document.addEventListener('touchcancel', onListPointerUp);
                 }, 400); 
 
                 const cancelHold = (eMove) => {
-                    if (eMove.type === 'pointermove' && Math.abs(eMove.clientY - startY) < 10) return;
+                    const moveY = eMove.clientY || (eMove.touches ? eMove.touches[0].clientY : 0);
+                    if ((eMove.type === 'pointermove' || eMove.type === 'touchmove') && Math.abs(moveY - listStartY) < 10) return;
                     
                     clearTimeout(holdTimer);
                     document.removeEventListener('pointermove', cancelHold);
                     document.removeEventListener('pointerup', cancelHold);
                     document.removeEventListener('pointercancel', cancelHold);
+                    document.removeEventListener('touchmove', cancelHold);
+                    document.removeEventListener('touchend', cancelHold);
+                    document.removeEventListener('touchcancel', cancelHold);
                 };
 
                 document.addEventListener('pointermove', cancelHold);
                 document.addEventListener('pointerup', cancelHold);
                 document.addEventListener('pointercancel', cancelHold);
+                document.addEventListener('touchmove', cancelHold);
+                document.addEventListener('touchend', cancelHold);
+                document.addEventListener('touchcancel', cancelHold);
             });
 
             container.appendChild(div);
@@ -2343,7 +2408,6 @@
         
         const brixInput = document.getElementById('brixVal');
         
-        // ONLY update the screen value if the user is not actively typing in it right now
         if (document.activeElement !== brixInput) {
             brixInput.value = brixStr || '';
         }
