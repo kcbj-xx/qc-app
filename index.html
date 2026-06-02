@@ -173,40 +173,6 @@
         }
         .add-tab-btn:hover { color: var(--primary); }
 
-        /* --- Sum Groups (Pills) --- */
-        .sum-group-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 5px;
-            padding-bottom: 10px;
-        }
-        .sum-group-btn {
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 4px 14px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .sum-group-btn.active {
-            background: #eff6ff;
-            border-color: #93c5fd;
-            color: #1d4ed8;
-        }
-        .sum-group-add {
-            background: transparent;
-            border: 1px dashed #cbd5e1;
-            color: #94a3b8;
-            padding: 4px 10px;
-        }
-        .sum-group-add:hover { border-color: var(--primary); color: var(--primary); }
-
         /* --- Inline Tab Options Menu --- */
         .tab-options-panel {
             display: none; 
@@ -349,20 +315,7 @@
             </h2>
             <div class="card-body">
                 
-                <div class="sum-groups-wrapper">
-                    <div class="sum-group-list" id="sumGroupsList"></div>
-                </div>
-
-                <div id="sumGroupOptionsPanel" class="tab-options-panel" style="padding: 12px; margin-bottom: 10px;">
-                    <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Set</label>
-                    <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                        <input type="text" id="renameSumGroupInput" placeholder="Set Name" style="flex:1; min-height:38px; padding: 6px 10px; margin:0; font-size: 0.9rem;">
-                        <button onclick="saveSumGroupName()" style="width:auto; min-height:38px; margin:0; padding:0 15px;">Save</button>
-                    </div>
-                    <button onclick="confirmDeleteSumGroup()" class="secondary" style="margin:0; min-height:38px;">Delete Entire Set</button>
-                </div>
-
-                <div class="tabs-container" id="tabsContainer" style="padding-top: 5px;">
+                <div class="tabs-container" id="tabsContainer">
                     <div id="tabsList" class="tabs-list"></div>
                 </div>
 
@@ -562,7 +515,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v58</div>
+    <div class="footer-version">v56</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -578,17 +531,12 @@
 
     // --- GLOBALS FOR TAB STATE & GESTURES ---
     let preventTabClick = false; 
-    let isTabDraggingGlobal = false; 
     let vibrationInterval = null;
     let startX = 0, startY = 0; 
-    
     let isParentTabMenuOpen = false;
     let isPickupTabMenuOpen = false;
+    let isTabMenuOpen = false;
     let isEstimatorTabMenuOpen = false;
-    
-    let isSumGroupMenuOpen = false;
-    let isTabMenuOpen = false; // Sample tabs within Sum group
-
     const alarm = document.getElementById('alarmSound');
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
     
@@ -664,6 +612,7 @@
             if (pinned.includes(id)) card.classList.add('pinned');
             else card.classList.remove('pinned');
             
+            // Explicitly default to collapsed if the value is not precisely 'false'
             if (collapsed[id] === false) {
                 card.classList.remove('collapsed');
             } else {
@@ -725,7 +674,7 @@
             id: 'pg_' + Date.now(),
             name: 'Group 1',
             pickupTabs: oldPickup,
-            sumTabs: oldSum, // Will be migrated immediately below
+            sumTabs: oldSum,
             pinnedCards: [],
             collapsedCards: {},
             estimatorTabs: oldEstimator || [{ id: 'etab_'+Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
@@ -737,7 +686,7 @@
         localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
     }
 
-    // Migration to ensure all groups have the new nested SumGroups fields properly initialized
+    // Migration to ensure all groups have the new fields properly initialized
     parentGroups.forEach(g => {
         if (!g.pinnedCards) g.pinnedCards = [];
         if (!g.collapsedCards) g.collapsedCards = {};
@@ -746,89 +695,46 @@
         if (!g.temp) g.temp = { c: '', f: '' };
         if (!g.stopwatch) g.stopwatch = { elapsed: 0, startTime: 0, isRunning: false, mode: null };
         if (!g.sampling) g.sampling = { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false };
-        
-        // MIGRATION: Convert old sumTabs into sumGroups
-        if (!g.sumGroups) {
-            g.sumGroups = [{
-                id: 'sg_' + Date.now() + Math.random(),
-                name: 'Set 1',
-                tabs: g.sumTabs || [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
-                activeTabId: g.activeTabId || (g.sumTabs && g.sumTabs.length > 0 ? g.sumTabs[0].id : null)
-            }];
-            if(!g.sumGroups[0].activeTabId) g.sumGroups[0].activeTabId = g.sumGroups[0].tabs[0].id;
-            g.activeSumGroupId = g.sumGroups[0].id;
-            // We can leave g.sumTabs there as a backup, but it won't be used anymore.
-        } else {
-            // Ensure each inner set has lastAddedStr defined
-            g.sumGroups.forEach(sg => {
-                sg.tabs.forEach(t => { if(t.lastAddedStr === undefined) t.lastAddedStr = ''; });
-            });
-        }
+        g.sumTabs.forEach(t => { if(t.lastAddedStr === undefined) t.lastAddedStr = ''; });
     });
 
     let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
 
-    let pickupTabs, estimatorTabs;
-    let activePickupTabId, activeEstimatorTabId;
-    
-    // Nested Sum Variables
-    let sumGroups, activeSumGroupId;
-    let appTabs, activeTabId; // Reused variables representing tabs of the ACTIVE SumGroup
+    let pickupTabs, appTabs, estimatorTabs;
+    let activePickupTabId, activeTabId, activeEstimatorTabId;
 
     function ensureActiveIds() {
         parentGroups.forEach(g => {
             if (!g.activePickupTabId || !g.pickupTabs.find(t => t.id === g.activePickupTabId)) {
                 g.activePickupTabId = g.pickupTabs[0].id;
             }
+            if (!g.activeTabId || !g.sumTabs.find(t => t.id === g.activeTabId)) {
+                g.activeTabId = g.sumTabs[0].id;
+            }
             if (!g.activeEstimatorTabId || !g.estimatorTabs.find(t => t.id === g.activeEstimatorTabId)) {
                 g.activeEstimatorTabId = g.estimatorTabs[0].id;
             }
-            
-            // Nested checks
-            if (!g.activeSumGroupId || !g.sumGroups.find(sg => sg.id === g.activeSumGroupId)) {
-                g.activeSumGroupId = g.sumGroups[0].id;
-            }
-            g.sumGroups.forEach(sg => {
-                if (!sg.activeTabId || !sg.tabs.find(t => t.id === sg.activeTabId)) {
-                    sg.activeTabId = sg.tabs[0].id;
-                }
-            });
         });
     }
 
     function refreshGroupDataReferences() {
         const p = parentGroups.find(g => g.id === activeParentId);
         pickupTabs = p.pickupTabs;
+        appTabs = p.sumTabs;
         estimatorTabs = p.estimatorTabs;
         activePickupTabId = p.activePickupTabId;
+        activeTabId = p.activeTabId;
         activeEstimatorTabId = p.activeEstimatorTabId;
-
-        sumGroups = p.sumGroups;
-        activeSumGroupId = p.activeSumGroupId;
-
-        const activeSg = sumGroups.find(sg => sg.id === activeSumGroupId);
-        if (activeSg) {
-            appTabs = activeSg.tabs;
-            activeTabId = activeSg.activeTabId;
-        }
     }
 
     function saveAllGroupData() {
         const p = parentGroups.find(g => g.id === activeParentId);
         p.pickupTabs = pickupTabs;
+        p.sumTabs = appTabs;
         p.estimatorTabs = estimatorTabs;
         p.activePickupTabId = activePickupTabId;
+        p.activeTabId = activeTabId;
         p.activeEstimatorTabId = activeEstimatorTabId;
-
-        p.sumGroups = sumGroups;
-        p.activeSumGroupId = activeSumGroupId;
-        
-        const activeSg = sumGroups.find(sg => sg.id === activeSumGroupId);
-        if (activeSg) {
-            activeSg.tabs = appTabs;
-            activeSg.activeTabId = activeTabId;
-        }
-
         localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
         localStorage.setItem('qc_active_parent_id', activeParentId);
     }
@@ -868,10 +774,10 @@
                     updateSamplingDOM();
                     updateStopwatchDOMToggle();
                     
-                    renderParentTabs(); updateParentTabMenuState();
+                    renderParentTabs();
+                    updateParentTabMenuState();
                     renderPickupTabs(); loadPickupInputs();
                     renderEstimatorTabs(); loadEstimatorInputs();
-                    renderSumGroups(); updateSumGroupMenuState();
                     renderTabs(); renderList();
                 }
             };
@@ -885,12 +791,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !isTabDraggingGlobal) {
+            if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 50);
+        }, 10);
     }
 
     function updateParentTabMenuState() {
@@ -943,24 +849,17 @@
             renderParentTabs(); updateParentTabMenuState();
             renderPickupTabs(); loadPickupInputs();
             renderEstimatorTabs(); loadEstimatorInputs();
-            renderSumGroups(); updateSumGroupMenuState();
             renderTabs(); renderList();
         }
     }
 
     function addNewParentGroup() {
         const newName = getNextTabName(parentGroups, "Group");
-        
         const newGroup = {
             id: 'pg_' + Date.now(),
             name: newName,
             pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
-            sumGroups: [{
-                id: 'sg_' + Date.now(),
-                name: 'Set 1',
-                tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
-                activeTabId: null
-            }],
+            sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
             estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
             pinnedCards: [],
             collapsedCards: {},
@@ -970,10 +869,8 @@
             sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
         };
         newGroup.activePickupTabId = newGroup.pickupTabs[0].id;
+        newGroup.activeTabId = newGroup.sumTabs[0].id;
         newGroup.activeEstimatorTabId = newGroup.estimatorTabs[0].id;
-        
-        newGroup.activeSumGroupId = newGroup.sumGroups[0].id;
-        newGroup.sumGroups[0].activeTabId = newGroup.sumGroups[0].tabs[0].id;
         
         parentGroups.push(newGroup);
         activeParentId = newGroup.id;
@@ -983,12 +880,14 @@
         saveAllGroupData();
         applyCardStatesToDOM();
         
-        updateSalinityDOM(); updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle();
+        updateSalinityDOM();
+        updateTempDOM();
+        updateSamplingDOM();
+        updateStopwatchDOMToggle();
         
         renderParentTabs(); updateParentTabMenuState();
         renderPickupTabs(); loadPickupInputs();
         renderEstimatorTabs(); loadEstimatorInputs();
-        renderSumGroups(); updateSumGroupMenuState();
         renderTabs(); renderList();
     }
 
@@ -1003,16 +902,13 @@
         // Ensure menus start closed
         isParentTabMenuOpen = false;
         isPickupTabMenuOpen = false;
-        isEstimatorTabMenuOpen = false;
-        isSumGroupMenuOpen = false;
         isTabMenuOpen = false;
+        isEstimatorTabMenuOpen = false;
         
         renderParentTabs(); updateParentTabMenuState();
         renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
-        renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
-        
-        renderSumGroups(); updateSumGroupMenuState();
         renderTabs(); renderList(); updateTabMenuState();
+        renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
         
         updateSalinityDOM();
         updateTempDOM();
@@ -1032,12 +928,7 @@
                 id: 'pg_' + Date.now(),
                 name: 'Group 1',
                 pickupTabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }],
-                sumGroups: [{
-                    id: 'sg_' + Date.now(),
-                    name: 'Set 1',
-                    tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
-                    activeTabId: null
-                }],
+                sumTabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
                 estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
                 pinnedCards: [],
                 collapsedCards: {},
@@ -1047,9 +938,8 @@
                 sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
             }];
             parentGroups[0].activePickupTabId = parentGroups[0].pickupTabs[0].id;
+            parentGroups[0].activeTabId = parentGroups[0].sumTabs[0].id;
             parentGroups[0].activeEstimatorTabId = parentGroups[0].estimatorTabs[0].id;
-            parentGroups[0].activeSumGroupId = parentGroups[0].sumGroups[0].id;
-            parentGroups[0].sumGroups[0].activeTabId = parentGroups[0].sumGroups[0].tabs[0].id;
             
             activeParentId = parentGroups[0].id;
             isParentTabMenuOpen = false;
@@ -1057,11 +947,9 @@
             saveAllGroupData();
             applyCardStatesToDOM();
             updateSalinityDOM(); updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle();
-            
             renderParentTabs(); updateParentTabMenuState();
             renderPickupTabs(); loadPickupInputs();
             renderEstimatorTabs(); loadEstimatorInputs();
-            renderSumGroups(); updateSumGroupMenuState();
             renderTabs(); renderList();
         }, "Delete ALL groups and start completely fresh?");
 
@@ -1093,7 +981,7 @@
             renderTabs();
             renderList();
             updateTabMenuState(); 
-        }, "Delete ALL samples from this Set? This cannot be undone.");
+        }, "Delete ALL samples from Sum & Averaging? This cannot be undone.");
 
         // Force UI Repaint for Manage Tabs fix 
         setTimeout(() => {
@@ -1140,7 +1028,6 @@
 
             holdTimer = setTimeout(() => {
                 isDragging = true;
-                isTabDraggingGlobal = true; // Block scroll snapping during drag
                 if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
 
                 elements = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn)'));
@@ -1240,7 +1127,7 @@
             if (isDragging) {
                 isDragging = false;
                 preventTabClick = true;
-                setTimeout(() => { preventTabClick = false; isTabDraggingGlobal = false; }, 150);
+                setTimeout(() => preventTabClick = false, 150);
 
                 const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
                 const deltaX = clientX - startX;
@@ -1364,12 +1251,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !isTabDraggingGlobal) {
+            if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 50);
+        }, 10);
     }
 
     function updateEstimatorTabMenuState() {
@@ -1661,12 +1548,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !isTabDraggingGlobal) {
+            if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 50);
+        }, 10);
     }
 
     function updatePickupTabMenuState() {
@@ -1792,120 +1679,6 @@
     // ==========================================
     // ---- SUM & AVERAGING TABS SYSTEM LOGIC ---
     // ==========================================
-    
-    // --- Sum Groups (The Parent Sets) ---
-    function renderSumGroups() {
-        const list = document.getElementById('sumGroupsList');
-        list.innerHTML = '';
-        
-        sumGroups.forEach(sg => {
-            const btn = document.createElement('button');
-            btn.className = `sum-group-btn ${sg.id === activeSumGroupId ? 'active' : ''}`;
-            btn.innerText = sg.name;
-            
-            btn.onclick = (e) => {
-                if (preventTabClick) return;
-                
-                if (activeSumGroupId === sg.id) {
-                    isSumGroupMenuOpen = !isSumGroupMenuOpen;
-                    updateSumGroupMenuState();
-                } else {
-                    activeSumGroupId = sg.id;
-                    isSumGroupMenuOpen = false;
-                    isTabMenuOpen = false;
-                    refreshGroupDataReferences(); 
-                    saveAllGroupData();
-                    
-                    renderSumGroups();
-                    updateSumGroupMenuState();
-                    updateTabMenuState();
-                    renderTabs();
-                    renderList();
-                }
-            };
-            list.appendChild(btn);
-        });
-        
-        const addBtn = document.createElement('button');
-        addBtn.className = 'sum-group-btn sum-group-add';
-        addBtn.innerText = '+ Set';
-        addBtn.onclick = addNewSumGroup;
-        list.appendChild(addBtn);
-    }
-    
-    function updateSumGroupMenuState() {
-        const panel = document.getElementById('sumGroupOptionsPanel');
-        if (isSumGroupMenuOpen) {
-            const activeSg = sumGroups.find(t => t.id === activeSumGroupId);
-            document.getElementById('renameSumGroupInput').value = activeSg.name;
-            panel.style.display = 'flex';
-        } else {
-            panel.style.display = 'none';
-        }
-    }
-    
-    function saveSumGroupName() {
-        const newName = document.getElementById('renameSumGroupInput').value.trim();
-        if (newName !== '') {
-            const sg = sumGroups.find(t => t.id === activeSumGroupId);
-            sg.name = newName;
-            saveAllGroupData();
-            isSumGroupMenuOpen = false;
-            renderSumGroups();
-            updateSumGroupMenuState();
-        }
-    }
-    
-    function confirmDeleteSumGroup() {
-        const sg = sumGroups.find(t => t.id === activeSumGroupId);
-        if (sumGroups.length === 1) {
-            alert("You must have at least one Set.");
-            return;
-        }
-        if (confirm(`Are you sure you want to delete the entire set "${sg.name}"? This removes all samples inside it.`)) {
-            let currentIndex = sumGroups.findIndex(t => t.id === activeSumGroupId);
-            sumGroups.splice(currentIndex, 1);
-            let newIndex = currentIndex - 1;
-            if (newIndex < 0) newIndex = 0;
-            
-            activeSumGroupId = sumGroups[newIndex].id;
-            isSumGroupMenuOpen = false;
-            refreshGroupDataReferences();
-            saveAllGroupData();
-            
-            renderSumGroups();
-            updateSumGroupMenuState();
-            renderTabs();
-            renderList();
-        }
-    }
-    
-    function addNewSumGroup() {
-        if (preventTabClick) return;
-        const newName = getNextTabName(sumGroups, "Set");
-        const newGroup = {
-            id: 'sg_' + Date.now(),
-            name: newName,
-            tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' }],
-            activeTabId: null
-        };
-        newGroup.activeTabId = newGroup.tabs[0].id;
-        
-        sumGroups.push(newGroup);
-        activeSumGroupId = newGroup.id;
-        isSumGroupMenuOpen = false;
-        
-        refreshGroupDataReferences();
-        saveAllGroupData();
-        
-        renderSumGroups();
-        updateSumGroupMenuState();
-        renderTabs();
-        renderList();
-    }
-
-
-    // --- The Samples Inside the Sum Group ---
     function getActiveData() {
         return appTabs.find(t => t.id === activeTabId).data;
     }
@@ -1951,12 +1724,12 @@
         list.appendChild(addBtn);
         
         setTimeout(() => {
-            if (activeBtnElement && !isTabDraggingGlobal) {
+            if (activeBtnElement && !preventTabClick) {
                 const container = list.parentElement;
                 const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
                 container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
             }
-        }, 50);
+        }, 10);
     }
 
     function updateTabMenuState() {
