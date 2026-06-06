@@ -152,25 +152,27 @@
             padding-top: 8px; 
         }
 
-        /* --- New Set Tabs --- */
+        /* --- Pill Set Tabs --- */
         .set-tab-btn {
-            background: #f1f5f9; 
-            color: #64748b; 
-            border: 1px solid var(--border); 
-            border-radius: 6px; 
-            padding: 4px 12px; 
+            background: #e2e8f0; 
+            color: #475569; 
+            border: none; 
+            border-radius: 20px; 
+            padding: 0 16px; 
             height: 28px; 
+            line-height: 28px;
             margin-bottom: 2px;
             font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
         }
         .set-tab-btn.active {
             background: #475569; 
             color: white; 
-            border-color: #475569;
-            border-top: 1px solid #475569;
+            border: none;
         }
 
         .add-tab-btn { 
@@ -198,6 +200,7 @@
             padding-bottom: 0;
             font-size: 1.2rem;
             border: none;
+            background: transparent;
         }
 
         /* --- Inline Tab Options Menu --- */
@@ -568,7 +571,7 @@
             </div>
         </div>    
     </div>
-    <div class="footer-version">v61</div>
+    <div class="footer-version">v62</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -1136,6 +1139,26 @@
             renderSumSets(); updateSumSetMenuState();
             renderTabs(); renderList(); 
         }, "Delete ALL Sets and Samples from Sum & Averaging? This cannot be undone.");
+        
+        setupAddButtonHold('pickupTabsList', addNewPickupTab, () => {
+            pickupTabs.splice(0, pickupTabs.length, { id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' });
+            activePickupTabId = pickupTabs[0].id;
+            const activePSet = pickupSets.find(s => s.id === activePickupSetId);
+            activePSet.activeTabId = activePickupTabId;
+            isPickupTabMenuOpen = false;
+            saveAllGroupData();
+            renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
+        }, "Delete ALL Samples from this Set? This cannot be undone.");
+
+        setupAddButtonHold('tabsList', addNewTab, () => {
+            appTabs.splice(0, appTabs.length, { id: 'tab_' + Date.now(), name: 'Sample 1', data: [], lastAddedStr: '' });
+            activeTabId = appTabs[0].id;
+            const activeSSet = sumSets.find(s => s.id === activeSumSetId);
+            activeSSet.activeTabId = activeTabId;
+            isTabMenuOpen = false;
+            saveAllGroupData();
+            renderTabs(); renderList(); updateTabMenuState();
+        }, "Delete ALL Samples from this Set? This cannot be undone.");
 
         // Force UI Repaint for Manage Tabs fix 
         setTimeout(() => {
@@ -1687,10 +1710,10 @@
                     isPickupSetMenuOpen = !isPickupSetMenuOpen;
                     updatePickupSetMenuState();
                 } else {
+                    saveAllGroupData();
                     activePickupSetId = set.id;
                     isPickupSetMenuOpen = false;
                     refreshGroupDataReferences(); 
-                    saveAllGroupData();
                     renderPickupSets();
                     updatePickupSetMenuState();
                     renderPickupTabs();
@@ -1987,10 +2010,10 @@
                     isSumSetMenuOpen = !isSumSetMenuOpen;
                     updateSumSetMenuState();
                 } else {
+                    saveAllGroupData();
                     activeSumSetId = set.id;
                     isSumSetMenuOpen = false;
                     refreshGroupDataReferences(); 
-                    saveAllGroupData();
                     renderSumSets();
                     updateSumSetMenuState();
                     renderTabs();
