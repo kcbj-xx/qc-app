@@ -245,7 +245,7 @@
         input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit; width: 100%; max-width: 100%; min-height: 46px; box-sizing: border-box; transition: border-color 0.3s ease; margin: 0; display: block; -webkit-appearance: none; appearance: none; }
         input.input-error { border: 2px solid var(--error); background-color: #fff1f2; }
         
-        input[type="checkbox"].tick-box {
+        input[="checkbox"].tick-box {
             width: 24px !important;
             height: 24px !important;
             min-height: 24px !important;
@@ -327,7 +327,7 @@
         <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
             <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                <input type="text" id="renameParentTabInput" placeholder="Group Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                <input ="text" id="renameParentTabInput" placeholder="Group Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
                 <button onclick="saveParentTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
             </div>
             <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire Group</button>
@@ -355,7 +355,7 @@
                 <div id="pickupSetOptionsPanel" class="tab-options-panel" style="margin-top: 5px;">
                     <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Set</label>
                     <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                        <input type="text" id="renamePickupSetInput" placeholder="Set Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        <input ="text" id="renamePickupSetInput" placeholder="Set Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
                         <button onclick="savePickupSetName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
                     </div>
                     <button onclick="confirmDeletePickupSet()" class="secondary" style="margin:0; min-height:40px;">Delete Set</button>
@@ -368,7 +368,7 @@
                 <div id="pickupTabOptionsPanel" class="tab-options-panel">
                     <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
                     <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                        <input type="text" id="renamePickupTabInput" placeholder="Sample Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        <input ="text" id="renamePickupTabInput" placeholder="Sample Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
                         <button onclick="savePickupTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
                     </div>
                     <button onclick="confirmDeletePickupTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
@@ -383,7 +383,7 @@
                     <div class="row">
                         <div class="input-group">
                             <label>Pre-sample</label>
-                            <input type="number" step="any" id="preSampleVal" inputmode="decimal" oninput="savePickupInputs()">
+                            <input ="number" step="any" id="preSampleVal" inputmode="decimal" oninput="savePickupInputs()">
                         </div>
                         <div class="input-group">
                             <label>Post-sample</label>
@@ -635,7 +635,7 @@
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
-                <textarea id="quickNotesArea" placeholder="Type your notes here..." oninput="saveNotes()"></textarea>
+                <textarea id="quickNotesArea" placeholder="Type here..." oninput="saveNotes()"></textarea>
                 <button id="clearNotesBtn" class="secondary" onclick="clearNotes()" style="display: none; margin-top: 10px;">Clear Notes</button>
             </div>
         </div>
