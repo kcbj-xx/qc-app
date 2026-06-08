@@ -257,6 +257,27 @@
             cursor: pointer;
         }
 
+        /* New Notes Textarea Styling */
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            box-sizing: border-box;
+            background: #f8fafc;
+            color: var(--text);
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            background: #ffffff;
+        }
+
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 8px; }
         button:hover { background-color: var(--primary-hover); }
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
@@ -603,9 +624,23 @@
                     <div class="result" id="estimatorForecastResult" style="display: none; margin-top: 5px; background-color:#eff6ff; border-color:#bfdbfe;"></div>
                 </div>
             </div>
-        </div>    
+        </div>
+
+        <div class="card collapsed" id="card-notes">
+            <h2 onclick="toggleCard('card-notes')">
+                <button class="pin-btn" onclick="togglePin(event, 'card-notes')" title="Pin Tool">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
+                </button>
+                <div class="card-title-text">Quick Notes</div>
+                <div class="chevron">&#9660;</div>
+            </h2>
+            <div class="card-body">
+                <textarea id="quickNotesArea" placeholder="Type your notes here..." oninput="saveNotes()"></textarea>
+                <button id="clearNotesBtn" class="secondary" onclick="clearNotes()" style="display: none; margin-top: 10px;">Clear Notes</button>
+            </div>
+        </div>
     </div>
-    <div class="footer-version">v64</div>
+    <div class="footer-version">v65</div>
 </div>
 
 <audio id="alarmSound" loop preload="auto">
@@ -633,7 +668,7 @@
     let isEstimatorTabMenuOpen = false;
     
     const alarm = document.getElementById('alarmSound');
-    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator'];
+    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator', 'card-notes'];
     
     // --- TIME FORMATTING HELPERS ---
     function format12Hour(hours, minutes) {
@@ -781,7 +816,8 @@
             salinity: { brix: '' },
             temp: { c: '', f: '' },
             stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
-            sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
+            sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
+            notes: { text: '' }
         }];
         localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
     }
@@ -790,6 +826,7 @@
     parentGroups.forEach(g => {
         if (!g.pinnedCards) g.pinnedCards = [];
         if (!g.collapsedCards) g.collapsedCards = {};
+        if (!g.notes) g.notes = { text: '' };
         
         // Migrate old flat pickupTabs into pickupSets
         if (g.pickupTabs && !g.pickupSets) {
@@ -930,6 +967,7 @@
                     updateTempDOM();
                     updateSamplingDOM();
                     updateStopwatchDOMToggle();
+                    loadNotes();
                     
                     renderParentTabs(); updateParentTabMenuState();
                     renderPickupSets(); updatePickupSetMenuState();
@@ -1002,6 +1040,7 @@
             updateTempDOM();
             updateSamplingDOM();
             updateStopwatchDOMToggle();
+            loadNotes();
             
             renderParentTabs(); updateParentTabMenuState();
             renderPickupSets(); updatePickupSetMenuState();
@@ -1025,7 +1064,8 @@
             salinity: { brix: '' },
             temp: { c: '', f: '' },
             stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
-            sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
+            sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
+            notes: { text: '' }
         };
         newGroup.pickupSets[0].activeTabId = newGroup.pickupSets[0].tabs[0].id;
         newGroup.activePickupSetId = newGroup.pickupSets[0].id;
@@ -1047,6 +1087,7 @@
         updateTempDOM();
         updateSamplingDOM();
         updateStopwatchDOMToggle();
+        loadNotes();
         
         renderParentTabs(); updateParentTabMenuState();
         renderPickupSets(); updatePickupSetMenuState();
@@ -1085,6 +1126,7 @@
         updateTempDOM();
         updateSamplingDOM();
         updateStopwatchDOMToggle();
+        loadNotes();
         
         startGlobalStopwatch(); 
         startGlobalSamplingTimer(); 
@@ -1112,7 +1154,8 @@
                 salinity: { brix: '' },
                 temp: { c: '', f: '' },
                 stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
-                sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false }
+                sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
+                notes: { text: '' }
             }];
             parentGroups[0].pickupSets[0].activeTabId = parentGroups[0].pickupSets[0].tabs[0].id;
             parentGroups[0].activePickupSetId = parentGroups[0].pickupSets[0].id;
@@ -1127,7 +1170,7 @@
             refreshGroupDataReferences();
             saveAllGroupData();
             applyCardStatesToDOM();
-            updateSalinityDOM(); updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle();
+            updateSalinityDOM(); updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes();
             
             renderParentTabs(); updateParentTabMenuState();
             renderPickupSets(); updatePickupSetMenuState();
@@ -2313,6 +2356,40 @@
     // ==========================================
     // ---- GENERAL LOGIC ----
     // ==========================================
+
+    function loadNotes() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const notesArea = document.getElementById('quickNotesArea');
+        const clearBtn = document.getElementById('clearNotesBtn');
+        
+        if (p && p.notes) {
+            notesArea.value = p.notes.text || '';
+            clearBtn.style.display = notesArea.value.trim() !== '' ? 'block' : 'none';
+        }
+    }
+
+    function saveNotes() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const notesArea = document.getElementById('quickNotesArea');
+        const clearBtn = document.getElementById('clearNotesBtn');
+        
+        if (p && p.notes) {
+            p.notes.text = notesArea.value;
+            clearBtn.style.display = notesArea.value.trim() !== '' ? 'block' : 'none';
+            saveAllGroupData();
+        }
+    }
+
+    function clearNotes() {
+        if (confirm('Are you sure you want to clear these notes?')) {
+            const p = parentGroups.find(g => g.id === activeParentId);
+            if (p && p.notes) {
+                p.notes.text = '';
+                saveAllGroupData();
+                loadNotes();
+            }
+        }
+    }
 
     function convertTemp(source) {
         const p = parentGroups.find(g => g.id === activeParentId);
