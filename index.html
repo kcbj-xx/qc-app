@@ -304,8 +304,9 @@
         .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1.1rem; padding: 4px; text-align: center; transition: border-color 0.2s; }
         .edit-input:focus { border-bottom: 2px solid var(--primary); outline: none; border-radius: 0; }
         
-        /* Updated Out-of-Range Styling */
-        .edit-input.out-of-range { color: var(--success); }
+        /* Out-of-Range Styling */
+        .edit-input.out-of-range-low { color: var(--error); }
+        .edit-input.out-of-range-high { color: var(--success); }
         
         .remove-btn { background: #fee2e2; color: #ef4444; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; line-height: 1; transition: background-color 0.2s; }
         .remove-btn:hover { background: #fecaca; }
@@ -2952,7 +2953,14 @@
             div.className = 'number-item';
             
             // Check if number falls outside the configured range
-            let rangeClass = (hasRange && (n < minVal || n > maxVal)) ? "out-of-range" : "";
+            let rangeClass = "";
+            if (hasRange) {
+                if (n < minVal) {
+                    rangeClass = "out-of-range-low";
+                } else if (n > maxVal) {
+                    rangeClass = "out-of-range-high";
+                }
+            }
 
             div.innerHTML = `
                 <div class="drag-handle" title="Hold to reorder">&#x2261;</div>
