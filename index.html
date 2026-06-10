@@ -3426,6 +3426,17 @@
     // ==========================================
     // ---- EXPORT TO CSV ENGINE ----------------
     // ==========================================
+    function toggleExportSelection(cardId) {
+        const card = document.getElementById(cardId);
+        if (selectedExportCards.has(cardId)) {
+            selectedExportCards.delete(cardId);
+            card.classList.remove('export-selected');
+        } else {
+            selectedExportCards.add(cardId);
+            card.classList.add('export-selected');
+        }
+    }
+    
     function enterExportMode(startCardId) {
         isExportMode = true;
         document.body.classList.add('export-mode');
