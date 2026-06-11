@@ -3107,18 +3107,19 @@
 
         if (hasRange) {
             if (val < minVal) {
-                statusText = "&nbsp;(below range)";
+                statusText = " (below range)";
                 color = "var(--error)"; 
             } else if (val > maxVal) {
-                statusText = "&nbsp;(above range)";
+                statusText = " (above range)";
                 color = "var(--success)"; 
             } else {
-                statusText = "&nbsp;(within range)";
-                color = "var(--text)";
+                statusText = " (within range)";
+                color = "var(--primary)"; // Back to blue!
             }
         }
 
-        activeTab.lastAddedStr = `Last added:&nbsp;<u>${val}</u>${statusText}`;
+        // Wrapping the whole line in a <span> protects the standard spaces
+        activeTab.lastAddedStr = `<span>Last added: <u>${val}</u>${statusText}</span>`;
         activeTab.lastAddedColor = color;
         
         getActiveData().push(val); 
@@ -3149,18 +3150,19 @@
 
             if (hasRange) {
                 if (newVal < minVal) {
-                    statusText = "&nbsp;(below range)";
+                    statusText = " (below range)";
                     color = "var(--error)";
                 } else if (newVal > maxVal) {
-                    statusText = "&nbsp;(above range)";
+                    statusText = " (above range)";
                     color = "var(--success)";
                 } else {
-                    statusText = "&nbsp;(within range)";
-                    color = "var(--text)";
+                    statusText = " (within range)";
+                    color = "var(--accent)"; // Stays orange to indicate it was an edit
                 }
             }
 
-            activeTab.lastAddedStr = `Edited:&nbsp;<u>${oldVal}</u> <span style="margin: 0 5px;">&#10142;</span> <u>${newVal}</u>${statusText}`;
+            // Wrapping the whole line in a <span> protects the standard spaces
+            activeTab.lastAddedStr = `<span>Edited: <u>${oldVal}</u> <span style="margin: 0 5px;">&#10142;</span> <u>${newVal}</u>${statusText}</span>`;
             activeTab.lastAddedColor = color;
             
             saveAllGroupData();
