@@ -334,7 +334,7 @@
         body.export-mode .card * { pointer-events: none !important; }
         body.export-mode .card[data-exportable="true"] { outline: 3px dashed #94a3b8; opacity: 0.8; }
         body.export-mode .card[data-exportable="true"].export-selected { outline: 4px solid var(--primary); opacity: 1; transform: scale(1.02); box-shadow: 0 10px 20px rgba(37,99,235,0.25); background-color: #f0fdf4; }
-        body.export-mode .card[data-exportable="false"] { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
+        body.export-mode .card[data-exportable="false"] { opacity: 0.4; filter: grayscale(100%); }
         
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
     </style>
@@ -1425,10 +1425,7 @@
                 if (isExportMode) {
                     e.preventDefault();
                     e.stopPropagation();
-                    // Only allow toggling if the card is exportable
-                    if (card.dataset.exportable === "true") {
-                        toggleExportSelection(card.id);
-                    }
+                    if (card.dataset.exportable === "true") toggleExportSelection(card.id);
                 }
             }, true);
         });
@@ -3444,12 +3441,7 @@
         isExportMode = true;
         document.body.classList.add('export-mode');
         document.getElementById('exportModeBar').style.display = 'flex';
-        
-        // Only select the initial card if it is allowed to be exported
-        const startCard = document.getElementById(startCardId);
-        if (startCard && startCard.dataset.exportable === "true") {
-            toggleExportSelection(startCardId);
-        }
+        toggleExportSelection(startCardId);
     }
 
     function cancelExportMode() {
