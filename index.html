@@ -1454,7 +1454,6 @@
         let draggedData = null;
         let currentTargetIdx = -1;
         let startScrollLeft = 0;
-        let indicator = null; // The blue drop indicator
         
         let scrollDirection = 0;
         let autoScrollInterval = null;
@@ -1493,29 +1492,11 @@
                 }));
                 draggedData = elementsData[dragIdx];
 
-                // Create the drop indicator line
-                indicator = document.getElementById('tab-drop-indicator');
-                if (!indicator) {
-                    indicator = document.createElement('div');
-                    indicator.id = 'tab-drop-indicator';
-                    indicator.style.position = 'absolute';
-                    indicator.style.backgroundColor = 'var(--primary)';
-                    indicator.style.width = '4px';
-                    indicator.style.borderRadius = '2px';
-                    indicator.style.bottom = '0'; // align to bottom to match pills/tabs
-                    indicator.style.zIndex = '90';
-                    indicator.style.transition = 'left 0.1s ease-out, height 0.1s ease-out';
-                    indicator.style.pointerEvents = 'none';
-                    list.appendChild(indicator);
-                }
-                indicator.style.display = 'none';
-
                 btn.style.transition = 'none';
                 btn.style.zIndex = '100';
                 btn.style.transformOrigin = 'bottom center';
                 btn.style.transform = 'scale(1.05)';
-                btn.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)'; 
-                btn.style.opacity = '0.9'; // Ghost effect to see the drop line
+                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; 
                 
                 if (btn.classList.contains('parent-tab-btn') && btn.classList.contains('active')) {
                     btn.style.setProperty('background-color', 'var(--primary-hover)', 'important');
@@ -1527,6 +1508,11 @@
                 } else {
                     btn.style.setProperty('background-color', '#f1f5f9', 'important');
                 }
+
+                elements.forEach(el => {
+                    if (el !== btn) el.style.transition = 'transform 0.2s ease';
+                    el.dataset.offset = 0;
+                });
             }, 400);
         };
 
@@ -1540,36 +1526,33 @@
             const currentCenter = draggedData.center + totalMove;
             let targetIdx = dragIdx;
 
-            // Check which tab's center we have crossed
+            // Check which tab's center we have crossed (with leniency buffer)
             for (let i = 0; i < elementsData.length; i++) {
                 if (i === dragIdx) continue;
                 const other = elementsData[i];
-                if (dragIdx < i && currentCenter > other.center) targetIdx = i;
-                if (dragIdx > i && currentCenter < other.center) targetIdx = i;
+                
+                // 15% leniency buffer so it snaps into place a little earlier
+                const moveRightThreshold = other.center - (other.outerWidth * 0.15);
+                const moveLeftThreshold = other.center + (other.outerWidth * 0.15);
+
+                if (dragIdx < i && currentCenter > moveRightThreshold) targetIdx = i;
+                if (dragIdx > i && currentCenter < moveLeftThreshold) targetIdx = i;
             }
 
             currentTargetIdx = targetIdx;
 
-            // Move the drop indicator
-            if (indicator) {
-                if (targetIdx !== dragIdx) {
-                    indicator.style.display = 'block';
-                    const targetEl = elementsData[targetIdx].el;
-                    const gap = parseInt(window.getComputedStyle(list).gap) || 4;
-                    indicator.style.height = targetEl.offsetHeight + 'px'; // Match height of target tab
-                    
-                    if (targetIdx < dragIdx) {
-                        // Place to the left of the target
-                        indicator.style.left = (targetEl.offsetLeft - (gap / 2) - 2) + 'px';
-                    } else {
-                        // Place to the right of the target
-                        indicator.style.left = (targetEl.offsetLeft + targetEl.offsetWidth + (gap / 2) - 2) + 'px';
-                    }
-                } else {
-                    // Hide when hovering over original spot
-                    indicator.style.display = 'none';
+            // Shift other elements cleanly based on the dragged element's exact width
+            elementsData.forEach((data, i) => {
+                if (i === dragIdx) return;
+                let offset = 0;
+                if (i > dragIdx && i <= targetIdx) offset = -draggedData.outerWidth;
+                else if (i < dragIdx && i >= targetIdx) offset = draggedData.outerWidth;
+                
+                if (data.el.dataset.offset != offset) {
+                    data.el.style.transform = `translateX(${offset}px)`;
+                    data.el.dataset.offset = offset;
                 }
-            }
+            });
         }
 
         const moveDrag = (e) => {
@@ -1590,10 +1573,11 @@
 
                 const rect = container.getBoundingClientRect();
                 
-                if (lastClientX < rect.left + 50) {
-                    scrollDirection = -10;
-                } else if (lastClientX > rect.right - 50) {
-                    scrollDirection = 10;
+                // SLOWER PANNING: Reduced speed from 10 to 4, and widened trigger zone to 60px
+                if (lastClientX < rect.left + 60) {
+                    scrollDirection = -4;
+                } else if (lastClientX > rect.right - 60) {
+                    scrollDirection = 4;
                 } else {
                     scrollDirection = 0;
                 }
@@ -1624,11 +1608,6 @@
                 isDragging = false;
                 preventTabClick = true;
                 setTimeout(() => { preventTabClick = false; isTabDraggingGlobal = false; }, 150);
-
-                if (indicator) {
-                    indicator.remove();
-                    indicator = null;
-                }
 
                 if (dragIdx !== currentTargetIdx && currentTargetIdx !== -1) {
                     const arr = getArrayFn();
@@ -3128,18 +3107,18 @@
 
         if (hasRange) {
             if (val < minVal) {
-                statusText = " (under range)";
+                statusText = "&nbsp;(below range)";
                 color = "var(--error)"; 
             } else if (val > maxVal) {
-                statusText = " (over range)";
+                statusText = "&nbsp;(above range)";
                 color = "var(--success)"; 
             } else {
-                statusText = " (within range)";
+                statusText = "&nbsp;(within range)";
                 color = "var(--text)";
             }
         }
 
-        activeTab.lastAddedStr = `Last added: <u>${val}</u>${statusText}`;
+        activeTab.lastAddedStr = `Last added:&nbsp;<u>${val}</u>${statusText}`;
         activeTab.lastAddedColor = color;
         
         getActiveData().push(val); 
@@ -3170,19 +3149,19 @@
 
             if (hasRange) {
                 if (newVal < minVal) {
-                    statusText = " (below range)";
+                    statusText = "&nbsp;(below range)";
                     color = "var(--error)";
                 } else if (newVal > maxVal) {
-                    statusText = " (above range)";
+                    statusText = "&nbsp;(above range)";
                     color = "var(--success)";
                 } else {
-                    statusText = " (within range)";
+                    statusText = "&nbsp;(within range)";
                     color = "var(--text)";
                 }
             }
 
-            activeTab.lastAddedStr = `Edited: <u>${oldVal}</u> <span style="margin: 0 5px;">&#10142;</span> <u>${newVal}</u>${statusText}`;
-            activeTab.lastAddedColor = color; 
+            activeTab.lastAddedStr = `Edited:&nbsp;<u>${oldVal}</u> <span style="margin: 0 5px;">&#10142;</span> <u>${newVal}</u>${statusText}`;
+            activeTab.lastAddedColor = color;
             
             saveAllGroupData();
             updateStats();
