@@ -629,7 +629,7 @@
             </div>
         </div>
         
-        <div class="card collapsed" id="card-estimator" data-exportable="false">
+        <div class="card collapsed" id="card-estimator" data-exportable="true">
             <h2 onclick="toggleCard('card-estimator')">
                 <button class="pin-btn" onclick="togglePin(event, 'card-estimator')" title="Pin Tool">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
@@ -705,7 +705,7 @@
             </div>
         </div>
     </div>
-    <div class="footer-version">v71</div>
+    <div class="footer-version">v72</div>
 </div>
 
 <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1393,10 +1393,10 @@
         cards.forEach(card => {
             let holdTimer = null;
             let startTouchX = 0, startTouchY = 0;
+            const title = card.querySelector('h2'); // Target the title specifically
 
             const startHold = (e) => {
                 if (isExportMode) return;
-                // Don't trigger export if clicking input fields
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
 
                 startTouchX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1412,23 +1412,25 @@
                 if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
             };
 
-            card.addEventListener('touchstart', startHold, {passive: true});
-            card.addEventListener('mousedown', startHold);
-            card.addEventListener('touchmove', (e) => {
-                const cx = e.touches ? e.touches[0].clientX : e.clientX;
-                const cy = e.touches ? e.touches[0].clientY : e.clientY;
-                if (Math.abs(cx - startTouchX) > 10 || Math.abs(cy - startTouchY) > 10) cancelHold();
-            }, {passive: true});
-            card.addEventListener('touchend', cancelHold);
-            card.addEventListener('mouseup', cancelHold);
-            card.addEventListener('mouseleave', cancelHold);
+            // Attach hold events strictly to the title header
+            if (title) {
+                title.addEventListener('touchstart', startHold, {passive: true});
+                title.addEventListener('mousedown', startHold);
+                title.addEventListener('touchmove', (e) => {
+                    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+                    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+                    if (Math.abs(cx - startTouchX) > 10 || Math.abs(cy - startTouchY) > 10) cancelHold();
+                }, {passive: true});
+                title.addEventListener('touchend', cancelHold);
+                title.addEventListener('mouseup', cancelHold);
+                title.addEventListener('mouseleave', cancelHold);
+            }
 
-            // Intercept clicks during export mode
+            // Keep the click interceptor on the whole card for toggling selection once mode is active
             card.addEventListener('click', (e) => {
                 if (isExportMode) {
                     e.preventDefault();
                     e.stopPropagation();
-                    // Only select the card if it is allowed to be exported
                     if (card.dataset.exportable === "true") {
                         toggleExportSelection(card.id);
                     }
@@ -1470,7 +1472,7 @@
             const arr = getArrayFn();
             dragIdx = arr.findIndex(t => t.id === btn.dataset.id);
 
-            holdTimer = setTimeout(() => {
+           holdTimer = setTimeout(() => {
                 isDragging = true;
                 isTabDraggingGlobal = true; 
                 if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
@@ -1481,8 +1483,9 @@
 
                 btn.style.transition = 'none';
                 btn.style.zIndex = '100';
+                btn.style.transformOrigin = 'bottom center'; // Forces expansion upward, preventing scroll jitter
                 btn.style.transform = 'scale(1.05)';
-                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; 
+                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
                 
                 // Keep the styling visible during drag since inline overrides won't inherently break pill shapes anymore
                 if (btn.classList.contains('parent-tab-btn') && btn.classList.contains('active')) {
@@ -3085,15 +3088,18 @@
 
         if (hasRange) {
             if (val < minVal) {
-                statusText = " (under)";
+                statusText = " (under range)";
                 color = "var(--error)"; 
             } else if (val > maxVal) {
-                statusText = " (over)";
+                statusText = " (over range)";
                 color = "var(--success)"; 
+            } else {
+                statusText = " (within range)";
+                color = "var(--text)";
             }
         }
 
-        activeTab.lastAddedStr = `Last added: ${val}${statusText}`;
+        activeTab.lastAddedStr = `Last added: <u>${val}</u>${statusText}`;
         activeTab.lastAddedColor = color;
         
         getActiveData().push(val); 
@@ -3114,8 +3120,29 @@
             arr[index] = newVal;
             
             const activeTab = appTabs.find(t => t.id === activeTabId);
-            activeTab.lastAddedStr = `Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}`;
-            activeTab.lastAddedColor = 'var(--accent)'; // Edited stays orange
+            
+            let statusText = "";
+            let color = "var(--accent)"; 
+            let minVal = parseFloat(activeTab.minRange);
+            let maxVal = parseFloat(activeTab.maxRange);
+            let hasRange = !isNaN(minVal) && !isNaN(maxVal);
+            if (hasRange && minVal > maxVal) { let temp = minVal; minVal = maxVal; maxVal = temp; }
+
+            if (hasRange) {
+                if (newVal < minVal) {
+                    statusText = " (below range)";
+                    color = "var(--error)";
+                } else if (newVal > maxVal) {
+                    statusText = " (above range)";
+                    color = "var(--success)";
+                } else {
+                    statusText = " (within range)";
+                    color = "var(--text)";
+                }
+            }
+
+            activeTab.lastAddedStr = `Edited: <u>${oldVal}</u> <span style="margin: 0 5px;">&#10142;</span> <u>${newVal}</u>${statusText}`;
+            activeTab.lastAddedColor = color; 
             
             saveAllGroupData();
             updateStats();
@@ -3471,28 +3498,31 @@
         
         const p = parentGroups.find(g => g.id === activeParentId);
         
-        // Ensure \uFEFF is completely gone from the start of this string
-        let csv = `Group Name,"${p.name || ''}"\nDate,"${p.date || ''}"\nStart Time,"${p.startTime || ''}"\nEnd Time,"${p.endTime || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
+        let csv = `Group Name,"${p.name || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
 
         if (selectedExportCards.has('card-pickup')) {
             csv += "--- PICKUP CALCULATOR ---\nSet,Sample,Pre-Sample,Post-Sample,Decimal,Percentage\n";
             p.pickupSets.forEach(set => {
+                let firstSet = true;
                 set.tabs.forEach(tab => {
+                    let setName = firstSet ? set.name : "";
                     let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
                     let dec = "", pct = "";
                     if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
                         dec = ((pre - post) / pre).toFixed(4);
                         pct = (((pre - post) / pre) * 100).toFixed(2) + "%";
                     }
-                    csv += `"${set.name}","${tab.name}","${tab.pre || ''}","${tab.post || ''}","${dec}","${pct}"\n`;
+                    csv += `"${setName}","${tab.name}","${tab.pre || ''}","${tab.post || ''}","${dec}","${pct}"\n`;
+                    firstSet = false;
                 });
             });
             csv += "\n";
         }
 
         if (selectedExportCards.has('card-averaging')) {
-            csv += "--- SUM & AVERAGING ---\nSet,Sample,Range Limit,Count,Sum,Average,Under Range,Over Range,Data Points\n";
+            csv += "--- SUM & AVERAGING ---\nSet,Sample,Range Limit,Count,Sum,Average,Below Range,Above Range,Within Range,Data Points\n";
             p.sumSets.forEach(set => {
+                let firstSet = true;
                 set.tabs.forEach(tab => {
                     let min = parseFloat(tab.minRange); let max = parseFloat(tab.maxRange);
                     let hasRange = !isNaN(min) && !isNaN(max);
@@ -3502,16 +3532,45 @@
                     let avg = tab.data.length ? (sum/tab.data.length).toFixed(2) : 0;
                     let count = tab.data.length;
 
-                    let under = 0, over = 0;
+                    let under = 0, over = 0, within = 0;
                     if (hasRange) {
-                        tab.data.forEach(n => { if (n < min) under++; else if (n > max) over++; });
+                        tab.data.forEach(n => { 
+                            if (n < min) under++; 
+                            else if (n > max) over++; 
+                            else within++;
+                        });
                     }
 
                     let rangeStr = hasRange ? `${min} - ${max}` : "N/A";
                     let dataStr = tab.data.join(", ");
+                    let setName = firstSet ? set.name : "";
 
-                    csv += `"${set.name}","${tab.name}","${rangeStr}","${count}","${sum}","${avg}","${hasRange ? under : 'N/A'}","${hasRange ? over : 'N/A'}","${dataStr}"\n`;
+                    csv += `"${setName}","${tab.name}","${rangeStr}","${count}","${sum}","${avg}","${hasRange ? under : 'N/A'}","${hasRange ? over : 'N/A'}","${hasRange ? within : 'N/A'}","${dataStr}"\n`;
+                    firstSet = false;
                 });
+            });
+            csv += "\n";
+        }
+
+        if (selectedExportCards.has('card-estimator')) {
+            csv += "--- PRODUCTION ESTIMATOR ---\nLine,Unit,Shift Start,Amount,Clock Time,Status\n";
+            p.estimatorTabs.forEach(tab => {
+                let firstTab = true;
+                let sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                
+                if (sortedData.length === 0) {
+                    csv += `"${tab.name}","${tab.unit || 'Units'}","${formatTimeStringTo12Hour(tab.startTime) || ''}","N/A","N/A","No Logs"\n`;
+                } else {
+                    sortedData.forEach(entry => {
+                        let lineName = firstTab ? tab.name : "";
+                        let unit = firstTab ? (tab.unit || 'Units') : "";
+                        let shiftStart = firstTab ? formatTimeStringTo12Hour(tab.startTime) : "";
+                        let status = entry.checked ? "Logged" : "Ignored";
+                        
+                        csv += `"${lineName}","${unit}","${shiftStart}","${entry.amount}","${formatTimeStringTo12Hour(entry.time)}","${status}"\n`;
+                        firstTab = false;
+                    });
+                }
             });
             csv += "\n";
         }
@@ -3535,7 +3594,6 @@
             csv += `"${notes.replace(/"/g, '""')}"\n\n`;
         }
 
-        // No BOM arrays, just the raw CSV text
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         
         const link = document.createElement("a");
