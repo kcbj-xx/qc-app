@@ -3470,8 +3470,10 @@
         }
         
         const p = parentGroups.find(g => g.id === activeParentId);
-        let csv = `Group Name,"${p.name || ''}"\nDate,"${p.date || ''}"\nStart Time,"${p.startTime || ''}"\nEnd Time,"${p.endTime || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
         
+        // Ensure \uFEFF is completely gone from the start of this string
+        let csv = `Group Name,"${p.name || ''}"\nDate,"${p.date || ''}"\nStart Time,"${p.startTime || ''}"\nEnd Time,"${p.endTime || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
+
         if (selectedExportCards.has('card-pickup')) {
             csv += "--- PICKUP CALCULATOR ---\nSet,Sample,Pre-Sample,Post-Sample,Decimal,Percentage\n";
             p.pickupSets.forEach(set => {
@@ -3533,8 +3535,8 @@
             csv += `"${notes.replace(/"/g, '""')}"\n\n`;
         }
 
-        // Add the BOM directly into the Blob array, and remove the trailing semicolon from the type
-        const blob = new Blob(["\uFEFF", csv], { type: 'text/csv;charset=utf-8' });
+        // No BOM arrays, just the raw CSV text
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
