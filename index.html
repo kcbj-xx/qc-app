@@ -1449,8 +1449,10 @@
         let holdTimer = null;
         let isDragging = false;
         let dragIdx = -1;
-        let itemWidth = 0;
         let elements = [];
+        let elementsData = []; // Stores individual widths and centers
+        let draggedData = null;
+        let currentTargetIdx = -1;
         let startScrollLeft = 0;
         
         let scrollDirection = 0;
@@ -1471,23 +1473,31 @@
 
             const arr = getArrayFn();
             dragIdx = arr.findIndex(t => t.id === btn.dataset.id);
+            currentTargetIdx = dragIdx;
 
-           holdTimer = setTimeout(() => {
+            holdTimer = setTimeout(() => {
                 isDragging = true;
                 isTabDraggingGlobal = true; 
                 if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
 
                 elements = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn)'));
                 const gap = parseInt(window.getComputedStyle(list).gap) || 4;
-                itemWidth = elements[0].offsetWidth + gap;
+                
+                // Map the exact sizes and physical centers of ALL tabs
+                elementsData = elements.map((el, index) => ({
+                    el: el,
+                    index: index,
+                    outerWidth: el.offsetWidth + gap,
+                    center: el.offsetLeft + (el.offsetWidth / 2)
+                }));
+                draggedData = elementsData[dragIdx];
 
                 btn.style.transition = 'none';
                 btn.style.zIndex = '100';
-                btn.style.transformOrigin = 'bottom center'; // Forces expansion upward, preventing scroll jitter
+                btn.style.transformOrigin = 'bottom center';
                 btn.style.transform = 'scale(1.05)';
-                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; 
                 
-                // Keep the styling visible during drag since inline overrides won't inherently break pill shapes anymore
                 if (btn.classList.contains('parent-tab-btn') && btn.classList.contains('active')) {
                     btn.style.setProperty('background-color', 'var(--primary-hover)', 'important');
                     btn.style.setProperty('color', 'white', 'important');
@@ -1513,18 +1523,30 @@
 
             elements[dragIdx].style.transform = `translateX(${totalMove}px) scale(1.05)`;
 
-            let moveSteps = Math.round(totalMove / itemWidth);
-            let targetIdx = Math.max(0, Math.min(elements.length - 1, dragIdx + moveSteps));
+            // Find where the dragged tab's center currently is
+            const currentCenter = draggedData.center + totalMove;
+            let targetIdx = dragIdx;
 
-            elements.forEach((el, idx) => {
-                if (idx === dragIdx) return;
+            // Check which tab's center we have crossed
+            for (let i = 0; i < elementsData.length; i++) {
+                if (i === dragIdx) continue;
+                const other = elementsData[i];
+                if (dragIdx < i && currentCenter > other.center) targetIdx = i;
+                if (dragIdx > i && currentCenter < other.center) targetIdx = i;
+            }
+
+            currentTargetIdx = targetIdx;
+
+            // Shift other elements cleanly based on the dragged element's exact width
+            elementsData.forEach((data, i) => {
+                if (i === dragIdx) return;
                 let offset = 0;
-                if (idx > dragIdx && idx <= targetIdx) offset = -itemWidth;
-                else if (idx < dragIdx && idx >= targetIdx) offset = itemWidth;
+                if (i > dragIdx && i <= targetIdx) offset = -draggedData.outerWidth;
+                else if (i < dragIdx && i >= targetIdx) offset = draggedData.outerWidth;
                 
-                if (el.dataset.offset != offset) {
-                    el.style.transform = `translateX(${offset}px)`;
-                    el.dataset.offset = offset;
+                if (data.el.dataset.offset != offset) {
+                    data.el.style.transform = `translateX(${offset}px)`;
+                    data.el.dataset.offset = offset;
                 }
             });
         }
@@ -1582,18 +1604,10 @@
                 preventTabClick = true;
                 setTimeout(() => { preventTabClick = false; isTabDraggingGlobal = false; }, 150);
 
-                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-                const deltaX = clientX - startX;
-                const scrollShift = container.scrollLeft - startScrollLeft;
-                const totalMove = deltaX + scrollShift;
-
-                let moveSteps = Math.round(totalMove / itemWidth);
-                let targetIdx = Math.max(0, Math.min(elements.length - 1, dragIdx + moveSteps));
-
-                if (dragIdx !== targetIdx) {
+                if (dragIdx !== currentTargetIdx && currentTargetIdx !== -1) {
                     const arr = getArrayFn();
                     const item = arr.splice(dragIdx, 1)[0];
-                    arr.splice(targetIdx, 0, item);
+                    arr.splice(currentTargetIdx, 0, item);
                     saveFn();
                 }
                 renderFn();
