@@ -3581,8 +3581,12 @@
         
         const p = parentGroups.find(g => g.id === activeParentId);
         
-        let csv = `Group Name,"${p.name || ''}"\nProduct Code,"${p.productCode || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
-
+        // Grab the date and replace the built-in comma with " at " to prevent CSV cell splitting
+        const safeExportDate = new Date().toLocaleString().replace(/,/g, ' at');
+        
+        // Group Info
+        let csv = `Group Name,"${p.name || ''}"\nProduct Code,"${p.productCode || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${safeExportDate}"\n\n`;
+        
         if (selectedExportCards.has('card-pickup')) {
             csv += "--- PICKUP CALCULATOR ---\n";
             p.pickupSets.forEach(set => {
