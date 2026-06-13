@@ -3527,31 +3527,32 @@
         
         const p = parentGroups.find(g => g.id === activeParentId);
         
-        let csv = `Group Name,"${p.name || ''}",,,,,,,,\nProduct Code,"${p.productCode || ''}",,,,,,,,\nDate,"${p.date || ''}",,,,,,,,\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}",,,,,,,,\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}",,,,,,,,\nExported On,"${new Date().toLocaleString()}",,,,,,,,\n\n`;
+        // Group Info
+        let csv = `Group Name,"${p.name || ''}"\nProduct Code,"${p.productCode || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
 
         if (selectedExportCards.has('card-pickup')) {
-            csv += "--- PICKUP CALCULATOR ---\nSet,Sample,Pre-Sample,Post-Sample,Decimal,Percentage\n";
+            csv += "--- PICKUP CALCULATOR ---\n";
             p.pickupSets.forEach(set => {
-                let firstSet = true;
                 set.tabs.forEach(tab => {
-                    let setName = firstSet ? set.name : "";
                     let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
                     let dec = "", pct = "";
                     if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
                         dec = ((pre - post) / pre).toFixed(4);
                         pct = (((pre - post) / pre) * 100).toFixed(2) + "%";
                     }
-                    csv += `"${setName}","${tab.name}","${tab.pre || ''}","${tab.post || ''}","${dec}","${pct}"\n`;
-                    firstSet = false;
+                    csv += `Set,"${set.name}"\n`;
+                    csv += `Sample,"${tab.name}"\n`;
+                    csv += `Pre-Sample,"${tab.pre || ''}"\n`;
+                    csv += `Post-Sample,"${tab.post || ''}"\n`;
+                    csv += `Decimal,"${dec}"\n`;
+                    csv += `Percentage,"${pct}"\n\n`;
                 });
             });
-            csv += "\n";
         }
 
         if (selectedExportCards.has('card-averaging')) {
-            csv += "--- SUM & AVERAGING ---\nSet,Sample,Range Limit,Count,Sum,Average,Below Range,Above Range,Within Range,Data Points\n";
+            csv += "--- SUM & AVERAGING ---\n";
             p.sumSets.forEach(set => {
-                let firstSet = true;
                 set.tabs.forEach(tab => {
                     let min = parseFloat(tab.minRange); let max = parseFloat(tab.maxRange);
                     let hasRange = !isNaN(min) && !isNaN(max);
@@ -3571,56 +3572,69 @@
                     }
 
                     let rangeStr = hasRange ? `${min} - ${max}` : "N/A";
-                    let dataStr = tab.data.join(", ");
-                    let setName = firstSet ? set.name : "";
+                    
+                    // By joining with commas WITHOUT surrounding quotes, 
+                    // Excel will place each number into its own individual cell.
+                    let dataStr = tab.data.join(","); 
 
-                    csv += `"${setName}","${tab.name}","${rangeStr}","${count}","${sum}","${avg}","${hasRange ? under : 'N/A'}","${hasRange ? over : 'N/A'}","${hasRange ? within : 'N/A'}","${dataStr}"\n`;
-                    firstSet = false;
+                    csv += `Set,"${set.name}"\n`;
+                    csv += `Sample,"${tab.name}"\n`;
+                    csv += `Range Limit,"${rangeStr}"\n`;
+                    csv += `Count,"${count}"\n`;
+                    csv += `Sum,"${sum}"\n`;
+                    csv += `Average,"${avg}"\n`;
+                    csv += `Below Range,"${hasRange ? under : 'N/A'}"\n`;
+                    csv += `Above Range,"${hasRange ? over : 'N/A'}"\n`;
+                    csv += `Within Range,"${hasRange ? within : 'N/A'}"\n`;
+                    csv += `Data Points,${dataStr}\n\n`;
                 });
             });
-            csv += "\n";
         }
 
         if (selectedExportCards.has('card-estimator')) {
-            csv += "--- PRODUCTION PACE ---\nLine,Unit,Shift Start,Amount,Clock Time,Status\n";
+            csv += "--- PRODUCTION PACE ---\n";
             p.estimatorTabs.forEach(tab => {
-                let firstTab = true;
                 let sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
                 
+                csv += `Line,"${tab.name}"\n`;
+                csv += `Unit,"${tab.unit || 'Units'}"\n`;
+                csv += `Shift Start,"${formatTimeStringTo12Hour(tab.startTime) || ''}"\n`;
+                
                 if (sortedData.length === 0) {
-                    csv += `"${tab.name}","${tab.unit || 'Units'}","${formatTimeStringTo12Hour(tab.startTime) || ''}","N/A","N/A","No Logs"\n`;
+                    csv += `Amount,N/A\n`;
+                    csv += `Clock Time,N/A\n`;
+                    csv += `Status,No Logs\n\n`;
                 } else {
-                    sortedData.forEach(entry => {
-                        let lineName = firstTab ? tab.name : "";
-                        let unit = firstTab ? (tab.unit || 'Units') : "";
-                        let shiftStart = firstTab ? formatTimeStringTo12Hour(tab.startTime) : "";
-                        let status = entry.checked ? "Logged" : "Ignored";
-                        
-                        csv += `"${lineName}","${unit}","${shiftStart}","${entry.amount}","${formatTimeStringTo12Hour(entry.time)}","${status}"\n`;
-                        firstTab = false;
-                    });
+                    // This formats the Production logs horizontally so they read left-to-right like a timeline
+                    let amounts = sortedData.map(e => `"${e.amount}"`).join(",");
+                    let times = sortedData.map(e => `"${formatTimeStringTo12Hour(e.time)}"`).join(",");
+                    let statuses = sortedData.map(e => `"${e.checked ? 'Logged' : 'Ignored'}"`).join(",");
+                    
+                    csv += `Amount,${amounts}\n`;
+                    csv += `Clock Time,${times}\n`;
+                    csv += `Status,${statuses}\n\n`;
                 }
             });
-            csv += "\n";
         }
 
         if (selectedExportCards.has('card-salinity')) {
-            csv += "--- SALINITY CALCULATOR ---\nSample,Brix,Salinity Percentage\n";
+            csv += "--- SALINITY CALCULATOR ---\n";
             (p.salinityTabs || []).forEach(tab => {
                 let brix = parseFloat(tab.brix);
                 let pct = "";
                 if (!isNaN(brix)) {
                     pct = ((brix / 26.4) * 100).toFixed(2) + "%";
                 }
-                csv += `"${tab.name}","${tab.brix || ''}","${pct}"\n`;
+                csv += `Sample,"${tab.name}"\n`;
+                csv += `Brix,"${tab.brix || ''}"\n`;
+                csv += `Salinity Percentage,"${pct}"\n\n`;
             });
-            csv += "\n";
         }
 
         if (selectedExportCards.has('card-notes')) {
             csv += "--- QUICK NOTES ---\n";
             let notes = p.notes?.text || "";
-            csv += `"${notes.replace(/"/g, '""')}",,,,,,,,\n\n`;
+            csv += `"${notes.replace(/"/g, '""')}"\n\n`;
         }
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
