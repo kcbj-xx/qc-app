@@ -3427,9 +3427,8 @@
         const precision = getDynamicPrecision(arr);
 
         document.getElementById('statCount').innerText = arr.length;
-        document.getElementById('statSum').innerText = arr.length ? sum.toFixed(precision) : 0;
-        document.getElementById('statAvg').innerText = arr.length ? (sum / arr.length).toFixed(precision) : 0;
-
+        document.getElementById('statSum').innerText = arr.length ? parseFloat(sum.toFixed(precision)) : 0;
+        document.getElementById('statAvg').innerText = arr.length ? parseFloat((sum / arr.length).toFixed(precision)) : 0;
         let minVal = parseFloat(activeTab.minRange);
         let maxVal = parseFloat(activeTab.maxRange);
         let hasRange = !isNaN(minVal) && !isNaN(maxVal);
@@ -3576,8 +3575,8 @@
                     let sum = tab.data.reduce((a,b)=>a+b, 0);
                     let precision = getDynamicPrecision(tab.data);
                     
-                    let displaySum = tab.data.length ? sum.toFixed(precision) : 0;
-                    let avg = tab.data.length ? (sum/tab.data.length).toFixed(precision) : 0;
+                    let displaySum = tab.data.length ? parseFloat(sum.toFixed(precision)) : 0;
+                    let avg = tab.data.length ? parseFloat((sum/tab.data.length).toFixed(precision)) : 0;
                     let count = tab.data.length;
 
                     let under = 0, over = 0, within = 0;
