@@ -357,11 +357,16 @@
             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
             <div style="display:flex; gap:10px; width:100%; margin-bottom: 15px;">
                 <input type="text" id="renameParentTabInput" placeholder="Group Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                <input type="text" id="groupProductCodeInput" placeholder="Product Code" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
             </div>
-            <div class="input-group" style="width: 100%; margin-bottom: 15px;">
-                <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
-                <input type="date" id="groupDateInput" style="min-height: 40px;">
+            <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
+                <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                    <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Product Code</label>
+                    <input type="text" id="groupProductCodeInput" placeholder="Product Code" style="min-height:40px;">
+                </div>
+                <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                    <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
+                    <input type="date" id="groupDateInput" style="min-height: 40px;">
+                </div>
             </div>
             <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
@@ -3541,32 +3546,48 @@
         
         const p = parentGroups.find(g => g.id === activeParentId);
         
-        // Group Info
         let csv = `Group Name,"${p.name || ''}"\nProduct Code,"${p.productCode || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
 
         if (selectedExportCards.has('card-pickup')) {
             csv += "--- PICKUP CALCULATOR ---\n";
             p.pickupSets.forEach(set => {
+                csv += `Set,"${set.name}"\n`;
+                
+                let sNames = [], preVals = [], postVals = [], decVals = [], pctVals = [];
+                
                 set.tabs.forEach(tab => {
+                    sNames.push(`"${tab.name}"`);
+                    preVals.push(`"${tab.pre || ''}"`);
+                    postVals.push(`"${tab.post || ''}"`);
+                    
                     let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
                     let dec = "", pct = "";
                     if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
                         dec = ((pre - post) / pre).toFixed(4);
                         pct = (((pre - post) / pre) * 100).toFixed(2) + "%";
                     }
-                    csv += `Set,"${set.name}"\n`;
-                    csv += `Sample,"${tab.name}"\n`;
-                    csv += `Pre-Sample,"${tab.pre || ''}"\n`;
-                    csv += `Post-Sample,"${tab.post || ''}"\n`;
-                    csv += `Decimal,"${dec}"\n`;
-                    csv += `Percentage,"${pct}"\n\n`;
+                    decVals.push(`"${dec}"`);
+                    pctVals.push(`"${pct}"`);
                 });
+                
+                csv += `Sample,${sNames.join(",")}\n`;
+                csv += `Pre-Sample,${preVals.join(",")}\n`;
+                csv += `Post-Sample,${postVals.join(",")}\n`;
+                csv += `Decimal,${decVals.join(",")}\n`;
+                csv += `Percentage,${pctVals.join(",")}\n\n`;
             });
         }
 
         if (selectedExportCards.has('card-averaging')) {
             csv += "--- SUM & AVERAGING ---\n";
             p.sumSets.forEach(set => {
+                csv += `Set,"${set.name}"\n`;
+                
+                let sNames = [], rLimits = [], counts = [], sums = [], avgs = [];
+                let underR = [], overR = [], withinR = [];
+                let maxDataLength = 0;
+                let allData = [];
+                
                 set.tabs.forEach(tab => {
                     let min = parseFloat(tab.minRange); let max = parseFloat(tab.maxRange);
                     let hasRange = !isNaN(min) && !isNaN(max);
@@ -3588,23 +3609,39 @@
                         });
                     }
 
-                    let rangeStr = hasRange ? `${min} - ${max}` : "N/A";
+                    sNames.push(`"${tab.name}"`);
+                    rLimits.push(`"${hasRange ? `${min} - ${max}` : 'N/A'}"`);
+                    counts.push(`"${count}"`);
+                    sums.push(`"${displaySum}"`);
+                    avgs.push(`"${avg}"`);
+                    underR.push(`"${hasRange ? under : 'N/A'}"`);
+                    overR.push(`"${hasRange ? over : 'N/A'}"`);
+                    withinR.push(`"${hasRange ? within : 'N/A'}"`);
                     
-                    // By joining with commas WITHOUT surrounding quotes, 
-                    // Excel will place each number into its own individual cell.
-                    let dataStr = tab.data.join(","); 
-
-                    csv += `Set,"${set.name}"\n`;
-                    csv += `Sample,"${tab.name}"\n`;
-                    csv += `Range Limit,"${rangeStr}"\n`;
-                    csv += `Count,"${count}"\n`;
-                    csv += `Sum,"${displaySum}"\n`;
-                    csv += `Average,"${avg}"\n`;
-                    csv += `Below Range,"${hasRange ? under : 'N/A'}"\n`;
-                    csv += `Above Range,"${hasRange ? over : 'N/A'}"\n`;
-                    csv += `Within Range,"${hasRange ? within : 'N/A'}"\n`;
-                    csv += `Data Points,${dataStr}\n\n`;
+                    if (tab.data.length > maxDataLength) maxDataLength = tab.data.length;
+                    allData.push(tab.data);
                 });
+                
+                csv += `Sample,${sNames.join(",")}\n`;
+                csv += `Range Limit,${rLimits.join(",")}\n`;
+                csv += `Count,${counts.join(",")}\n`;
+                csv += `Sum,${sums.join(",")}\n`;
+                csv += `Average,${avgs.join(",")}\n`;
+                csv += `Below Range,${underR.join(",")}\n`;
+                csv += `Above Range,${overR.join(",")}\n`;
+                csv += `Within Range,${withinR.join(",")}\n`;
+                csv += `Data Points\n`;
+                
+                // Plot data points vertically
+                for (let i = 0; i < maxDataLength; i++) {
+                    let row = [];
+                    for (let t = 0; t < allData.length; t++) {
+                        if (i < allData[t].length) row.push(`"${allData[t][i]}"`);
+                        else row.push(""); 
+                    }
+                    csv += `,${row.join(",")}\n`; // Commas shift the array one column right
+                }
+                csv += `\n`; 
             });
         }
 
@@ -3618,34 +3655,36 @@
                 csv += `Shift Start,"${formatTimeStringTo12Hour(tab.startTime) || ''}"\n`;
                 
                 if (sortedData.length === 0) {
-                    csv += `Amount,N/A\n`;
-                    csv += `Clock Time,N/A\n`;
-                    csv += `Status,No Logs\n\n`;
+                    csv += `Amount,N/A\nClock Time,N/A\nStatus,No Logs\n\n`;
                 } else {
-                    // This formats the Production logs horizontally so they read left-to-right like a timeline
                     let amounts = sortedData.map(e => `"${e.amount}"`).join(",");
                     let times = sortedData.map(e => `"${formatTimeStringTo12Hour(e.time)}"`).join(",");
                     let statuses = sortedData.map(e => `"${e.checked ? 'Logged' : 'Ignored'}"`).join(",");
                     
-                    csv += `Amount,${amounts}\n`;
-                    csv += `Clock Time,${times}\n`;
-                    csv += `Status,${statuses}\n\n`;
+                    csv += `Amount,${amounts}\nClock Time,${times}\nStatus,${statuses}\n\n`;
                 }
             });
         }
 
         if (selectedExportCards.has('card-salinity')) {
             csv += "--- SALINITY CALCULATOR ---\n";
+            let sNames = [], brixVals = [], pctVals = [];
+            
             (p.salinityTabs || []).forEach(tab => {
+                sNames.push(`"${tab.name}"`);
+                brixVals.push(`"${tab.brix || ''}"`);
+                
                 let brix = parseFloat(tab.brix);
                 let pct = "";
                 if (!isNaN(brix)) {
                     pct = ((brix / 26.4) * 100).toFixed(2) + "%";
                 }
-                csv += `Sample,"${tab.name}"\n`;
-                csv += `Brix,"${tab.brix || ''}"\n`;
-                csv += `Salinity Percentage,"${pct}"\n\n`;
+                pctVals.push(`"${pct}"`);
             });
+            
+            csv += `Sample,${sNames.join(",")}\n`;
+            csv += `Brix,${brixVals.join(",")}\n`;
+            csv += `Salinity Percentage,${pctVals.join(",")}\n\n`;
         }
 
         if (selectedExportCards.has('card-notes')) {
@@ -3655,15 +3694,14 @@
         }
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
         
+        link.setAttribute("href", url);
         let baseName = p.productCode ? `${p.productCode} - ${p.name}` : p.name;
         let safeName = baseName.replace(/[^a-z0-9 \-]/gi, '_');
-        
         link.setAttribute("download", `${safeName}.csv`);
+        
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
