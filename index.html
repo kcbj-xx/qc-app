@@ -3590,9 +3590,23 @@
         if (selectedExportCards.has('card-pickup')) {
             csv += "--- PICKUP CALCULATOR ---\n";
             p.pickupSets.forEach(set => {
-                csv += `Set,"${set.name}"\n`;
                 
-                let sNames = [], preVals = [], postVals = [], decVals = [], pctVals = [];
+                // Calculate the Set Average specifically for the export
+                let sumDec = 0;
+                let validCount = 0;
+                set.tabs.forEach(tab => {
+                    let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
+                    if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
+                        sumDec += (pre - post) / pre;
+                        validCount++;
+                    }
+                });
+                let setAvgStr = validCount === 0 ? "N/A" : ((sumDec / validCount) * 100).toFixed(2) + "%";
+
+                csv += `Set,"${set.name}"\n`;
+                csv += `Set Average,"${setAvgStr}"\n`; // Prints right below the Set Name
+                
+                let sNames = [], preVals = [], postVals = [], decVals = [], pctVals = [];                
                 
                 set.tabs.forEach(tab => {
                     sNames.push(`"${tab.name}"`);
