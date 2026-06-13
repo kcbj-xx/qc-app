@@ -357,6 +357,7 @@
             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
             <div style="display:flex; gap:10px; width:100%; margin-bottom: 15px;">
                 <input type="text" id="renameParentTabInput" placeholder="Group Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                <input type="text" id="groupProductCodeInput" placeholder="Product Code" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
             </div>
             <div class="input-group" style="width: 100%; margin-bottom: 15px;">
                 <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
@@ -634,7 +635,7 @@
                 <button class="pin-btn" onclick="togglePin(event, 'card-estimator')" title="Pin Tool">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
                 </button>
-                <div class="card-title-text">Production Estimator</div>
+                <div class="card-title-text">Production Pace</div>
                 <div class="chevron">&#9660;</div>
             </h2>
             <div class="card-body">
@@ -705,7 +706,7 @@
             </div>
         </div>
     </div>
-    <div class="footer-version">v72</div>
+    <div class="footer-version">v73</div>
 </div>
 
 <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -881,6 +882,7 @@
         parentGroups = [{
             id: 'pg_' + Date.now(),
             name: 'Group 1',
+            productCode: '',
             date: '',
             startTime: '',
             endTime: '',
@@ -906,6 +908,7 @@
         if (!g.pinnedCards) g.pinnedCards = [];
         if (!g.collapsedCards) g.collapsedCards = {};
         if (!g.notes) g.notes = { text: '' };
+        if (g.productCode === undefined) g.productCode = '';
         if (g.date === undefined) g.date = '';
         if (g.startTime === undefined) g.startTime = '';
         if (g.endTime === undefined) g.endTime = '';
@@ -1097,6 +1100,7 @@
         if (isParentTabMenuOpen) {
             const p = parentGroups.find(t => t.id === activeParentId);
             document.getElementById('renameParentTabInput').value = p.name;
+            document.getElementById('groupProductCodeInput').value = p.productCode || '';
             document.getElementById('groupDateInput').value = p.date || '';
             document.getElementById('groupStartTimeInput').value = p.startTime || '';
             document.getElementById('groupEndTimeInput').value = p.endTime || '';
@@ -1108,6 +1112,7 @@
 
     function saveParentGroupSettings() {
         const newName = document.getElementById('renameParentTabInput').value.trim();
+        const newProductCode = document.getElementById('groupProductCodeInput').value.trim();
         const date = document.getElementById('groupDateInput').value;
         const startTime = document.getElementById('groupStartTimeInput').value;
         const endTime = document.getElementById('groupEndTimeInput').value;
@@ -1118,6 +1123,7 @@
             p.name = newName;
         }
         
+        p.productCode = newProductCode;
         p.date = date;
         p.startTime = startTime;
         p.endTime = endTime;
@@ -1167,6 +1173,7 @@
         const newGroup = {
             id: 'pg_' + Date.now(),
             name: newName,
+            productCode: '',
             date: '',
             startTime: '',
             endTime: '',
@@ -1263,6 +1270,7 @@
             parentGroups = [{
                 id: 'pg_' + Date.now(),
                 name: 'Group 1',
+                productCode: '',
                 date: '',
                 startTime: '',
                 endTime: '',
@@ -1310,7 +1318,7 @@
             renderEstimatorTabs();
             loadEstimatorInputs();
             updateEstimatorTabMenuState();
-        }, "Delete ALL records from the Production Estimator? This cannot be undone.");
+        }, "Delete ALL records from Production Pace? This cannot be undone.");
 
         setupAddButtonHold('salinityTabsList', addNewSalinityTab, () => {
             salinityTabs.splice(0, salinityTabs.length, { id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' });
@@ -1535,8 +1543,9 @@
                 const moveRightThreshold = other.center - (other.outerWidth * 0.15);
                 const moveLeftThreshold = other.center + (other.outerWidth * 0.15);
 
-                if (dragIdx < i && currentCenter > moveRightThreshold) targetIdx = i;
-                if (dragIdx > i && currentCenter < moveLeftThreshold) targetIdx = i;
+                // Using Math.max and Math.min prevents overwriting from lower/higher indexes during multi-tab jumps
+                if (dragIdx < i && currentCenter > moveRightThreshold) targetIdx = Math.max(targetIdx, i);
+                if (dragIdx > i && currentCenter < moveLeftThreshold) targetIdx = Math.min(targetIdx, i);
             }
 
             currentTargetIdx = targetIdx;
@@ -1573,7 +1582,6 @@
 
                 const rect = container.getBoundingClientRect();
                 
-                // SLOWER PANNING: Reduced speed from 10 to 4, and widened trigger zone to 60px
                 if (lastClientX < rect.left + 60) {
                     scrollDirection = -4;
                 } else if (lastClientX > rect.right - 60) {
@@ -1678,7 +1686,7 @@
 
 
     // ==========================================
-    // ---- PRODUCTION ESTIMATOR LOGIC ----------
+    // ---- PRODUCTION PACE LOGIC ----------
     // ==========================================
     function getActiveEstimator() { return estimatorTabs.find(t => t.id === activeEstimatorTabId); }
 
@@ -3519,7 +3527,7 @@
         
         const p = parentGroups.find(g => g.id === activeParentId);
         
-        let csv = `Group Name,"${p.name || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${new Date().toLocaleString()}"\n\n`;
+        let csv = `Group Name,"${p.name || ''}",,,,,,,,\nProduct Code,"${p.productCode || ''}",,,,,,,,\nDate,"${p.date || ''}",,,,,,,,\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}",,,,,,,,\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}",,,,,,,,\nExported On,"${new Date().toLocaleString()}",,,,,,,,\n\n`;
 
         if (selectedExportCards.has('card-pickup')) {
             csv += "--- PICKUP CALCULATOR ---\nSet,Sample,Pre-Sample,Post-Sample,Decimal,Percentage\n";
@@ -3574,7 +3582,7 @@
         }
 
         if (selectedExportCards.has('card-estimator')) {
-            csv += "--- PRODUCTION ESTIMATOR ---\nLine,Unit,Shift Start,Amount,Clock Time,Status\n";
+            csv += "--- PRODUCTION PACE ---\nLine,Unit,Shift Start,Amount,Clock Time,Status\n";
             p.estimatorTabs.forEach(tab => {
                 let firstTab = true;
                 let sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
@@ -3612,7 +3620,7 @@
         if (selectedExportCards.has('card-notes')) {
             csv += "--- QUICK NOTES ---\n";
             let notes = p.notes?.text || "";
-            csv += `"${notes.replace(/"/g, '""')}"\n\n`;
+            csv += `"${notes.replace(/"/g, '""')}",,,,,,,,\n\n`;
         }
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -3620,7 +3628,11 @@
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `QC_Export_${p.name.replace(/[^a-z0-9]/gi, '_')}.csv`);
+        
+        let baseName = p.productCode ? `${p.productCode} - ${p.name}` : p.name;
+        let safeName = baseName.replace(/[^a-z0-9 \-]/gi, '_');
+        
+        link.setAttribute("download", `${safeName}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
