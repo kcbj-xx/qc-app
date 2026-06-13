@@ -3409,12 +3409,12 @@
     function updateStats() {
         const arr = getActiveData();
         const activeTab = appTabs.find(t => t.id === activeTabId);
-        
+
         const sum = arr.reduce((a, b) => a + b, 0);
         document.getElementById('statCount').innerText = arr.length;
-        document.getElementById('statSum').innerText = sum.toFixed(2).replace(/\.00$/, '');
-        document.getElementById('statAvg').innerText = (arr.length ? (sum / arr.length) : 0).toFixed(2).replace(/\.00$/, '');
-
+        document.getElementById('statSum').innerText = parseFloat(sum.toFixed(4));
+        document.getElementById('statAvg').innerText = arr.length ? parseFloat((sum / arr.length).toFixed(4)) : 0;
+        
         let minVal = parseFloat(activeTab.minRange);
         let maxVal = parseFloat(activeTab.maxRange);
         let hasRange = !isNaN(minVal) && !isNaN(maxVal);
@@ -3559,7 +3559,8 @@
                     if (hasRange && min > max) { let temp = min; min = max; max = temp; }
 
                     let sum = tab.data.reduce((a,b)=>a+b, 0);
-                    let avg = tab.data.length ? (sum/tab.data.length).toFixed(2) : 0;
+                    let displaySum = parseFloat(sum.toFixed(4));
+                    let avg = tab.data.length ? parseFloat((sum/tab.data.length).toFixed(4)) : 0;
                     let count = tab.data.length;
 
                     let under = 0, over = 0, within = 0;
@@ -3581,7 +3582,7 @@
                     csv += `Sample,"${tab.name}"\n`;
                     csv += `Range Limit,"${rangeStr}"\n`;
                     csv += `Count,"${count}"\n`;
-                    csv += `Sum,"${sum}"\n`;
+                    csv += `Sum,"${displaySum}"\n`;
                     csv += `Average,"${avg}"\n`;
                     csv += `Below Range,"${hasRange ? under : 'N/A'}"\n`;
                     csv += `Above Range,"${hasRange ? over : 'N/A'}"\n`;
