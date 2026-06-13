@@ -360,12 +360,12 @@
             </div>
             <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                    <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Product Code</label>
-                    <input type="text" id="groupProductCodeInput" placeholder="Product Code" style="min-height:40px;">
-                </div>
-                <div class="input-group" style="flex: 1; margin-bottom: 0;">
                     <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
                     <input type="date" id="groupDateInput" style="min-height: 40px;">
+                </div>
+                <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                    <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Product Code</label>
+                    <input type="text" id="groupProductCodeInput" placeholder="Product Code" style="min-height:40px;">
                 </div>
             </div>
             <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
@@ -407,6 +407,12 @@
                         <input type="text" id="renamePickupSetInput" placeholder="Set Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
                         <button onclick="savePickupSetName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
                     </div>
+                    
+                    <div style="background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: bold;">Set Average</div>
+                        <div id="pickupSetAvgDisplay" style="font-size: 1.25rem; font-weight: bold; color: var(--primary);">0.00%</div>
+                    </div>
+
                     <button onclick="confirmDeletePickupSet()" class="secondary" style="margin:0; min-height:40px;">Delete Set</button>
                 </div>
 
@@ -2053,6 +2059,7 @@
         if (isPickupSetMenuOpen) {
             const activeSet = pickupSets.find(s => s.id === activePickupSetId);
             document.getElementById('renamePickupSetInput').value = activeSet.name;
+            updatePickupSetAverage(); // Recalculates when the menu is opened
             panel.style.display = 'flex';
         } else {
             panel.style.display = 'none';
@@ -2250,6 +2257,7 @@
             tab.post = post;
             saveAllGroupData();
             calculatePickup();
+            updatePickupSetAverage(); // Updates live while typing
         }
     }
 
@@ -2299,6 +2307,33 @@
             tab.post = '';
             saveAllGroupData();
             loadPickupInputs(); 
+        }
+    }
+
+    function updatePickupSetAverage() {
+        const set = pickupSets.find(s => s.id === activePickupSetId);
+        if (!set) return;
+
+        let sumDec = 0;
+        let validCount = 0;
+
+        set.tabs.forEach(tab => {
+            let pre = parseFloat(tab.pre);
+            let post = parseFloat(tab.post);
+            if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
+                sumDec += (pre - post) / pre;
+                validCount++;
+            }
+        });
+
+        const display = document.getElementById('pickupSetAvgDisplay');
+        if (validCount === 0) {
+            display.innerText = "N/A";
+            display.style.color = "#94a3b8";
+        } else {
+            let avgPct = (sumDec / validCount) * 100;
+            display.innerText = avgPct.toFixed(2) + "%";
+            display.style.color = "var(--primary)";
         }
     }
 
