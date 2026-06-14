@@ -694,12 +694,63 @@
                 <div class="result" id="estimatorPaceResult" style="display: none; margin-top: 15px;"></div>
 
                 <div id="estimatorForecastBox" style="display:none; margin-top:15px; border-top:2px solid var(--border); padding-top:15px;">
-                    <label style="font-weight:bold; color:var(--primary); margin-bottom:10px; display:block;">Forecast Finish Time</label>
-                    <div class="input-group">
-                        <input type="number" id="estRemainingInput" placeholder="Remaining Amount" step="any" oninput="calculateEstimatorPace()">
+                    <label style="font-weight:bold; color:var(--primary); margin-bottom:10px; display:block;">Pace Forecasting</label>
+                    <div class="row">
+                        <div class="input-group">
+                            <label style="font-size: 0.75rem;">Target Amount</label>
+                            <input type="number" id="estRemainingInput" placeholder="Total Amount" step="any" oninput="calculateEstimatorPace('amount')">
+                        </div>
+                        <div class="input-group">
+                            <label style="font-size: 0.75rem;">Target Time</label>
+                            <input type="time" id="estTargetTimeInput" oninput="calculateEstimatorPace('time')">
+                        </div>
                     </div>
                     <div class="result" id="estimatorForecastResult" style="display: none; margin-top: 5px; background-color:#eff6ff; border-color:#bfdbfe;"></div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card collapsed" id="card-tally" data-exportable="true">
+            <h2 onclick="toggleCard('card-tally')">
+                <button class="pin-btn" onclick="togglePin(event, 'card-tally')" title="Pin Tool">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
+                </button>
+                <div class="card-title-text">Tally Counters</div>
+                <div class="chevron">&#9660;</div>
+            </h2>
+            <div class="card-body">
+                <div id="tallyList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;"></div>
+                <button class="action-btn" onclick="addTally()" style="margin-top:0;">+ Add New Tally</button>
+                <button id="clearTalliesBtn" class="secondary" onclick="resetTallies()" style="display: none;">Reset All Counts to Zero</button>
+            </div>
+        </div>
+
+        <div class="card collapsed" id="card-percentage" data-exportable="false">
+            <h2 onclick="toggleCard('card-percentage')">
+                <button class="pin-btn" onclick="togglePin(event, 'card-percentage')" title="Pin Tool">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
+                </button>
+                <div class="card-title-text">Percentage Calculator</div>
+                <div class="chevron">&#9660;</div>
+            </h2>
+            <div class="card-body">
+                <form onsubmit="event.preventDefault();">
+                    <div class="input-group">
+                        <label>Total Value</label>
+                        <input type="number" step="any" id="pctTotal" inputmode="decimal" oninput="calcPercentage('total')">
+                    </div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>Part / Value</label>
+                            <input type="number" step="any" id="pctPart" inputmode="decimal" oninput="calcPercentage('part')">
+                        </div>
+                        <div class="input-group">
+                            <label>Percentage (%)</label>
+                            <input type="number" step="any" id="pctValue" inputmode="decimal" oninput="calcPercentage('pct')">
+                        </div>
+                    </div>
+                </form>
+                <button id="clearPctBtn" class="secondary" onclick="resetPercentage()" style="display: none;">Clear Inputs</button>
             </div>
         </div>
 
@@ -755,7 +806,7 @@
     let selectedExportCards = new Set();
     
     const alarm = document.getElementById('alarmSound');
-    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator', 'card-notes'];
+    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator', 'card-notes', 'card-tally', 'card-percentage'];
     
     // --- TIME FORMATTING HELPERS ---
     function format12Hour(hours, minutes) {
@@ -923,6 +974,9 @@
         if (g.date === undefined) g.date = '';
         if (g.startTime === undefined) g.startTime = '';
         if (g.endTime === undefined) g.endTime = '';
+
+        if (!g.tallies) g.tallies = [{ id: 'tally_' + Date.now() + Math.random(), name: 'Counter 1', count: 0 }];
+        if (!g.percentage) g.percentage = { total: '', part: '', pct: '' };
         
         // Migrate old flat pickupTabs into pickupSets
         if (g.pickupTabs && !g.pickupSets) {
@@ -1080,6 +1134,9 @@
                     updateStopwatchDOMToggle();
                     loadNotes();
                     
+                    updatePctDOM();
+                    renderTallies();
+                    
                     renderParentTabs(); updateParentTabMenuState();
                     renderPickupSets(); updatePickupSetMenuState();
                     renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
@@ -1197,7 +1254,9 @@
             temp: { c: '', f: '' },
             stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
             sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
-            notes: { text: '' }
+            notes: { text: '' },
+            tallies: [{ id: 'tally_' + Date.now(), name: 'Counter 1', count: 0 }],
+            percentage: { total: '', part: '', pct: '' }
         };
         newGroup.pickupSets[0].activeTabId = newGroup.pickupSets[0].tabs[0].id;
         newGroup.activePickupSetId = newGroup.pickupSets[0].id;
@@ -1261,6 +1320,9 @@
         updateSamplingDOM();
         updateStopwatchDOMToggle();
         loadNotes();
+
+        updatePctDOM();
+        renderTallies();
         
         startGlobalStopwatch(); 
         startGlobalSamplingTimer(); 
@@ -1832,6 +1894,7 @@
         
         document.getElementById('estStartTimeInput').value = tab.startTime || '';
         document.getElementById('estRemainingInput').value = tab.remaining || '';
+        document.getElementById('estTargetTimeInput').value = tab.targetTime || '';
         
         setCurrentTime('estTimeInput');
         document.getElementById('estAmountInput').value = '';
@@ -1934,16 +1997,15 @@
         calculateEstimatorPace();
     }
 
-    function calculateEstimatorPace() {
+    function calculateEstimatorPace(source = 'amount') {
         const tab = getActiveEstimator();
         const checked = tab.data.filter(e => e.checked).sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
         const paceRes = document.getElementById('estimatorPaceResult');
         const forecastBox = document.getElementById('estimatorForecastBox');
         const forecastRes = document.getElementById('estimatorForecastResult');
         
-        const remInput = document.getElementById('estRemainingInput').value;
-        tab.remaining = remInput;
-        saveAllGroupData();
+        const remInputEl = document.getElementById('estRemainingInput');
+        const targetTimeEl = document.getElementById('estTargetTimeInput');
 
         if (checked.length === 0) {
             paceRes.style.display = 'none';
@@ -1963,35 +2025,62 @@
         const lastTimeMins = parseTimeToMinutes(lastEntry.time);
         
         let timeDiffMins = lastTimeMins - firstTimeMins;
-        if (timeDiffMins < 0) timeDiffMins += 24 * 60; // Midnight rollover
-        
+        if (timeDiffMins < 0) timeDiffMins += 24 * 60; 
         if (timeDiffMins === 0) timeDiffMins = 1;
         
         let totalHours = timeDiffMins / 60; 
-        
         const totalAmount = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
         const pacePerHour = totalAmount / totalHours;
-
         const displayUnit = tab.unit || 'Units';
 
         paceRes.style.display = 'block';
         paceRes.innerHTML = `Avg Pace: <strong style="font-size:1.15rem; color:var(--primary);">${pacePerHour.toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${displayUnit}/hr</span></strong>`;
-        
         forecastBox.style.display = 'block';
         
-        const remaining = parseFloat(remInput);
-        if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
-            const hoursNeeded = remaining / pacePerHour;
-            const finishTimeMins = lastTimeMins + (hoursNeeded * 60);
+        if (source === 'amount') {
+            const remaining = parseFloat(remInputEl.value);
+            tab.remaining = remInputEl.value;
             
-            const time24 = formatMinutesToTime(finishTimeMins);
-            const time12 = formatMinutesTo12Hour(finishTimeMins);
+            if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
+                const hoursNeeded = remaining / pacePerHour;
+                const finishTimeMins = lastTimeMins + (hoursNeeded * 60);
+                
+                targetTimeEl.value = formatMinutesToTime(finishTimeMins);
+                tab.targetTime = targetTimeEl.value;
+                
+                const time12 = formatMinutesTo12Hour(finishTimeMins);
+                forecastRes.style.display = 'block';
+                forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.2rem; color:var(--primary);">${time12}</strong> <span style="font-size:0.9rem; color:var(--accent); font-weight:bold; margin-left:5px;">(${hoursNeeded.toFixed(2)} hrs away)</span>`;
+            } else {
+                targetTimeEl.value = '';
+                tab.targetTime = '';
+                forecastRes.style.display = 'none';
+            }
+        } else if (source === 'time') {
+            const targetTimeVal = targetTimeEl.value;
+            tab.targetTime = targetTimeVal;
             
-            forecastRes.style.display = 'block';
-            forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.3rem; color:var(--primary); margin-left:5px;">${time24}</strong> <span style="font-size:1rem; color:var(--accent); font-weight:bold; margin-left:5px;">(${time12})</span>`;
-        } else {
-            forecastRes.style.display = 'none';
+            if (targetTimeVal && pacePerHour > 0) {
+                const targetMins = parseTimeToMinutes(targetTimeVal);
+                let diffMins = targetMins - lastTimeMins;
+                if (diffMins < 0) diffMins += 24 * 60; 
+                
+                const hoursNeeded = diffMins / 60;
+                const calculatedAmount = hoursNeeded * pacePerHour;
+                
+                remInputEl.value = parseFloat(calculatedAmount.toFixed(4));
+                tab.remaining = remInputEl.value;
+                
+                const time12 = formatTimeStringTo12Hour(targetTimeVal);
+                forecastRes.style.display = 'block';
+                forecastRes.innerHTML = `Projected Output: <strong style="font-size:1.2rem; color:var(--primary);">${parseFloat(calculatedAmount.toFixed(2))} ${displayUnit}</strong> <span style="font-size:0.9rem; color:var(--accent); font-weight:bold; margin-left:5px;">(by ${time12})</span>`;
+            } else {
+                remInputEl.value = '';
+                tab.remaining = '';
+                forecastRes.style.display = 'none';
+            }
         }
+        saveAllGroupData();
     }
 
 
@@ -3540,6 +3629,142 @@
     }
 
     // ==========================================
+    // ---- PERCENTAGE CALCULATOR ENGINE ----
+    // ==========================================
+    function calcPercentage(source) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const totalEl = document.getElementById('pctTotal');
+        const partEl = document.getElementById('pctPart');
+        const pctEl = document.getElementById('pctValue');
+
+        let total = parseFloat(totalEl.value);
+        let part = parseFloat(partEl.value);
+        let pct = parseFloat(pctEl.value);
+
+        if (source === 'part' || source === 'total') {
+            if (!isNaN(total) && total !== 0 && !isNaN(part)) {
+                pctEl.value = parseFloat(((part / total) * 100).toFixed(4));
+            } else if (source === 'total' && !isNaN(total) && !isNaN(pct)) {
+                 partEl.value = parseFloat(((total * pct) / 100).toFixed(4));
+            }
+        } else if (source === 'pct') {
+            if (!isNaN(total) && !isNaN(pct)) {
+                partEl.value = parseFloat(((total * pct) / 100).toFixed(4));
+            }
+        }
+        
+        p.percentage.total = totalEl.value;
+        p.percentage.part = partEl.value;
+        p.percentage.pct = pctEl.value;
+        saveAllGroupData();
+        updatePctDOM();
+    }
+
+    function resetPercentage() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.percentage = { total: '', part: '', pct: '' };
+        saveAllGroupData();
+        updatePctDOM();
+    }
+
+    function updatePctDOM() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (!p.percentage) p.percentage = { total: '', part: '', pct: '' };
+        
+        const totalEl = document.getElementById('pctTotal');
+        const partEl = document.getElementById('pctPart');
+        const pctEl = document.getElementById('pctValue');
+        
+        if (document.activeElement !== totalEl) totalEl.value = p.percentage.total;
+        if (document.activeElement !== partEl) partEl.value = p.percentage.part;
+        if (document.activeElement !== pctEl) pctEl.value = p.percentage.pct;
+        
+        document.getElementById('clearPctBtn').style.display = (p.percentage.total || p.percentage.part || p.percentage.pct) ? 'block' : 'none';
+    }
+
+
+    // ==========================================
+    // ---- TALLY COUNTER ENGINE ----
+    // ==========================================
+    function renderTallies() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (!p.tallies) p.tallies = [{ id: 'tally_' + Date.now(), name: 'Counter 1', count: 0 }];
+        
+        const container = document.getElementById('tallyList');
+        container.innerHTML = '';
+        
+        p.tallies.forEach((tally, index) => {
+            const div = document.createElement('div');
+            div.style.cssText = "background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
+            
+            div.innerHTML = `
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent;" placeholder="Tally Name">
+                    <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove">&times;</button>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: stretch;">
+                    <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
+                    <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px;">
+                    <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        
+        document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
+    }
+
+    function addTally() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.tallies.push({ id: 'tally_' + Date.now(), name: 'Counter ' + (p.tallies.length + 1), count: 0 });
+        saveAllGroupData();
+        renderTallies();
+    }
+
+    function updateTallyName(id, val) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const tally = p.tallies.find(t => t.id === id);
+        if (tally) { tally.name = val; saveAllGroupData(); }
+    }
+
+    function updateTallyCount(id, val) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const tally = p.tallies.find(t => t.id === id);
+        if (tally) { 
+            tally.count = parseFloat(val) || 0; 
+            saveAllGroupData(); 
+            renderTallies();
+        }
+    }
+
+    function adjustTally(id, amount) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const tally = p.tallies.find(t => t.id === id);
+        if (tally) {
+            if (navigator.vibrate) navigator.vibrate(20); // Tactile feedback
+            tally.count += amount;
+            saveAllGroupData();
+            renderTallies();
+        }
+    }
+
+    function removeTally(id) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.tallies = p.tallies.filter(t => t.id !== id);
+        saveAllGroupData();
+        renderTallies();
+    }
+
+    function resetTallies() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (confirm("Reset all tally counts to 0?")) {
+            p.tallies.forEach(t => t.count = 0);
+            saveAllGroupData();
+            renderTallies();
+        }
+    }
+    
+    // ==========================================
     // ---- EXPORT TO CSV ENGINE ----------------
     // ==========================================
     function toggleExportSelection(cardId) {
@@ -3740,6 +3965,14 @@
             csv += `Salinity Percentage,${pctVals.join(",")}\n\n`;
         }
 
+        if (selectedExportCards.has('card-tally')) {
+            csv += "--- TALLY COUNTERS ---\n";
+            (p.tallies || []).forEach(t => {
+                csv += `"${t.name}","${t.count}"\n`;
+            });
+            csv += "\n";
+        }
+        
         if (selectedExportCards.has('card-notes')) {
             csv += "--- QUICK NOTES ---\n";
             let notes = p.notes?.text || "";
