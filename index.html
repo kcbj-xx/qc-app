@@ -1717,6 +1717,7 @@
         let holdStartX = 0, holdStartY = 0;
 
         const startHold = (e) => {
+            if (preventTabClick) return; // Block incoming ghost clicks
             const btn = e.target.closest('.add-tab-btn');
             if (!btn || (e.type === 'mousedown' && e.button !== 0)) return;
             
@@ -1727,7 +1728,17 @@
             holdTimer = setTimeout(() => {
                 isHold = true;
                 if (navigator.vibrate) navigator.vibrate(50);
-                if (confirm(promptMessage)) resetAction();
+                
+                // Defer the confirm slightly to allow UI to settle, 
+                // and block clicks immediately after to stop "ghost taps"
+                setTimeout(() => {
+                    preventTabClick = true;
+                    if (confirm(promptMessage)) {
+                        resetAction();
+                    }
+                    // Swallow any click-throughs from hitting "OK" on the alert
+                    setTimeout(() => preventTabClick = false, 400); 
+                }, 10);
             }, 800);
         };
 
@@ -1736,7 +1747,7 @@
                 clearTimeout(holdTimer);
                 holdTimer = null;
                 const btn = e.target.closest('.add-tab-btn');
-                if (btn && !isHold) {
+                if (btn && !isHold && !preventTabClick) {
                     preventTabClick = true;
                     setTimeout(() => preventTabClick = false, 150);
                     addAction(); 
