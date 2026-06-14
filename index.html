@@ -936,7 +936,7 @@
     if (!parentGroups) {
         let oldPickup = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }];
         let oldSum = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }];
-        let oldEstimator = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || [{ id: 'etab_'+Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }];
+        let oldEstimator = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || [{ id: 'etab_'+Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }];
         
         let initialPickupSet = [{ id: 'pset_'+Date.now(), name: 'Set 1', tabs: oldPickup, activeTabId: oldPickup[0].id }];
         let initialSumSet = [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: oldSum, activeTabId: oldSum[0].id }];
@@ -1031,7 +1031,7 @@
             });
         });
 
-        if (!g.estimatorTabs) g.estimatorTabs = [{ id: 'etab_' + Date.now() + Math.random(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }];
+        if (!g.estimatorTabs) g.estimatorTabs = [{ id: 'etab_' + Date.now() + Math.random(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }];
         
         if (!g.temp) g.temp = { c: '', f: '' };
         if (!g.stopwatch) g.stopwatch = { elapsed: 0, startTime: 0, isRunning: false, mode: null };
@@ -1247,7 +1247,7 @@
             endTime: '',
             pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
             sumSets: [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
-            estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
+            estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
             salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
             pinnedCards: [],
             collapsedCards: {},
@@ -1349,7 +1349,7 @@
                 endTime: '',
                 pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
                 sumSets: [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
-                estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] }],
+                estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
                 salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
                 pinnedCards: [],
                 collapsedCards: {},
@@ -1384,7 +1384,7 @@
         }, "Delete ALL groups and start completely fresh?");
 
         setupAddButtonHold('estimatorTabsList', addNewEstimatorTab, () => {
-            estimatorTabs.splice(0, estimatorTabs.length, { id: 'etab_' + Date.now(), name: 'Line 1', unit: 'Pallets', startTime: '', remaining: '', data: [] });
+            estimatorTabs.splice(0, estimatorTabs.length, { id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] });
             activeEstimatorTabId = estimatorTabs[0].id;
             isEstimatorTabMenuOpen = false;
             saveAllGroupData();
@@ -1858,7 +1858,7 @@
 
     function addNewEstimatorTab() {
         const newName = getNextTabName(estimatorTabs, "Line");
-        const newTab = { id: 'etab_' + Date.now(), name: newName, unit: 'Pallets', startTime: '', remaining: '', data: [] };
+        const newTab = { id: 'etab_' + Date.now(), name: newName, unit: '', startTime: '', remaining: '', data: [] };
         estimatorTabs.push(newTab);
         activeEstimatorTabId = newTab.id;
         isEstimatorTabMenuOpen = false;
@@ -3716,7 +3716,9 @@
 
     function addTally() {
         const p = parentGroups.find(g => g.id === activeParentId);
-        p.tallies.push({ id: 'tally_' + Date.now(), name: 'Counter ' + (p.tallies.length + 1), count: 0 });
+        // Use your existing smart-naming function to check for the highest number!
+        const newName = getNextTabName(p.tallies, "Counter");
+        p.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0 });
         saveAllGroupData();
         renderTallies();
     }
