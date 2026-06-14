@@ -2061,7 +2061,8 @@
                 
                 const time12 = formatMinutesTo12Hour(finishTimeMins);
                 forecastRes.style.display = 'block';
-                forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.2rem; color:var(--primary);">${time12}</strong> <span style="font-size:0.9rem; color:var(--accent); font-weight:bold; margin-left:5px;">(${hoursNeeded.toFixed(2)} hrs away)</span>`;
+                // Added <br> below to force the remaining hours to the next line
+                forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.2rem; color:var(--primary);">${time12}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(${hoursNeeded.toFixed(2)} hrs away)</span>`;
             } else {
                 targetTimeEl.value = '';
                 tab.targetTime = '';
@@ -2084,7 +2085,8 @@
                 
                 const time12 = formatTimeStringTo12Hour(targetTimeVal);
                 forecastRes.style.display = 'block';
-                forecastRes.innerHTML = `Projected Output: <strong style="font-size:1.2rem; color:var(--primary);">${parseFloat(calculatedAmount.toFixed(2))} ${displayUnit}</strong> <span style="font-size:0.9rem; color:var(--accent); font-weight:bold; margin-left:5px;">(by ${time12})</span>`;
+                // Added <br> below to force the target time reference to the next line
+                forecastRes.innerHTML = `Projected Output: <strong style="font-size:1.2rem; color:var(--primary);">${parseFloat(calculatedAmount.toFixed(2))} ${displayUnit}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(by ${time12})</span>`;
             } else {
                 remInputEl.value = '';
                 tab.remaining = '';
