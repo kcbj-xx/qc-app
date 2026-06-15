@@ -24,18 +24,42 @@
             --error: #ef4444;
         }
 
-        /* --- NEW: Auto Dark Mode --- */
+        /* --- Auto Dark Mode --- */
         @media (prefers-color-scheme: dark) {
             :root {
-                --primary: #3b82f6;       /* Lighter blue for better contrast */
+                --primary: #3b82f6;       
                 --primary-hover: #60a5fa;
-                --bg: #0f172a;            /* Deep slate background */
-                --card-bg: #1e293b;       /* Dark card background */
-                --text: #f8fafc;          /* Off-white text */
-                --border: #334155;        /* Subtle dark border */
-                --accent: #fbbf24;        /* Brighter orange/yellow */
-                /* Success and Error usually look fine as-is on dark! */
+                --bg: #0f172a;            
+                --card-bg: #1e293b;       
+                --text: #f8fafc;          
+                --border: #334155;        
+                --accent: #fbbf24;        
             }
+
+            /* 1. Fix Folder Tabs */
+            .tab-btn { background: #0f172a; color: #94a3b8; border-color: var(--border); }
+            .tab-btn.active { background: var(--card-bg); color: var(--primary); border-top-color: var(--primary); }
+            
+            /* 2. Fix Set/Batch Pill Tabs */
+            .tabs-list .parent-tab-btn, .tabs-list .set-tab-btn { background: #334155; color: #cbd5e1; }
+            .tabs-list .parent-tab-btn.active { background: var(--primary); color: white; }
+            .tabs-list .set-tab-btn.active { background: #64748b; color: white; }
+            
+            /* 3. Fix Inputs, Textareas, Menus, Stat Boxes, and List Items */
+            input, textarea, .tab-options-panel, .stat-box, .number-item, .result { 
+                background-color: #0f172a !important; 
+                color: var(--text) !important; 
+                border-color: var(--border) !important;
+            }
+
+            /* 4. Fix Inline-Styled Elements (Like Tally Counters and Set Averages) */
+            div[style*="background: #f8fafc"], div[style*="background: #e2e8f0"] { 
+                background-color: #0f172a !important; 
+                border-color: var(--border) !important; 
+            }
+            
+            /* 5. Keep the "Remove" button red background soft */
+            .remove-btn { background: #7f1d1d !important; color: #fca5a5 !important; }
         }
         
         body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; transition: background-color 0.3s; }
