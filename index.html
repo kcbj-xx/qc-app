@@ -3882,7 +3882,7 @@
         // Push the final sum to the new HTML display
         const totalDisplay = document.getElementById('tallyTotalDisplay');
         if (totalDisplay) {
-            totalDisplay.innerText = totalCount;
+            totalDisplay.innerText = safeRound(totalCount, 4); // Caps floating-point drift
         }
         
         document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
@@ -3918,7 +3918,7 @@
         const tally = p.tallies.find(t => t.id === id);
         if (tally) {
             if (navigator.vibrate) navigator.vibrate(20); // Tactile feedback
-            tally.count += amount;
+            tally.count = safeRound(tally.count + amount, 4);
             saveAllGroupData();
             renderTallies();
         }
@@ -3993,16 +3993,18 @@
             p.pickupSets.forEach(set => {
                 
                 // Calculate the Set Average specifically for the export
-                let sumDec = 0;
+                let sumPct = 0;
                 let validCount = 0;
                 set.tabs.forEach(tab => {
                     let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
                     if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
-                        sumDec += (pre - post) / pre;
+                        let rawDec = (pre - post) / pre;
+                        let roundedPct = safeRound(rawDec * 100, 2); 
+                        sumPct += roundedPct;
                         validCount++;
                     }
                 });
-                let setAvgStr = validCount === 0 ? "N/A" : safeRound((sumDec / validCount) * 100, 2).toFixed(2) + "%";
+                let setAvgStr = validCount === 0 ? "N/A" : safeRound(sumPct / validCount, 2).toFixed(2) + "%";
 
                 csv += `Set,"${set.name}"\n`;
                 csv += `Set Average,"${setAvgStr}"\n`; // Prints right below the Set Name
