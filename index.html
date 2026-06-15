@@ -102,6 +102,26 @@
                 background-color: #334155 !important;
                 color: var(--text) !important;
             }
+
+            /* --- UPDATE 1: Set Average Background --- */
+            /* Changed to a slightly lighter slate so it pops off the background */
+            div[style*="background: #e2e8f0"] { 
+                background-color: #334155 !important; 
+            }
+
+            /* --- UPDATE 2: Blend Added Item Borders --- */
+            /* Kills the border and matches the card background */
+            .number-item {
+                border-color: transparent !important;
+                background-color: var(--card-bg) !important;
+            }
+
+            /* --- UPDATE 3: Tally Counter Box Fix --- */
+            /* Grabs every div inside the Tally List regardless of inline styles */
+            #tallyList > div {
+                background-color: #0f172a !important; 
+                border-color: var(--border) !important;
+            }
         }
         
         body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; transition: background-color 0.3s; }
