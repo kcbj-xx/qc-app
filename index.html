@@ -471,6 +471,8 @@
                         <input type="text" id="renameSumSetInput" placeholder="Set Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
                         <button onclick="saveSumSetName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
                     </div>
+                    <button onclick="clearSumSetData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom:10px;">Clear Data Only</button>
+                    
                     <button onclick="confirmDeleteSumSet()" class="secondary" style="margin:0; min-height:40px;">Delete Set</button>
                 </div>
 
@@ -710,7 +712,7 @@
             </div>
         </div>
 
-        <div class="card collapsed" id="card-tally" data-exportable="true">
+        <div class="card collapsed" id="card-tally" data-exportable="false">
             <h2 onclick="toggleCard('card-tally')">
                 <button class="pin-btn" onclick="togglePin(event, 'card-tally')" title="Pin Tool">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
@@ -2551,6 +2553,20 @@
         }
     }
 
+    function clearSumSetData() {
+        const set = sumSets.find(s => s.id === activeSumSetId);
+        if (confirm(`Are you sure you want to clear all data points in Set "${set.name}"? Sample names and range limits will be kept.`)) {
+            set.tabs.forEach(tab => {
+                tab.data = [];
+                tab.lastAddedStr = '';
+            });
+            saveAllGroupData();
+            renderList();
+            isSumSetMenuOpen = false;
+            updateSumSetMenuState();
+        }
+    }
+    
     function addNewSumSet() {
         const newName = getNextTabName(sumSets, "Set");
         const newSet = { 
@@ -2606,6 +2622,7 @@
                     isTabMenuOpen = !isTabMenuOpen;
                     updateTabMenuState();
                 } else {
+                    document.getElementById('numberInput').value = ''; // Wipes the input
                     activeTabId = tab.id;
                     isTabMenuOpen = false;
                     const activeSSet = sumSets.find(s => s.id === activeSumSetId);
@@ -2695,6 +2712,7 @@
     }
 
     function addNewTab() {
+        document.getElementById('numberInput').value = ''; // Wipes the input 
         const newName = getNextTabName(appTabs, "Sample");
         const newTab = { id: 'tab_' + Date.now(), name: newName, data: [], lastAddedStr: '', minRange: '', maxRange: '' };
         appTabs.push(newTab);
