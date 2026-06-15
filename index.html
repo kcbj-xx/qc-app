@@ -103,24 +103,29 @@
                 color: var(--text) !important;
             }
 
-            /* --- UPDATE 1: Set Average Background --- */
-            /* Changed to a slightly lighter slate so it pops off the background */
-            div[style*="background: #e2e8f0"] { 
-                background-color: #334155 !important; 
-            }
-
-            /* --- UPDATE 2: Blend Added Item Borders --- */
-            /* Kills the border and matches the card background */
-            .number-item {
-                border-color: transparent !important;
-                background-color: var(--card-bg) !important;
-            }
-
             /* --- UPDATE 3: Tally Counter Box Fix --- */
             /* Grabs every div inside the Tally List regardless of inline styles */
             #tallyList > div {
                 background-color: #0f172a !important; 
                 border-color: var(--border) !important;
+            }
+
+            /* --- Force Border on Set Average --- */
+            div[style*="background: #e2e8f0"] { 
+                border: 1px solid var(--border) !important; 
+            }
+
+            /* --- Invisible Borders for Number Items --- */
+            .number-item {
+                background-color: transparent !important;
+                border-color: transparent !important;
+            }
+            .number-item .edit-input {
+                background-color: transparent !important;
+                border-color: transparent !important;
+            }
+            .number-item .edit-input:focus {
+                border-bottom: 2px solid var(--primary) !important;
             }
         }
         
