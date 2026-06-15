@@ -2546,14 +2546,18 @@
         const set = pickupSets.find(s => s.id === activePickupSetId);
         if (!set) return;
 
-        let sumDec = 0;
+        let sumPct = 0; // We will sum the percentages, not raw decimals
         let validCount = 0;
 
         set.tabs.forEach(tab => {
             let pre = parseFloat(tab.pre);
             let post = parseFloat(tab.post);
             if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
-                sumDec += (pre - post) / pre;
+                // Get the raw decimal
+                let rawDec = (pre - post) / pre;
+                // Force it to round to 2 decimal places exactly like the screen display
+                let roundedPct = safeRound(rawDec * 100, 2); 
+                sumPct += roundedPct; // Add the displayed number to our total
                 validCount++;
             }
         });
@@ -2563,7 +2567,8 @@
             display.innerText = "N/A";
             display.style.color = "#94a3b8";
         } else {
-            let avgPct = (sumDec / validCount) * 100;
+            // Average the rounded percentages and do one final safe round
+            let avgPct = sumPct / validCount;
             display.innerText = safeRound(avgPct, 2).toFixed(2) + "%";
             display.style.color = "var(--primary)";
         }
