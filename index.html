@@ -3917,7 +3917,11 @@
         const p = parentGroups.find(g => g.id === activeParentId);
         const tally = p.tallies.find(t => t.id === id);
         if (tally) {
-            if (navigator.vibrate) navigator.vibrate(20); // Tactile feedback
+            // This triggers a quick 20ms vibration for every click
+            if ('vibrate' in navigator) {
+                navigator.vibrate(20);
+            }
+            
             tally.count = safeRound(tally.count + amount, 4);
             saveAllGroupData();
             renderTallies();
