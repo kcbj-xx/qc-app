@@ -953,7 +953,7 @@
     let selectedExportCards = new Set();
     
     const alarm = document.getElementById('alarmSound');
-    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator', 'card-notes', 'card-tally', 'card-percentage'];
+    const allCardIds = ['card-notes', 'card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling'];
 
     // --- SAFE ROUNDING HELPER ---
     // Fixes native floating-point errors to ensure true "half-up" rounding
@@ -997,13 +997,19 @@
         document.getElementById('batchTitleDisplay').innerText = `Day ${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
     }
     
-    function toggleCard(cardId) {
+   function toggleCard(cardId) {
         const card = document.getElementById(cardId);
         card.classList.toggle('collapsed');
         const p = parentGroups.find(g => g.id === activeParentId);
         if (!p.collapsedCards) p.collapsedCards = {};
         p.collapsedCards[cardId] = card.classList.contains('collapsed');
         saveAllGroupData();
+        
+        // --- NEW FIX: Auto-resize any textareas when the card is opened ---
+        if (!card.classList.contains('collapsed')) {
+            const textareas = card.querySelectorAll('textarea');
+            textareas.forEach(ta => autoResizeTextarea(ta));
+        }
     }
     
     function togglePin(event, cardId) {
