@@ -150,19 +150,19 @@
                 outline: 2px solid var(--primary) !important; /* Blue border */
                 box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25) !important; 
             }
+        } /* <--- THIS BRACKET CLOSES DARK MODE! */
 
-            /* --- Dragging State Colors (Light Mode) --- */
-            .tab-btn.is-dragging-tab {
-                background-color: #f1f5f9 !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-            }
-            .set-tab-btn.is-dragging-tab, .parent-tab-btn.is-dragging-tab {
-                background-color: #cbd5e1 !important;
-            }
-            .parent-tab-btn.active.is-dragging-tab, .set-tab-btn.active.is-dragging-tab {
-                background-color: var(--primary-hover) !important;
-                color: white !important;
-            }
+        /* --- Dragging State Colors (Light Mode) --- */
+        .tab-btn.is-dragging-tab {
+            background-color: #f1f5f9 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+        .set-tab-btn.is-dragging-tab, .parent-tab-btn.is-dragging-tab {
+            background-color: #cbd5e1 !important;
+        }
+        .parent-tab-btn.active.is-dragging-tab, .set-tab-btn.active.is-dragging-tab {
+            background-color: var(--primary-hover) !important;
+            color: white !important;
         }
         
         body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; transition: background-color 0.3s; }
