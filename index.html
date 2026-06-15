@@ -933,6 +933,12 @@
     
     const alarm = document.getElementById('alarmSound');
     const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-stopwatch', 'card-sampling', 'card-estimator', 'card-notes', 'card-tally', 'card-percentage'];
+
+    // --- SAFE ROUNDING HELPER ---
+    // Fixes native floating-point errors to ensure true "half-up" rounding
+    function safeRound(value, decimals) {
+        return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+    }
     
     // --- TIME FORMATTING HELPERS ---
     function format12Hour(hours, minutes) {
@@ -2152,8 +2158,8 @@
 
         if (checked.length < 2 && !tab.startTime) {
             paceRes.style.display = 'block';
-            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires a Start Time or 2 checked logs.</span>`;
-            forecastBox.style.display = 'none';
+            paceRes.innerHTML = `Avg Pace: <strong style="font-size:1.15rem; color:var(--primary);">${safeRound(pacePerHour, 2).toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${displayUnit}/hr</span></strong>`;
+            forecastBox.style.display = 'block';
             return;
         }
 
@@ -2187,8 +2193,7 @@
                 
                 const time12 = formatMinutesTo12Hour(finishTimeMins);
                 forecastRes.style.display = 'block';
-                // Added <br> below to force the remaining hours to the next line
-                forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.2rem; color:var(--primary);">${time12}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(${hoursNeeded.toFixed(2)} hrs away)</span>`;
+                forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.2rem; color:var(--primary);">${time12}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(${safeRound(hoursNeeded, 2).toFixed(2)} hrs away)</span>`;
             } else {
                 targetTimeEl.value = '';
                 tab.targetTime = '';
@@ -2206,13 +2211,12 @@
                 const hoursNeeded = diffMins / 60;
                 const calculatedAmount = hoursNeeded * pacePerHour;
                 
-                remInputEl.value = parseFloat(calculatedAmount.toFixed(4));
+                remInputEl.value = safeRound(calculatedAmount, 4);
                 tab.remaining = remInputEl.value;
                 
                 const time12 = formatTimeStringTo12Hour(targetTimeVal);
                 forecastRes.style.display = 'block';
-                // Added <br> below to force the target time reference to the next line
-                forecastRes.innerHTML = `Projected Output: <strong style="font-size:1.2rem; color:var(--primary);">${parseFloat(calculatedAmount.toFixed(2))} ${displayUnit}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(by ${time12})</span>`;
+                forecastRes.innerHTML = `Projected Output: <strong style="font-size:1.2rem; color:var(--primary);">${safeRound(calculatedAmount, 2)} ${displayUnit}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(by ${time12})</span>`;
             } else {
                 remInputEl.value = '';
                 tab.remaining = '';
@@ -2522,8 +2526,8 @@
         }
         
         const dec = (pre - post) / pre;
-        decEl.innerText = dec.toFixed(4);
-        pctEl.innerText = (dec * 100).toFixed(2) + "%";
+        decEl.innerText = safeRound(dec, 4).toFixed(4);
+        pctEl.innerText = safeRound(dec * 100, 2).toFixed(2) + "%";
         pctEl.style.color = "var(--accent)";
         clearBtn.style.display = 'block';
     }
@@ -2560,7 +2564,7 @@
             display.style.color = "#94a3b8";
         } else {
             let avgPct = (sumDec / validCount) * 100;
-            display.innerText = avgPct.toFixed(2) + "%";
+            display.innerText = safeRound(avgPct, 2).toFixed(2) + "%";
             display.style.color = "var(--primary)";
         }
     }
@@ -3040,10 +3044,10 @@
         
         if (source === 'C') {
             if (cInput.value === '') { fInput.value = ''; }
-            else { fInput.value = ((parseFloat(cInput.value) * 9/5) + 32).toFixed(2).replace(/\.00$/, ''); }
+            else { fInput.value = safeRound((parseFloat(cInput.value) * 9/5) + 32, 2).toFixed(2).replace(/\.00$/, ''); }
         } else {
             if (fInput.value === '') { cInput.value = ''; }
-            else { cInput.value = ((parseFloat(fInput.value) - 32) * 5/9).toFixed(2).replace(/\.00$/, ''); }
+            else { cInput.value = safeRound((parseFloat(fInput.value) - 32) * 5/9, 2).toFixed(2).replace(/\.00$/, ''); }
         }
         p.temp.c = cInput.value;
         p.temp.f = fInput.value;
@@ -3711,8 +3715,8 @@
         const precision = getDynamicPrecision(arr);
 
         document.getElementById('statCount').innerText = arr.length;
-        document.getElementById('statSum').innerText = arr.length ? parseFloat(sum.toFixed(precision)) : 0;
-        document.getElementById('statAvg').innerText = arr.length ? parseFloat((sum / arr.length).toFixed(precision)) : 0;
+        document.getElementById('statSum').innerText = arr.length ? safeRound(sum, precision) : 0;
+        document.getElementById('statAvg').innerText = arr.length ? safeRound(sum / arr.length, precision) : 0;
         let minVal = parseFloat(activeTab.minRange);
         let maxVal = parseFloat(activeTab.maxRange);
         let hasRange = !isNaN(minVal) && !isNaN(maxVal);
@@ -3769,7 +3773,7 @@
         }
         
         const salinity = (brix / 26.4) * 100;
-        pctEl.innerText = salinity.toFixed(2) + "%";
+        pctEl.innerText = safeRound(salinity, 2).toFixed(2) + "%";
         pctEl.style.color = "var(--accent)";
         clearBtn.style.display = 'block';
     }
@@ -3798,13 +3802,13 @@
 
         if (source === 'part' || source === 'total') {
             if (!isNaN(total) && total !== 0 && !isNaN(part)) {
-                pctEl.value = parseFloat(((part / total) * 100).toFixed(4));
+                pctEl.value = safeRound((part / total) * 100, 4);
             } else if (source === 'total' && !isNaN(total) && !isNaN(pct)) {
-                 partEl.value = parseFloat(((total * pct) / 100).toFixed(4));
+                 partEl.value = safeRound((total * pct) / 100, 4);
             }
         } else if (source === 'pct') {
             if (!isNaN(total) && !isNaN(pct)) {
-                partEl.value = parseFloat(((total * pct) / 100).toFixed(4));
+                partEl.value = safeRound((total * pct) / 100, 4);
             }
         }
         
@@ -3993,7 +3997,7 @@
                         validCount++;
                     }
                 });
-                let setAvgStr = validCount === 0 ? "N/A" : ((sumDec / validCount) * 100).toFixed(2) + "%";
+                let setAvgStr = validCount === 0 ? "N/A" : safeRound((sumDec / validCount) * 100, 2).toFixed(2) + "%";
 
                 csv += `Set,"${set.name}"\n`;
                 csv += `Set Average,"${setAvgStr}"\n`; // Prints right below the Set Name
@@ -4008,8 +4012,8 @@
                     let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
                     let dec = "", pct = "";
                     if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
-                        dec = ((pre - post) / pre).toFixed(4);
-                        pct = (((pre - post) / pre) * 100).toFixed(2) + "%";
+                        dec = safeRound((pre - post) / pre, 4).toFixed(4);
+                        pct = safeRound(((pre - post) / pre) * 100, 2).toFixed(2) + "%";
                     }
                     decVals.push(`"${dec}"`);
                     pctVals.push(`"${pct}"`);
@@ -4041,8 +4045,8 @@
                     let sum = tab.data.reduce((a,b)=>a+b, 0);
                     let precision = getDynamicPrecision(tab.data);
                     
-                    let displaySum = tab.data.length ? parseFloat(sum.toFixed(precision)) : 0;
-                    let avg = tab.data.length ? parseFloat((sum/tab.data.length).toFixed(precision)) : 0;
+                    let displaySum = tab.data.length ? safeRound(sum, precision) : 0;
+                    let avg = tab.data.length ? safeRound(sum/tab.data.length, precision) : 0;
                     let count = tab.data.length;
 
                     let under = 0, over = 0, within = 0;
@@ -4122,7 +4126,7 @@
                 let brix = parseFloat(tab.brix);
                 let pct = "";
                 if (!isNaN(brix)) {
-                    pct = ((brix / 26.4) * 100).toFixed(2) + "%";
+                    pct = safeRound((brix / 26.4) * 100, 2).toFixed(2) + "%";
                 }
                 pctVals.push(`"${pct}"`);
             });
