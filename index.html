@@ -2158,8 +2158,8 @@
 
         if (checked.length < 2 && !tab.startTime) {
             paceRes.style.display = 'block';
-            paceRes.innerHTML = `Avg Pace: <strong style="font-size:1.15rem; color:var(--primary);">${safeRound(pacePerHour, 2).toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${displayUnit}/hr</span></strong>`;
-            forecastBox.style.display = 'block';
+            paceRes.innerHTML = `<span style="font-size:0.85rem; color:#64748b;">Requires a Start Time or 2 checked logs.</span>`;
+            forecastBox.style.display = 'none';
             return;
         }
 
@@ -2177,7 +2177,7 @@
         const displayUnit = tab.unit || 'Units';
 
         paceRes.style.display = 'block';
-        paceRes.innerHTML = `Avg Pace: <strong style="font-size:1.15rem; color:var(--primary);">${pacePerHour.toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${displayUnit}/hr</span></strong>`;
+        paceRes.innerHTML = `Avg Pace: <strong style="font-size:1.15rem; color:var(--primary);">${safeRound(pacePerHour, 2).toFixed(2)} <span style="font-size:0.8rem; color:#64748b;">${displayUnit}/hr</span></strong>`;
         forecastBox.style.display = 'block';
         
         if (source === 'amount') {
