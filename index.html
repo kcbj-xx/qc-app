@@ -491,7 +491,7 @@
     <div id="batch-header" style="width: 100%; text-align: center; margin-bottom: 5px; padding-top: 10px;">
         <div id="batchTitleDisplay" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">Active Group / Batch</div>
         
-        <div class="tabs-container" id="parentTabsContainer" style="border-bottom: none; padding: 0; margin: 0; justify-content: flex-start;">
+        <div class="tabs-container" id="parentTabsContainer" style="border-bottom: none; padding: 15px 5px 15px 5px; margin: 0; justify-content: flex-start;">
             <div id="parentTabsList" class="tabs-list" style="margin: 0 auto; gap: 8px; padding-bottom: 10px;"></div>
         </div>
         <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
@@ -757,16 +757,16 @@
                     <div class="row">
                         <div class="input-group">
                             <label>Min Mins</label>
-                            <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric">
+                            <input type="number" id="minMinutes" placeholder="e.g. 40" inputmode="numeric" oninput="saveSamplingInputs()">
                         </div>
                         <div class="input-group">
                             <label>Max Mins</label>
-                            <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric">
+                            <input type="number" id="maxMinutes" placeholder="e.g. 60" inputmode="numeric" oninput="saveSamplingInputs()">
                         </div>
                     </div>
                     <div class="input-group">
                         <label>Start Time</label>
-                        <input type="time" id="startTime">
+                        <input type="time" id="startTime" oninput="saveSamplingInputs()">
                     </div>
                     <button type="submit">Generate Time</button>
                 </form>
@@ -1285,6 +1285,8 @@
                     activeParentId = tab.id;
                     isParentTabMenuOpen = false;
                     refreshGroupDataReferences();
+
+                    saveAllGroupData();
                     
                     applyCardStatesToDOM(); 
                     
@@ -1438,6 +1440,9 @@
         updateSamplingDOM();
         updateStopwatchDOMToggle();
         loadNotes();
+
+        updatePctDOM();
+        renderTallies();
         
         renderParentTabs(); updateParentTabMenuState();
         renderPickupSets(); updatePickupSetMenuState();
@@ -1532,6 +1537,9 @@
             saveAllGroupData();
             applyCardStatesToDOM();
             updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes();
+
+            updatePctDOM();
+            renderTallies();
             
             renderParentTabs(); updateParentTabMenuState();
             renderPickupSets(); updatePickupSetMenuState();
@@ -3248,6 +3256,16 @@
             document.getElementById('timerControls').style.display = 'none';
             document.getElementById('activeTimer').style.display = 'none';
             document.getElementById('clearTimeBtn').style.display = 'none';
+        }
+    }
+
+    function saveSamplingInputs() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        if (p && p.sampling) {
+            p.sampling.min = document.getElementById('minMinutes').value;
+            p.sampling.max = document.getElementById('maxMinutes').value;
+            p.sampling.start = document.getElementById('startTime').value;
+            saveAllGroupData();
         }
     }
     
