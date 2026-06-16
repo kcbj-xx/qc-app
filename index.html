@@ -1134,7 +1134,7 @@
         if (g.startTime === undefined) g.startTime = '';
         if (g.endTime === undefined) g.endTime = '';
 
-        if (!g.tallies) g.tallies = [{ id: 'tally_' + Date.now() + Math.random(), name: 'Counter 1', count: 0 }];
+        if (!g.tallies) g.tallies = [];
         if (!g.percentage) g.percentage = { total: '', part: '', pct: '' };
         
         // Migrate old flat pickupTabs into pickupSets
@@ -1416,7 +1416,7 @@
             stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
             sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
             notes: { text: '' },
-            tallies: [{ id: 'tally_' + Date.now(), name: 'Counter 1', count: 0 }],
+            tallies: [],
             percentage: { total: '', part: '', pct: '' }
         };
         newGroup.pickupSets[0].activeTabId = newGroup.pickupSets[0].tabs[0].id;
@@ -3888,7 +3888,7 @@
     // ==========================================
     function renderTallies() {
         const p = parentGroups.find(g => g.id === activeParentId);
-        if (!p.tallies) p.tallies = [{ id: 'tally_' + Date.now(), name: 'Counter 1', count: 0 }];
+        if (!p.tallies) p.tallies = [];
         
         const container = document.getElementById('tallyList');
         container.innerHTML = '';
