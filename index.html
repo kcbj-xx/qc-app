@@ -520,7 +520,8 @@
                 </div>
             </div>
             <button onclick="saveParentGroupSettings()" style="width:100%; min-height:40px; margin-bottom: 15px;">Save Changes</button>
-            <button onclick="clearParentGroupData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 15px;">Clear Group Data</button>
+            <button onclick="clearParentGroupData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 10px;">Clear Group Data</button>
+            <button onclick="duplicateParentGroup()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 15px;">Duplicate Group Layout</button>
             <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire Group</button>
         </div>
     </div>
@@ -1525,6 +1526,98 @@
         renderTabs(); renderList(); updateTabMenuState();
     }
 
+    function duplicateParentGroup() {
+        const p = parentGroups.find(t => t.id === activeParentId);
+        
+        // 1. Clone Pickup Sets (Keep structure, wipe data)
+        const clonedPickupSets = p.pickupSets.map((set, setIdx) => {
+            const newSetId = 'pset_' + Date.now() + '_' + setIdx;
+            const clonedTabs = set.tabs.map((tab, tabIdx) => ({
+                id: 'ptab_' + Date.now() + '_' + setIdx + '_' + tabIdx,
+                name: tab.name,
+                pre: '',
+                post: ''
+            }));
+            return {
+                id: newSetId,
+                name: set.name,
+                tabs: clonedTabs,
+                activeTabId: clonedTabs[0] ? clonedTabs[0].id : null
+            };
+        });
+
+        // 2. Clone Sum & Avg Sets (Keep structure and ranges, wipe data)
+        const clonedSumSets = p.sumSets.map((set, setIdx) => {
+            const newSetId = 'sset_' + Date.now() + '_' + setIdx;
+            const clonedTabs = set.tabs.map((tab, tabIdx) => ({
+                id: 'tab_' + Date.now() + '_' + setIdx + '_' + tabIdx,
+                name: tab.name,
+                minRange: tab.minRange || '',
+                maxRange: tab.maxRange || '',
+                data: [],
+                lastAddedStr: ''
+            }));
+            return {
+                id: newSetId,
+                name: set.name,
+                tabs: clonedTabs,
+                activeTabId: clonedTabs[0] ? clonedTabs[0].id : null
+            };
+        });
+
+        // 3. Construct the fresh duplicate group
+        const newGroup = {
+            id: 'pg_' + Date.now(),
+            name: p.name + " (Copy)",
+            productCode: '',
+            date: '',
+            startTime: '',
+            endTime: '',
+            pickupSets: clonedPickupSets,
+            activePickupSetId: clonedPickupSets[0] ? clonedPickupSets[0].id : null,
+            sumSets: clonedSumSets,
+            activeSumSetId: clonedSumSets[0] ? clonedSumSets[0].id : null,
+            estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
+            salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
+            pinnedCards: [...(p.pinnedCards || [])], // Carry over your pinned setup
+            collapsedCards: {...(p.collapsedCards || {})}, // Carry over your open/closed states
+            temp: { c: '', f: '' },
+            stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
+            sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
+            notes: { text: '' },
+            tallies: [],
+            percentage: { total: '', part: '', pct: '' }
+        };
+        
+        newGroup.activeEstimatorTabId = newGroup.estimatorTabs[0].id;
+        newGroup.activeSalinityTabId = newGroup.salinityTabs[0].id;
+        
+        // 4. Push to memory and switch to it immediately
+        parentGroups.push(newGroup);
+        activeParentId = newGroup.id;
+        isParentTabMenuOpen = false;
+        
+        refreshGroupDataReferences();
+        saveAllGroupData();
+        applyCardStatesToDOM();
+        
+        // 5. Repaint the UI
+        updateTempDOM();
+        updateSamplingDOM();
+        updateStopwatchDOMToggle();
+        document.getElementById('stopwatchDisplay').innerText = "00:00.00";
+        loadNotes();
+        updatePctDOM();
+        renderTallies();
+        
+        renderParentTabs(); updateParentTabMenuState();
+        renderPickupSets(); updatePickupSetMenuState();
+        renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
+        renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
+        renderSalinityTabs(); updateSalinityDOM(); updateSalinityTabMenuState();
+        renderSumSets(); updateSumSetMenuState();
+        renderTabs(); renderList(); updateTabMenuState();
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         updateBatchTitle(); 
