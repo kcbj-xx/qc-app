@@ -74,6 +74,10 @@
             /* 5. Keep the "Remove" button red background soft */
             .remove-btn { background: #7f1d1d !important; color: #fca5a5 !important; }
 
+            /* 6. Custom Group Menu Buttons */
+            button.btn-duplicate { background-color: #059669 !important; }
+            button.btn-warning { background-color: #b45309 !important; }
+            
             /* --- 1. Sample Tabs (Folder style) --- */
             .tab-btn { 
                 background-color: #0f172a !important; 
@@ -442,6 +446,11 @@
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
         button.action-btn { background-color: #475569; width: 100%; margin-top: 10px; }
         button.action-btn:hover { background-color: #334155; }
+
+        button.btn-duplicate { background-color: #10b981; width: 100%; margin-top: 10px; }
+        button.btn-duplicate:hover { background-color: #059669; }
+        button.btn-warning { background-color: #f59e0b; width: 100%; margin-top: 10px; }
+        button.btn-warning:hover { background-color: #d97706; }
         
         .btn-timer-start { background-color: #8b5cf6; }
         .btn-timer-start:hover { background-color: #7c3aed; }
@@ -519,8 +528,8 @@
                     <input type="time" id="groupEndTimeInput" oninput="saveParentGroupSettings()" style="min-height: 40px;">
                 </div>
             </div>
-            <button onclick="clearParentGroupData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 10px;">Clear Group Data</button>
-            <button onclick="duplicateParentGroup()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 15px;">Duplicate Group Layout</button>
+            <button onclick="duplicateParentGroup()" class="btn-duplicate" style="margin:0; min-height:40px; margin-bottom: 10px;">Duplicate Group Layout</button>
+            <button onclick="clearParentGroupData()" class="btn-warning" style="margin:0; min-height:40px; margin-bottom: 10px;">Clear Group Data</button>
             <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire Group</button>
         </div>
     </div>
