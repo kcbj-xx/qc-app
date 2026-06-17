@@ -497,29 +497,28 @@
         <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
             <div style="display:flex; gap:10px; width:100%; margin-bottom: 15px;">
-                <input type="text" id="renameParentTabInput" placeholder="Group Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                <input type="text" id="renameParentTabInput" placeholder="Group Name" oninput="saveParentGroupSettings()" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
             </div>
             <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
                     <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
-                    <input type="date" id="groupDateInput" style="min-height: 40px;">
+                    <input type="date" id="groupDateInput" oninput="saveParentGroupSettings()" style="min-height: 40px;">
                 </div>
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
                     <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Product Code</label>
-                    <input type="text" id="groupProductCodeInput" placeholder="Product Code" style="min-height:40px;">
+                    <input type="text" id="groupProductCodeInput" placeholder="Product Code" oninput="saveParentGroupSettings()" style="min-height:40px;">
                 </div>
             </div>
             <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
                     <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Start Time</label>
-                    <input type="time" id="groupStartTimeInput" style="min-height: 40px;">
+                    <input type="time" id="groupStartTimeInput" oninput="saveParentGroupSettings()" style="min-height: 40px;">
                 </div>
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
                     <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">End Time</label>
-                    <input type="time" id="groupEndTimeInput" style="min-height: 40px;">
+                    <input type="time" id="groupEndTimeInput" oninput="saveParentGroupSettings()" style="min-height: 40px;">
                 </div>
             </div>
-            <button onclick="saveParentGroupSettings()" style="width:100%; min-height:40px; margin-bottom: 15px;">Save Changes</button>
             <button onclick="clearParentGroupData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 10px;">Clear Group Data</button>
             <button onclick="duplicateParentGroup()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 15px;">Duplicate Group Layout</button>
             <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire Group</button>
@@ -1350,8 +1349,10 @@
         
         const p = parentGroups.find(t => t.id === activeParentId);
         
-        if (newName !== '') {
+        let nameChanged = false;
+        if (newName !== '' && p.name !== newName) {
             p.name = newName;
+            nameChanged = true;
         }
         
         p.productCode = newProductCode;
@@ -1360,9 +1361,12 @@
         p.endTime = endTime;
         
         saveAllGroupData();
-        isParentTabMenuOpen = false;
-        renderParentTabs();
-        updateParentTabMenuState();
+        
+        // Only re-render the physical tabs if the actual Group Name changes.
+        // This stops the UI from stuttering if you are just typing in the Product Code or Date.
+        if (nameChanged) {
+            renderParentTabs();
+        }
     }
 
     function confirmDeleteParentTab() {
