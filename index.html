@@ -520,6 +520,7 @@
                 </div>
             </div>
             <button onclick="saveParentGroupSettings()" style="width:100%; min-height:40px; margin-bottom: 15px;">Save Changes</button>
+            <button onclick="clearParentGroupData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom: 15px;">Clear Group Data</button>
             <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire Group</button>
         </div>
     </div>
@@ -953,7 +954,7 @@
     let selectedExportCards = new Set();
     
     const alarm = document.getElementById('alarmSound');
-    const allCardIds = ['card-notes', 'card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling'];
+    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-notes'];
 
     // --- SAFE ROUNDING HELPER ---
     // Fixes native floating-point errors to ensure true "half-up" rounding
@@ -1397,6 +1398,77 @@
         }
     }
 
+    function clearParentGroupData() {
+        const p = parentGroups.find(t => t.id === activeParentId);
+        if (confirm(`Are you sure you want to clear ALL data in group "${p.name}"?\n\nThis will keep your sample names, limits, and tabs for Sum & Averaging and Pickup, but erase everything else.`)) {
+            
+            // 1. Clear Group Header Info (keep the group name)
+            p.productCode = '';
+            p.date = '';
+            p.startTime = '';
+            p.endTime = '';
+
+            // 2. Keep Pickup structure, clear pre/post data
+            p.pickupSets.forEach(set => {
+                set.tabs.forEach(tab => {
+                    tab.pre = '';
+                    tab.post = '';
+                });
+            });
+
+            // 3. Keep Sum/Avg structure & ranges, clear number data
+            p.sumSets.forEach(set => {
+                set.tabs.forEach(tab => {
+                    tab.data = [];
+                    tab.lastAddedStr = '';
+                });
+            });
+
+            // 4. Reset everything else to a completely blank slate
+            p.estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }];
+            p.activeEstimatorTabId = p.estimatorTabs[0].id;
+
+            p.salinityTabs = [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }];
+            p.activeSalinityTabId = p.salinityTabs[0].id;
+
+            p.temp = { c: '', f: '' };
+            p.stopwatch = { elapsed: 0, startTime: 0, isRunning: false, mode: null };
+            p.sampling = { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false };
+            p.notes = { text: '' };
+            p.tallies = [];
+            p.percentage = { total: '', part: '', pct: '' };
+
+            // Stop any active alarms globally if needed
+            stopTimer(); 
+            
+            // Close the menu and save
+            isParentTabMenuOpen = false;
+            refreshGroupDataReferences();
+            saveAllGroupData();
+
+            // Force a massive UI repaint to reflect the wiped data
+            updateParentTabMenuState();
+            applyCardStatesToDOM();
+            
+            updateTempDOM();
+            updateSamplingDOM();
+            updateStopwatchDOMToggle();
+            document.getElementById('stopwatchDisplay').innerText = "00:00.00";
+            loadNotes();
+            updatePctDOM();
+            renderTallies();
+            
+            renderPickupSets(); updatePickupSetMenuState();
+            renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
+            
+            renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
+            renderSalinityTabs(); updateSalinityDOM(); updateSalinityTabMenuState();
+            
+            renderSumSets(); updateSumSetMenuState();
+            renderTabs(); renderList(); updateTabMenuState();
+        }
+    }
+    
     function addNewParentGroup() {
         const newName = getNextTabName(parentGroups, "Group");
         const newGroup = {
