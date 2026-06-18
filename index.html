@@ -4219,7 +4219,7 @@
             
             div.innerHTML = `
                 <div style="display: flex; gap: 10px; width: 100%; align-items: center; margin-bottom: 8px;">
-                    <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" style="flex: 1; min-height: 36px; padding: 4px 8px; font-weight: bold; font-family: monospace; color: var(--primary);">
+                    <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" style="flex: 1; min-height: 36px; padding: 4px 8px; font-weight: bold; font-family: monospace; color: var(--primary); border: none; background: transparent; outline: none;">
                     <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove">&times;</button>
                 </div>
                 <input type="text" placeholder="Event description..." value="${(ts.event || '').replace(/"/g, '&quot;')}" oninput="updateTimestampEvent('${ts.id}', this.value)" style="width: 100%; min-height: 40px; padding: 8px 12px; background: transparent;">
@@ -4241,6 +4241,9 @@
         if (!p.timestamps) p.timestamps = [];
         p.timestamps.push({ id: 'ts_' + Date.now() + Math.random(), time: timeVal, event: '' });
         
+        // Auto-sort chronologically based on time
+        p.timestamps.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        
         timeInput.value = ''; 
         saveAllGroupData();
         renderTimestamps();
@@ -4249,7 +4252,15 @@
     function updateTimestampTime(id, val) {
         const p = parentGroups.find(g => g.id === activeParentId);
         const ts = p.timestamps.find(t => t.id === id);
-        if (ts) { ts.time = val; saveAllGroupData(); }
+        if (ts) { 
+            ts.time = val; 
+            
+            // Re-sort and re-render if a time is manually edited so it jumps to the correct spot
+            p.timestamps.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+            
+            saveAllGroupData(); 
+            renderTimestamps();
+        }
     }
 
     function updateTimestampEvent(id, val) {
