@@ -911,6 +911,32 @@
             </div>
         </div>
 
+        <div class="card collapsed" id="card-timestamps" data-exportable="true">
+            <h2 onclick="toggleCard('card-timestamps')">
+                <button class="pin-btn" onclick="togglePin(event, 'card-timestamps')" title="Pin Tool">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
+                </button>
+                <div class="card-title-text">Timestamps</div>
+                <div class="chevron">&#9660;</div>
+            </h2>
+            <div class="card-body">
+                <form onsubmit="event.preventDefault(); addTimestamp();">
+                    <div class="input-group" style="margin-bottom: 5px;">
+                        <label>Add Time Log</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="time" id="newTimestampTime" style="flex: 1;">
+                            <button type="submit" style="width: auto; margin-bottom: 0;">Add Log</button>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 5px;">Leave time blank to record the current time.</div>
+                    </div>
+                </form>
+                
+                <div id="timestampsList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;"></div>
+                
+                <button id="clearTimestampsBtn" class="secondary" onclick="clearTimestamps()" style="display: none; margin-top: 15px;">Clear All Logs</button>
+            </div>
+        </div>
+        
         <div class="card collapsed" id="card-notes" data-exportable="true">
             <h2 onclick="toggleCard('card-notes')">
                 <button class="pin-btn" onclick="togglePin(event, 'card-notes')" title="Pin Tool">
@@ -963,7 +989,7 @@
     let selectedExportCards = new Set();
     
     const alarm = document.getElementById('alarmSound');
-    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-notes'];
+    const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-timestamps', 'card-notes'];
 
     // --- SAFE ROUNDING HELPER ---
     // Fixes native floating-point errors to ensure true "half-up" rounding
@@ -1139,6 +1165,7 @@
         if (!g.pinnedCards) g.pinnedCards = [];
         if (!g.collapsedCards) g.collapsedCards = {};
         if (!g.notes) g.notes = { text: '' };
+        if (!g.timestamps) g.timestamps = [];
         if (g.productCode === undefined) g.productCode = '';
         if (g.date === undefined) g.date = '';
         if (g.startTime === undefined) g.startTime = '';
@@ -1304,6 +1331,7 @@
                     updateSamplingDOM();
                     updateStopwatchDOMToggle();
                     loadNotes();
+                    renderTimestamps();
                     
                     updatePctDOM();
                     renderTallies();
@@ -1401,6 +1429,7 @@
             updateSamplingDOM();
             updateStopwatchDOMToggle();
             loadNotes();
+            renderTimestamps();
             
             renderParentTabs(); updateParentTabMenuState();
             renderPickupSets(); updatePickupSetMenuState();
@@ -1449,6 +1478,7 @@
             p.stopwatch = { elapsed: 0, startTime: 0, isRunning: false, mode: null };
             p.sampling = { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false };
             p.notes = { text: '' };
+            p.timestamps = [];
             p.tallies = [];
             p.percentage = { total: '', part: '', pct: '' };
 
@@ -1469,6 +1499,7 @@
             updateStopwatchDOMToggle();
             document.getElementById('stopwatchDisplay').innerText = "00:00.00";
             loadNotes();
+            renderTimestamps();
             updatePctDOM();
             renderTallies();
             
@@ -1502,6 +1533,7 @@
             stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
             sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
             notes: { text: '' },
+            timestamps: [],
             tallies: [],
             percentage: { total: '', part: '', pct: '' }
         };
@@ -1526,6 +1558,7 @@
         updateSamplingDOM();
         updateStopwatchDOMToggle();
         loadNotes();
+        renderTimestamps();
 
         updatePctDOM();
         renderTallies();
@@ -1598,6 +1631,7 @@
             stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
             sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
             notes: { text: '' },
+            timestamps: [],
             tallies: [],
             percentage: { total: '', part: '', pct: '' }
         };
@@ -1620,6 +1654,7 @@
         updateStopwatchDOMToggle();
         document.getElementById('stopwatchDisplay').innerText = "00:00.00";
         loadNotes();
+        renderTimestamps();
         updatePctDOM();
         renderTallies();
         
@@ -1662,6 +1697,7 @@
         updateSamplingDOM();
         updateStopwatchDOMToggle();
         loadNotes();
+        renderTimestamps();
 
         updatePctDOM();
         renderTallies();
@@ -1714,7 +1750,7 @@
             refreshGroupDataReferences();
             saveAllGroupData();
             applyCardStatesToDOM();
-            updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes();
+            updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes(); renderTimestamps();
 
             updatePctDOM();
             renderTallies();
@@ -4157,6 +4193,86 @@
             renderTallies();
         }
     }
+
+    // ==========================================
+    // ---- TIMESTAMPS ENGINE ----
+    // ==========================================
+    function renderTimestamps() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const container = document.getElementById('timestampsList');
+        const clearBtn = document.getElementById('clearTimestampsBtn');
+        
+        container.innerHTML = '';
+        if (!p.timestamps || p.timestamps.length === 0) {
+            container.style.display = 'none';
+            clearBtn.style.display = 'none';
+            return;
+        }
+        
+        container.style.display = 'flex';
+        clearBtn.style.display = 'block';
+        
+        p.timestamps.forEach(ts => {
+            const div = document.createElement('div');
+            div.className = 'number-item';
+            div.style.cssText = 'flex-wrap: wrap; padding: 10px; border-radius: 8px; justify-content: space-between; align-items: center; background: #f8fafc;';
+            
+            div.innerHTML = `
+                <div style="display: flex; gap: 10px; width: 100%; align-items: center; margin-bottom: 8px;">
+                    <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" style="flex: 1; min-height: 36px; padding: 4px 8px; font-weight: bold; font-family: monospace; color: var(--primary);">
+                    <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove">&times;</button>
+                </div>
+                <input type="text" placeholder="Event description..." value="${(ts.event || '').replace(/"/g, '&quot;')}" oninput="updateTimestampEvent('${ts.id}', this.value)" style="width: 100%; min-height: 40px; padding: 8px 12px; background: transparent;">
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function addTimestamp() {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const timeInput = document.getElementById('newTimestampTime');
+        let timeVal = timeInput.value;
+        
+        if (!timeVal) {
+            const now = new Date();
+            timeVal = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        }
+        
+        if (!p.timestamps) p.timestamps = [];
+        p.timestamps.push({ id: 'ts_' + Date.now() + Math.random(), time: timeVal, event: '' });
+        
+        timeInput.value = ''; 
+        saveAllGroupData();
+        renderTimestamps();
+    }
+
+    function updateTimestampTime(id, val) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const ts = p.timestamps.find(t => t.id === id);
+        if (ts) { ts.time = val; saveAllGroupData(); }
+    }
+
+    function updateTimestampEvent(id, val) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        const ts = p.timestamps.find(t => t.id === id);
+        if (ts) { ts.event = val; saveAllGroupData(); }
+    }
+
+    function removeTimestamp(id) {
+        const p = parentGroups.find(g => g.id === activeParentId);
+        p.timestamps = p.timestamps.filter(t => t.id !== id);
+        saveAllGroupData();
+        renderTimestamps();
+    }
+    
+    function clearTimestamps() {
+        if (confirm("Are you sure you want to clear all timestamp logs?")) {
+            const p = parentGroups.find(g => g.id === activeParentId);
+            p.timestamps = [];
+            saveAllGroupData();
+            renderTimestamps();
+        }
+    }
     
     // ==========================================
     // ---- EXPORT TO CSV ENGINE ----------------
@@ -4367,6 +4483,23 @@
                 csv += `"${t.name}","${t.count}"\n`;
             });
             csv += "\n";
+        }
+
+        if (selectedExportCards.has('card-timestamps')) {
+            csv += "--- TIMESTAMPS ---\n";
+            if (!p.timestamps || p.timestamps.length === 0) {
+                csv += "No logs recorded.\n\n";
+            } else {
+                csv += "Time,Event\n";
+                // Sort chronologically for the export
+                let sortedTs = [...p.timestamps].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                sortedTs.forEach(ts => {
+                    let formattedTime = formatTimeStringTo12Hour(ts.time);
+                    let safeEvent = ts.event.replace(/"/g, '""');
+                    csv += `"${formattedTime}","${safeEvent}"\n`;
+                });
+                csv += "\n";
+            }
         }
         
         if (selectedExportCards.has('card-notes')) {
