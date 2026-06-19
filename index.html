@@ -589,22 +589,27 @@
 
         /* --- FIX: Force Sidebar Groups to Truncate & Remove Add Button Pill --- */
         #parentTabsList .parent-tab-btn:not(.add-tab-btn) {
-            display: block !important; 
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            padding-right: 45px !important; /* Truncates the text much earlier */
-            line-height: 46px !important; 
+            text-align: left; 
+            height: 46px; 
+            padding: 0 30px 0 15px; /* The 30px right padding forces earlier truncation */
+            margin: 0; 
+            width: 100%; 
+            box-sizing: border-box; 
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block; /* Required for the ellipsis to trigger properly */
+            line-height: 46px;
         }
         
         #parentTabsList .nav-add-tab-btn.parent-tab-btn {
-            background: transparent !important; /* Removes the gray pill background */
-            border: none !important;            /* Removes any dashed borders */
-            box-shadow: none !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            justify-content: center; 
+            border: none; /* Removed the dashed border */
+            background: transparent;
+            height: 46px;
         }
+        
     </style>
 </head>
 <body>
