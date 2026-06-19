@@ -4706,6 +4706,15 @@
                 }
             }
         }, { passive: false });
+
+        // Dismiss keyboard on Enter key for Manage Group inputs
+        document.getElementById('parentTabOptionsPanel').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                // Blur the input that currently has focus
+                document.activeElement.blur();
+                e.preventDefault(); // Stop the form from trying to submit
+            }
+        });
     </script>
 </body>
 </html>
