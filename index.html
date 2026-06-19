@@ -4226,7 +4226,7 @@
             
             div.innerHTML = `
                 <div style="display: flex; gap: 10px; width: 100%; align-items: center; margin-bottom: 4px;">
-                    <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" style="flex: 1; min-height: 36px; padding: 4px 8px; font-weight: bold; font-family: monospace; color: var(--primary); border: none; background: transparent; outline: none; text-align: left;">
+                    <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" style="margin-right: auto; min-height: 36px; padding: 4px 8px; font-weight: bold; font-family: monospace; color: var(--primary); border: none; background: transparent; outline: none;">
                     <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove">&times;</button>
                 </div>
                 <textarea placeholder="Event description..." oninput="updateTimestampEvent('${ts.id}', this.value); autoResizeTextarea(this)" style="width: 100%; min-height: 40px; padding: 4px 12px 8px 12px; background: transparent; border: none; outline: none; resize: none; overflow-y: hidden; font-family: inherit; font-size: inherit; margin: 0; box-sizing: border-box;">${(ts.event || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
