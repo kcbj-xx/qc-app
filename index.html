@@ -2529,10 +2529,12 @@
             }
         
             function removeEstimatorEntry(id) {
-                const tab = getActiveEstimator();
-                tab.data = tab.data.filter(e => e.id !== id);
-                saveAllGroupData();
-                renderEstimatorList();
+                if (confirm("Are you sure you want to remove this log?")) {
+                    const tab = getActiveEstimator();
+                    tab.data = tab.data.filter(e => e.id !== id);
+                    saveAllGroupData();
+                    renderEstimatorList();
+                }
             }
         
             function parseTimeToMinutes(timeStr) {
@@ -3929,22 +3931,24 @@
             }
         
             function removeNumber(index) {
-                // 1. Remove the number from the array
-                getActiveData().splice(index, 1);
-                
-                // 2. Check if the list is now empty
-                const arr = getActiveData();
-                if (arr.length === 0) {
-                    const activeTab = appTabs.find(t => t.id === activeTabId);
-                    activeTab.lastAddedStr = '';   // Wipe the text
-                    activeTab.lastAddedColor = ''; // Wipe the color styling
+                if (confirm("Are you sure you want to remove this number?")) {
+                    // 1. Remove the number from the array
+                    getActiveData().splice(index, 1);
+                    
+                    // 2. Check if the list is now empty
+                    const arr = getActiveData();
+                    if (arr.length === 0) {
+                        const activeTab = appTabs.find(t => t.id === activeTabId);
+                        activeTab.lastAddedStr = '';   // Wipe the text
+                        activeTab.lastAddedColor = ''; // Wipe the color styling
+                    }
+                    
+                    // 3. Save the data AFTER the wipe happens!
+                    saveAllGroupData();
+                    
+                    // 4. Update the screen
+                    renderList();
                 }
-                
-                // 3. Save the data AFTER the wipe happens!
-                saveAllGroupData();
-                
-                // 4. Update the screen
-                renderList();
             }
         
             // --- List Drag & Auto-Scroll Specific Vars ---
@@ -4393,10 +4397,12 @@
             }
         
             function removeTally(id) {
-                const p = parentGroups.find(g => g.id === activeParentId);
-                p.tallies = p.tallies.filter(t => t.id !== id);
-                saveAllGroupData();
-                renderTallies();
+                if (confirm("Are you sure you want to remove this tally counter?")) {
+                    const p = parentGroups.find(g => g.id === activeParentId);
+                    p.tallies = p.tallies.filter(t => t.id !== id);
+                    saveAllGroupData();
+                    renderTallies();
+                }
             }
         
             function resetTallies() {
