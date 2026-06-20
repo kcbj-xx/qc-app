@@ -4729,7 +4729,46 @@
         }, true); // Use capture phase to ensure this runs before native browser jumps
     </script>
     <script>
-        // --- PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS ---
+        // ==========================================
+        // --- GLOBAL KEYBOARD & FOCUS MANAGEMENT ---
+        // ==========================================
+    
+        // 1. GLOBAL ENTER-KEY DISMISSAL
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const activeInput = document.activeElement;
+    
+                // Target standard INPUT fields only
+                if (activeInput && activeInput.tagName === 'INPUT') {
+                    
+                    // EXCEPTION: Keep keyboard up for Sum & Averaging 'Add Number' field
+                    if (activeInput.id === 'numberInput') {
+                        return; // Exit script and let it behave naturally
+                    }
+    
+                    // Block the browser's default "jump to next field" behavior
+                    e.preventDefault();
+                    e.stopPropagation();
+    
+                    // Check if the input is part of a form (Timestamps, Sampling, etc.)
+                    const form = activeInput.closest('form');
+                    if (form) {
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.click(); // Trigger the exact button logic
+                        } else {
+                            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                        }
+                    }
+    
+                    // Force the keyboard to dismiss smoothly
+                    setTimeout(() => activeInput.blur(), 10);
+                }
+            }
+        }, true); // 'true' captures the event before the browser native logic runs
+    
+    
+        // 2. PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS
         ['mousedown', 'touchstart'].forEach(eventType => {
             document.addEventListener(eventType, function(e) {
                 const removeBtn = e.target.closest('.remove-btn');
@@ -4737,8 +4776,9 @@
                 if (removeBtn) {
                     const activeInput = document.activeElement;
                     
-                    // Only intervene if the keyboard is currently active on an input field
+                    // Only intervene if the keyboard is currently open on an input field
                     if (activeInput && activeInput.tagName === 'INPUT') {
+                        
                         e.preventDefault(); // Stop the button from stealing focus
                         
                         // On mobile, preventing 'touchstart' kills the native click, so we trigger it manually
