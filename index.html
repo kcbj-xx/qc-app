@@ -4689,23 +4689,5 @@
             </script>
         </div>
     </div>
-    <script>
-        document.addEventListener('mousedown', function(e) {
-            // Check if the clicked element is one of your remove buttons
-            if (e.target.classList.contains('remove-btn')) {
-                // Check if there is an active input currently holding the keyboard
-                const activeInput = document.activeElement;
-                if (activeInput.tagName === 'INPUT' || activeInput.tagName === 'TEXTAREA') {
-                    e.preventDefault(); // Stop the focus-steal
-                    
-                    // Now manually trigger the function that was supposed to run
-                    // We use setTimeout to let the click event register safely
-                    setTimeout(() => {
-                        e.target.click(); 
-                    }, 0);
-                }
-            }
-        }, { passive: false });
-    </script>
 </body>
 </html>
