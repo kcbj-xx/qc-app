@@ -861,22 +861,17 @@
                         <div class="chevron">&#9660;</div>
                     </h2>
                     <div class="card-body">
-                        <div onsubmit="event.preventDefault();">
-                            <div class="row">
-                                <div class="input-group">
-                                    <label>Celsius (°C)</label>
-                                    <input type="number" step="any" id="celsiusVal" inputmode="decimal" placeholder="°C" 
-                                           oninput="convertTemp('C')" 
-                                           onkeydown="if(event.key==='Enter') { event.preventDefault(); setTimeout(() => this.blur(), 10); }">
-                                </div>
-                                <div class="input-group">
-                                    <label>Fahrenheit (°F)</label>
-                                    <input type="number" step="any" id="fahrenheitVal" inputmode="decimal" placeholder="°F" 
-                                           oninput="convertTemp('F')" 
-                                           onkeydown="if(event.key==='Enter') { event.preventDefault(); setTimeout(() => this.blur(), 10); }">
-                                </div>
-                            </div>
-                        </div>
+                        <form onsubmit="event.preventDefault();">
+                            <div class="row">
+                                <div class="input-group">
+                                    <label>Celsius (°C)</label>
+                                    <input type="number" step="any" id="celsiusVal" inputmode="decimal" placeholder="°C" oninput="convertTemp('C')" onkeydown="if(event.key==='Enter') { event.preventDefault(); }">
+                                <div class="input-group">
+                                    <label>Fahrenheit (°F)</label>
+                                    <input type="number" step="any" id="fahrenheitVal" inputmode="decimal" placeholder="°F" oninput="convertTemp('F')" onkeydown="if(event.key==='Enter') { event.preventDefault(); }">
+                                </div>
+                            </div>
+                        </form>
                         <button id="clearTempBtn" class="secondary" onclick="resetTemp()" style="display: none;">Clear</button>
                     </div>
                 </div>
