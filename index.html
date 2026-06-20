@@ -3869,13 +3869,21 @@
             }
         
             function removeNumber(index) {
+                // 1. Remove the number from the array
                 getActiveData().splice(index, 1);
-                saveAllGroupData();
+                
+                // 2. Check if the list is now empty
                 const arr = getActiveData();
                 if (arr.length === 0) {
                     const activeTab = appTabs.find(t => t.id === activeTabId);
-                    activeTab.lastAddedStr = '';
+                    activeTab.lastAddedStr = '';   // Wipe the text
+                    activeTab.lastAddedColor = ''; // Wipe the color styling
                 }
+                
+                // 3. Save the data AFTER the wipe happens!
+                saveAllGroupData();
+                
+                // 4. Update the screen
                 renderList();
             }
         
