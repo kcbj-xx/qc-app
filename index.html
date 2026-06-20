@@ -4733,39 +4733,45 @@
         // --- GLOBAL KEYBOARD & FOCUS MANAGEMENT ---
         // ==========================================
     
-        // 1. GLOBAL ENTER-KEY DISMISSAL
+        // 1. GLOBAL ENTER-KEY DISMISSAL (Updated for Ghost Jumps)
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const activeInput = document.activeElement;
     
-                // Target standard INPUT fields only
                 if (activeInput && activeInput.tagName === 'INPUT') {
                     
                     // EXCEPTION: Keep keyboard up for Sum & Averaging 'Add Number' field
                     if (activeInput.id === 'numberInput') {
-                        return; // Exit script and let it behave naturally
+                        return; 
                     }
     
-                    // Block the browser's default "jump to next field" behavior
+                    // Block the native "jump to next field" behavior
                     e.preventDefault();
                     e.stopPropagation();
     
-                    // Check if the input is part of a form (Timestamps, Sampling, etc.)
+                    // 1. INSTANT BLUR: Drop the keyboard immediately
+                    activeInput.blur();
+    
+                    // 2. GHOST JUMP KILLER: If the mobile OS stubbornly forced focus to the 
+                    // next field anyway in the background, catch it and blur it too.
+                    setTimeout(() => {
+                        if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                            document.activeElement.blur();
+                        }
+                    }, 10);
+    
+                    // 3. SMART SUBMIT: Only click submit if a real submit button exists.
+                    // (This stops the Temperature Converter from jumping)
                     const form = activeInput.closest('form');
                     if (form) {
                         const submitBtn = form.querySelector('button[type="submit"]');
                         if (submitBtn) {
-                            submitBtn.click(); // Trigger the exact button logic
-                        } else {
-                            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                            submitBtn.click(); 
                         }
                     }
-    
-                    // Force the keyboard to dismiss smoothly
-                    setTimeout(() => activeInput.blur(), 10);
                 }
             }
-        }, true); // 'true' captures the event before the browser native logic runs
+        }, true); 
     
     
         // 2. PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS
