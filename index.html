@@ -4730,51 +4730,8 @@
     </script>
     <script>
         // ==========================================
-        // --- GLOBAL KEYBOARD & FOCUS MANAGEMENT ---
+        // --- PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS ---
         // ==========================================
-    
-        // 1. GLOBAL ENTER-KEY DISMISSAL (Updated for Ghost Jumps)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const activeInput = document.activeElement;
-    
-                if (activeInput && activeInput.tagName === 'INPUT') {
-                    
-                    // EXCEPTION: Keep keyboard up for Sum & Averaging 'Add Number' field
-                    if (activeInput.id === 'numberInput') {
-                        return; 
-                    }
-    
-                    // Block the native "jump to next field" behavior
-                    e.preventDefault();
-                    e.stopPropagation();
-    
-                    // 1. INSTANT BLUR: Drop the keyboard immediately
-                    activeInput.blur();
-    
-                    // 2. GHOST JUMP KILLER: If the mobile OS stubbornly forced focus to the 
-                    // next field anyway in the background, catch it and blur it too.
-                    setTimeout(() => {
-                        if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-                            document.activeElement.blur();
-                        }
-                    }, 10);
-    
-                    // 3. SMART SUBMIT: Only click submit if a real submit button exists.
-                    // (This stops the Temperature Converter from jumping)
-                    const form = activeInput.closest('form');
-                    if (form) {
-                        const submitBtn = form.querySelector('button[type="submit"]');
-                        if (submitBtn) {
-                            submitBtn.click(); 
-                        }
-                    }
-                }
-            }
-        }, true); 
-    
-    
-        // 2. PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS
         ['mousedown', 'touchstart'].forEach(eventType => {
             document.addEventListener(eventType, function(e) {
                 const removeBtn = e.target.closest('.remove-btn');
@@ -4784,10 +4741,8 @@
                     
                     // Only intervene if the keyboard is currently open on an input field
                     if (activeInput && activeInput.tagName === 'INPUT') {
-                        
                         e.preventDefault(); // Stop the button from stealing focus
                         
-                        // On mobile, preventing 'touchstart' kills the native click, so we trigger it manually
                         if (eventType === 'touchstart') {
                             setTimeout(() => removeBtn.click(), 10);
                         }
