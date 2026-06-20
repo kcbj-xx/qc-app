@@ -326,6 +326,29 @@
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
 
         /* --- Folder Tabs --- */
+        
+        /* --- Form Utility Classes --- */
+        .panel-input {
+            flex: 1;
+            min-height: 40px;
+            padding: 8px 12px;
+            margin: 0;
+        }
+
+        .panel-btn {
+            width: auto;
+            min-height: 40px;
+            margin: 0;
+            padding: 0 20px;
+        }
+        
+        .panel-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
         .tabs-container { 
             display: flex; 
             border-bottom: 2px solid var(--border); 
@@ -646,9 +669,11 @@
                     
                     <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
                         <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
-                        <div style="display:flex; gap:10px; width:100%; margin-bottom: 15px;">
-                            <input type="text" id="renameParentTabInput" placeholder="Group Name" oninput="saveParentGroupSettings()" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                        
+                        <div class="panel-row" style="margin-bottom: 15px;">
+                            <input type="text" id="renameParentTabInput" placeholder="Group Name" class="panel-input" oninput="saveParentGroupSettings()">
                         </div>
+
                         <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
                             <div class="input-group" style="flex: 1; margin-bottom: 0;">
                                 <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
@@ -695,9 +720,10 @@
         
                         <div id="pickupSetOptionsPanel" class="tab-options-panel" style="margin-top: 5px;">
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Set</label>
-                            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                                <input type="text" id="renamePickupSetInput" placeholder="Set Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                                <button onclick="savePickupSetName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                            
+                            <div class="panel-row">
+                                <input type="text" id="renamePickupSetInput" placeholder="Set Name" class="panel-input">
+                                <button onclick="savePickupSetName()" class="panel-btn">Save</button>
                             </div>
                             
                             <div style="background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center;">
@@ -714,10 +740,12 @@
         
                         <div id="pickupTabOptionsPanel" class="tab-options-panel">
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
-                            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                                <input type="text" id="renamePickupTabInput" placeholder="Sample Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                                <button onclick="savePickupTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                            
+                            <div class="panel-row">
+                                <input type="text" id="renamePickupTabInput" placeholder="Sample Name" class="panel-input">
+                                <button onclick="savePickupTabName()" class="panel-btn">Save</button>
                             </div>
+
                             <button onclick="confirmDeletePickupTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
                         </div>
         
@@ -759,10 +787,12 @@
         
                         <div id="sumSetOptionsPanel" class="tab-options-panel" style="margin-top: 5px;">
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Set</label>
-                            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                                <input type="text" id="renameSumSetInput" placeholder="Set Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                                <button onclick="saveSumSetName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                            
+                            <div class="panel-row">
+                                <input type="text" id="renameSumSetInput" placeholder="Set Name" class="panel-input">
+                                <button onclick="saveSumSetName()" class="panel-btn">Save</button>
                             </div>
+
                             <button onclick="clearSumSetData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom:10px;">Clear Data Only</button>
                             
                             <button onclick="confirmDeleteSumSet()" class="secondary" style="margin:0; min-height:40px;">Delete Set</button>
@@ -774,17 +804,18 @@
         
                         <div id="tabOptionsPanel" class="tab-options-panel">
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample Name</label>
-                            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                                <input type="text" id="renameTabInput" placeholder="Sample Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                                <button onclick="saveTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                            
+                            <div class="panel-row">
+                                <input type="text" id="renameTabInput" placeholder="Sample Name" class="panel-input">
+                                <button onclick="saveTabName()" class="panel-btn">Save</button>
                             </div>
-        
+                            
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Range Limits</label>
-                            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                                <input type="number" id="tabMinRange" placeholder="Min Limit" step="any" oninput="saveTabRange()" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                                <input type="number" id="tabMaxRange" placeholder="Max Limit" step="any" oninput="saveTabRange()" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
+                            <div class="panel-row">
+                                <input type="number" id="tabMinRange" placeholder="Min Limit" step="any" oninput="saveTabRange()" class="panel-input">
+                                <input type="number" id="tabMaxRange" placeholder="Max Limit" step="any" oninput="saveTabRange()" class="panel-input">
                             </div>
-        
+
                             <button onclick="duplicateTab()" class="action-btn" style="margin:0; min-height:40px; margin-bottom:10px;">Duplicate Tab</button>
                             <button onclick="confirmDeleteTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
                         </div>
@@ -830,10 +861,12 @@
         
                         <div id="salinityTabOptionsPanel" class="tab-options-panel">
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
-                            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                                <input type="text" id="renameSalinityTabInput" placeholder="Sample Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                                <button onclick="saveSalinityTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                            
+                            <div class="panel-row">
+                                <input type="text" id="renameSalinityTabInput" placeholder="Sample Name" class="panel-input">
+                                <button onclick="saveSalinityTabName()" class="panel-btn">Save</button>
                             </div>
+
                             <button onclick="confirmDeleteSalinityTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
                         </div>
         
@@ -951,10 +984,12 @@
         
                         <div id="estimatorTabOptionsPanel" class="tab-options-panel">
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Line</label>
-                            <div style="display:flex; gap:10px; width:100%; margin-bottom: 10px;">
-                                <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" style="flex:1; min-height:40px; padding: 8px 12px; margin:0;">
-                                <button onclick="saveEstimatorTabName()" style="width:auto; min-height:40px; margin:0; padding:0 20px;">Save</button>
+                            
+                            <div class="panel-row">
+                                <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" class="panel-input">
+                                <button onclick="saveEstimatorTabName()" class="panel-btn">Save</button>
                             </div>
+
                             <button onclick="confirmDeleteEstimatorTab()" class="secondary" style="margin:0; min-height:40px;">Delete Line</button>
                         </div>
         
@@ -1111,6 +1146,24 @@
                 });
             }
         
+            // ==========================================
+            // --- PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS ---
+            // ==========================================
+            ['mousedown', 'touchstart'].forEach(eventType => {
+                document.addEventListener(eventType, function(e) {
+                    const removeBtn = e.target.closest('.remove-btn');
+                    if (removeBtn) {
+                        const activeInput = document.activeElement;
+                        if (activeInput && activeInput.tagName === 'INPUT') {
+                            e.preventDefault(); 
+                            if (eventType === 'touchstart') {
+                                setTimeout(() => removeBtn.click(), 10);
+                            }
+                        }
+                    }
+                }, { passive: false });
+            });
+            
             // --- GLOBALS FOR TAB STATE & GESTURES ---
             let preventTabClick = false; 
             let isTabDraggingGlobal = false; 
@@ -4698,28 +4751,5 @@
             </script>
         </div>
     </div>
-    <script>
-        // ==========================================
-        // --- PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS ---
-        // ==========================================
-        ['mousedown', 'touchstart'].forEach(eventType => {
-            document.addEventListener(eventType, function(e) {
-                const removeBtn = e.target.closest('.remove-btn');
-                
-                if (removeBtn) {
-                    const activeInput = document.activeElement;
-                    
-                    // Only intervene if the keyboard is currently open on an input field
-                    if (activeInput && activeInput.tagName === 'INPUT') {
-                        e.preventDefault(); // Stop the button from stealing focus
-                        
-                        if (eventType === 'touchstart') {
-                            setTimeout(() => removeBtn.click(), 10);
-                        }
-                    }
-                }
-            }, { passive: false });
-        });
-    </script>
 </body>
 </html>
