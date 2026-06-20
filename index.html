@@ -1101,15 +1101,18 @@
                     </h2>
                     <div class="card-body">
                         <form onsubmit="event.preventDefault(); addTimestamp();">
-                            <div class="input-group" style="margin-bottom: 5px;">
-                                <label>Add Time Log</label>
-                                <div class="panel-row" style="margin-bottom: 5px;">
-                                    <input type="time" id="newTimestampTime" class="panel-input" style="flex: 0 1 auto;">
-                                    <input type="text" id="newTimestampEvent" placeholder="Event description (optional)" class="panel-input" style="flex: 1;">
+                            <div class="row">
+                                <div class="input-group" style="flex: 0 1 130px;">
+                                    <label>Time</label>
+                                    <input type="time" id="newTimestampTime">
                                 </div>
-                                <button type="submit" style="width: 100%; margin-bottom: 0;">Add Log</button>
-                                <div style="font-size: 0.75rem; color: #64748b; margin-top: 5px;">Leave time blank to record the current time.</div>
+                                <div class="input-group" style="flex: 1;">
+                                    <label>Description</label>
+                                    <input type="text" id="newTimestampEvent" placeholder="Event details (optional)...">
+                                </div>
                             </div>
+                            <button type="submit" style="margin-top: -5px; margin-bottom: 10px;">Add Log</button>
+                            <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-bottom: 5px;">Leave time blank to record the current time.</div>
                         </form>
                         
                         <div id="timestampsList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; max-height: 260px; overflow-y: auto; padding-right: 4px; padding-bottom: 4px;"></div>
