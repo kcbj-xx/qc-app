@@ -1102,15 +1102,15 @@
                     <div class="card-body">
                         <form onsubmit="event.preventDefault(); addTimestamp();">
                             <div class="input-group">
-                                <label>Time</label>
+                                <label>Time (Optional)</label>
                                 <input type="time" id="newTimestampTime">
                             </div>
                             <div class="input-group">
-                                <label>Description</label>
-                                <input type="text" id="newTimestampEvent" placeholder="">
+                                <label>Description (Required)</label>
+                                <input type="text" id="newTimestampEvent" placeholder="Enter event details..." required>
                             </div>
                             <button type="submit" style="margin-bottom: 10px;">Add Log</button>
-                            <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-bottom: 5px;">Leave time blank to record the current time.</div>
+                            <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-bottom: 5px;">Leave time blank to auto-log the current time.</div>
                         </form>
                         
                         <div id="timestampsList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; max-height: 260px; overflow-y: auto; padding-right: 4px; padding-bottom: 4px;"></div>
@@ -4435,15 +4435,15 @@
                 p.timestamps.forEach(ts => {
                     const div = document.createElement('div');
                     div.className = 'number-item';
-                    div.id = ts.id; // Added ID for targeting scroll
-                    div.style.cssText = 'flex-wrap: wrap; padding: 10px; border-radius: 8px; justify-content: space-between; align-items: center; background: #f8fafc;';
+                    div.id = ts.id; 
+                    div.style.cssText = 'flex-wrap: wrap; padding: 12px; border-radius: 8px; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid var(--border);';
                     
                     div.innerHTML = `
-                        <div style="display: flex; gap: 10px; width: 100%; align-items: center; margin-bottom: 4px;">
-                            <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: auto; flex: 0 1 auto; margin: 0 auto 0 0; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); border: none; background: transparent; outline: none; text-align: left;">
+                        <div style="display: flex; gap: 10px; width: 100%; align-items: center; margin-bottom: 8px;">
+                            <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: auto; flex: 0 1 auto; margin: 0 auto 0 0; padding: 6px 10px; border-radius: 6px; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); background: #e2e8f0; border: 1px solid #cbd5e1; outline: none; text-align: left; transition: 0.2s;">
                             <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove" style="flex-shrink: 0;">&times;</button>
                         </div>
-                        <textarea placeholder="Event description..." oninput="updateTimestampEvent('${ts.id}', this.value); autoResizeTextarea(this)" style="width: 100%; min-height: 40px; padding: 4px 12px 8px 12px; background: transparent; border: none; outline: none; resize: none; overflow-y: hidden; font-family: inherit; font-size: inherit; margin: 0; box-sizing: border-box;">${(ts.event || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                        <textarea placeholder="Event description..." oninput="updateTimestampEvent('${ts.id}', this.value); autoResizeTextarea(this)" style="width: 100%; min-height: 40px; padding: 8px 12px; background: #ffffff; border: 1px solid var(--border); border-radius: 6px; outline: none; resize: none; overflow-y: hidden; font-family: inherit; font-size: inherit; margin: 0; box-sizing: border-box; transition: 0.2s;">${(ts.event || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
                     `;
                     container.appendChild(div);
                 });
@@ -4461,6 +4461,14 @@
                 let timeVal = timeInput.value;
                 let eventVal = eventInput ? eventInput.value.trim() : '';
                 
+                // Reject if description is empty
+                if (!eventVal) {
+                    eventInput.classList.add('input-error');
+                    setTimeout(() => eventInput.classList.remove('input-error'), 3000);
+                    return; 
+                }
+                
+                // Auto-fill time if empty
                 if (!timeVal) {
                     const now = new Date();
                     timeVal = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
@@ -4478,7 +4486,6 @@
                 saveAllGroupData();
                 renderTimestamps();
 
-                // Scroll directly to the newly created element
                 setTimeout(() => {
                     const container = document.getElementById('timestampsList');
                     const newItem = document.getElementById(newId);
