@@ -4728,5 +4728,27 @@
             }
         }, true); // Use capture phase to ensure this runs before native browser jumps
     </script>
+    <script>
+        // --- PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS ---
+        ['mousedown', 'touchstart'].forEach(eventType => {
+            document.addEventListener(eventType, function(e) {
+                const removeBtn = e.target.closest('.remove-btn');
+                
+                if (removeBtn) {
+                    const activeInput = document.activeElement;
+                    
+                    // Only intervene if the keyboard is currently active on an input field
+                    if (activeInput && activeInput.tagName === 'INPUT') {
+                        e.preventDefault(); // Stop the button from stealing focus
+                        
+                        // On mobile, preventing 'touchstart' kills the native click, so we trigger it manually
+                        if (eventType === 'touchstart') {
+                            setTimeout(() => removeBtn.click(), 10);
+                        }
+                    }
+                }
+            }, { passive: false });
+        });
+    </script>
 </body>
 </html>
