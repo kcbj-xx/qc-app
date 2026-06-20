@@ -1101,17 +1101,15 @@
                     </h2>
                     <div class="card-body">
                         <form onsubmit="event.preventDefault(); addTimestamp();">
-                            <div style="display: flex; gap: 8px; width: 100%;">
-                                <div class="input-group" style="flex: 0 0 110px; margin-bottom: 0;">
-                                    <label>Time</label>
-                                    <input type="time" id="newTimestampTime" style="padding: 12px 8px;">
-                                </div>
-                                <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                                    <label>Description</label>
-                                    <input type="text" id="newTimestampEvent" placeholder="Event details (optional)...">
-                                </div>
+                            <div class="input-group">
+                                <label>Time</label>
+                                <input type="time" id="newTimestampTime">
                             </div>
-                            <button type="submit" style="margin-top: 10px; margin-bottom: 10px;">Add Log</button>
+                            <div class="input-group">
+                                <label>Description</label>
+                                <input type="text" id="newTimestampEvent" placeholder="Event details (optional)...">
+                            </div>
+                            <button type="submit" style="margin-bottom: 10px;">Add Log</button>
                             <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-bottom: 5px;">Leave time blank to record the current time.</div>
                         </form>
                         
