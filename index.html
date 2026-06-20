@@ -4706,24 +4706,6 @@
                 }
             }
         }, { passive: false });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const activeInput = document.activeElement;
-        
-                // Check if the current input is the specific "Sum and Averaging" field
-                // Replace 'sum-averaging-input-id' with the actual ID of that input
-                if (activeInput && activeInput.id === 'sum-averaging-input-id') {
-                    return; // Do nothing, keep the keyboard open
-                }
-        
-                // Otherwise, dismiss the keyboard for all other fields
-                if (activeInput.tagName === 'INPUT' || activeInput.tagName === 'TEXTAREA') {
-                    activeInput.blur();
-                    e.preventDefault();
-                }
-            }
-        });
     </script>
 </body>
 </html>
