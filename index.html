@@ -167,6 +167,10 @@
                 outline: 2px solid var(--primary) !important; /* Blue border */
                 box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25) !important; 
             }
+            
+            @media (hover: hover) {
+                .pin-btn:hover { background: #334155 !important; color: #cbd5e1; }
+            }
         } /* <--- THIS BRACKET CLOSES DARK MODE! */
         
         body { 
@@ -1099,10 +1103,11 @@
                         <form onsubmit="event.preventDefault(); addTimestamp();">
                             <div class="input-group" style="margin-bottom: 5px;">
                                 <label>Add Time Log</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <input type="time" id="newTimestampTime" style="flex: 1;">
-                                    <button type="submit" style="width: auto; margin-bottom: 0;">Add Log</button>
+                                <div class="panel-row" style="margin-bottom: 5px;">
+                                    <input type="time" id="newTimestampTime" class="panel-input" style="flex: 0 1 auto;">
+                                    <input type="text" id="newTimestampEvent" placeholder="Event description (optional)" class="panel-input" style="flex: 1;">
                                 </div>
+                                <button type="submit" style="width: 100%; margin-bottom: 0;">Add Log</button>
                                 <div style="font-size: 0.75rem; color: #64748b; margin-top: 5px;">Leave time blank to record the current time.</div>
                             </div>
                         </form>
@@ -4414,53 +4419,68 @@
                 if (!p.timestamps || p.timestamps.length === 0) {
                     container.style.display = 'none';
                     clearBtn.style.display = 'none';
-                        return;
-                    }
-                    
-                    container.style.display = 'flex';
-                    clearBtn.style.display = 'block';
-                    
-                    p.timestamps.forEach(ts => {
-                        const div = document.createElement('div');
-                        div.className = 'number-item';
-                        div.style.cssText = 'flex-wrap: wrap; padding: 10px; border-radius: 8px; justify-content: space-between; align-items: center; background: #f8fafc;';
-                        
-                        div.innerHTML = `
-                            <div style="display: flex; gap: 10px; width: 100%; align-items: center; margin-bottom: 4px;">
-                                <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: auto; flex: 0 1 auto; margin: 0 auto 0 0; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); border: none; background: transparent; outline: none; text-align: left;">
-                                <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove" style="flex-shrink: 0;">&times;</button>
-                            </div>
-                            <textarea placeholder="Event description..." oninput="updateTimestampEvent('${ts.id}', this.value); autoResizeTextarea(this)" style="width: 100%; min-height: 40px; padding: 4px 12px 8px 12px; background: transparent; border: none; outline: none; resize: none; overflow-y: hidden; font-family: inherit; font-size: inherit; margin: 0; box-sizing: border-box;">${(ts.event || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
-                        `;
-                        container.appendChild(div);
-                    });
-            
-                    // Instantly resize the boxes if they already contain multi-line text when loaded
-                    setTimeout(() => {
-                        container.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
-                    }, 10);
+                    return;
                 }
-            
-                function addTimestamp() {
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    const timeInput = document.getElementById('newTimestampTime');
-                    let timeVal = timeInput.value;
+                
+                container.style.display = 'flex';
+                clearBtn.style.display = 'block';
+                
+                p.timestamps.forEach(ts => {
+                    const div = document.createElement('div');
+                    div.className = 'number-item';
+                    div.id = ts.id; // Added ID for targeting scroll
+                    div.style.cssText = 'flex-wrap: wrap; padding: 10px; border-radius: 8px; justify-content: space-between; align-items: center; background: #f8fafc;';
                     
-                    if (!timeVal) {
-                        const now = new Date();
-                        timeVal = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-                    }
-                    
-                    if (!p.timestamps) p.timestamps = [];
-                    p.timestamps.push({ id: 'ts_' + Date.now() + Math.random(), time: timeVal, event: '' });
-                    
-                    // Auto-sort chronologically based on time
-                    p.timestamps.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-                    
-                    timeInput.value = ''; 
-                    saveAllGroupData();
-                    renderTimestamps();
+                    div.innerHTML = `
+                        <div style="display: flex; gap: 10px; width: 100%; align-items: center; margin-bottom: 4px;">
+                            <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: auto; flex: 0 1 auto; margin: 0 auto 0 0; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); border: none; background: transparent; outline: none; text-align: left;">
+                            <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove" style="flex-shrink: 0;">&times;</button>
+                        </div>
+                        <textarea placeholder="Event description..." oninput="updateTimestampEvent('${ts.id}', this.value); autoResizeTextarea(this)" style="width: 100%; min-height: 40px; padding: 4px 12px 8px 12px; background: transparent; border: none; outline: none; resize: none; overflow-y: hidden; font-family: inherit; font-size: inherit; margin: 0; box-sizing: border-box;">${(ts.event || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                    `;
+                    container.appendChild(div);
+                });
+        
+                setTimeout(() => {
+                    container.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
+                }, 10);
+            }
+        
+            function addTimestamp() {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                const timeInput = document.getElementById('newTimestampTime');
+                const eventInput = document.getElementById('newTimestampEvent');
+                
+                let timeVal = timeInput.value;
+                let eventVal = eventInput ? eventInput.value.trim() : '';
+                
+                if (!timeVal) {
+                    const now = new Date();
+                    timeVal = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
                 }
+                
+                if (!p.timestamps) p.timestamps = [];
+                const newId = 'ts_' + Date.now() + Math.random();
+                p.timestamps.push({ id: newId, time: timeVal, event: eventVal });
+                
+                p.timestamps.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                
+                timeInput.value = ''; 
+                if (eventInput) eventInput.value = '';
+                
+                saveAllGroupData();
+                renderTimestamps();
+
+                // Scroll directly to the newly created element
+                setTimeout(() => {
+                    const container = document.getElementById('timestampsList');
+                    const newItem = document.getElementById(newId);
+                    if (container && newItem) {
+                        const scrollPos = newItem.offsetTop - container.offsetTop;
+                        container.scrollTo({ top: scrollPos, behavior: 'smooth' });
+                    }
+                }, 50);
+            }
             
                 function updateTimestampTime(id, val) {
                     const p = parentGroups.find(g => g.id === activeParentId);
