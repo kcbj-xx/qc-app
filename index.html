@@ -1107,7 +1107,7 @@
                             </div>
                             <div class="input-group">
                                 <label>Description</label>
-                                <input type="text" id="newTimestampEvent" placeholder="Event details...">
+                                <input type="text" id="newTimestampEvent" placeholder="">
                             </div>
                             <button type="submit" style="margin-bottom: 10px;">Add Log</button>
                             <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-bottom: 5px;">Leave time blank to record the current time.</div>
@@ -4504,10 +4504,12 @@
                 }
             
                 function removeTimestamp(id) {
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    p.timestamps = p.timestamps.filter(t => t.id !== id);
-                    saveAllGroupData();
-                    renderTimestamps();
+                    if (confirm("Are you sure you want to remove this time log?")) {
+                        const p = parentGroups.find(g => g.id === activeParentId);
+                        p.timestamps = p.timestamps.filter(t => t.id !== id);
+                        saveAllGroupData();
+                        renderTimestamps();
+                    }
                 }
                 
                 function clearTimestamps() {
