@@ -865,11 +865,15 @@
                             <div class="row">
                                 <div class="input-group">
                                     <label>Celsius (°C)</label>
-                                    <input type="number" step="any" id="celsiusVal" inputmode="decimal" placeholder="°C" oninput="convertTemp('C')">
+                                    <input type="number" step="any" id="celsiusVal" inputmode="decimal" placeholder="°C" 
+                                        oninput="convertTemp('C')" 
+                                        onkeydown="if(event.key==='Enter') { event.preventDefault(); this.blur(); }">
                                 </div>
                                 <div class="input-group">
                                     <label>Fahrenheit (°F)</label>
-                                    <input type="number" step="any" id="fahrenheitVal" inputmode="decimal" placeholder="°F" oninput="convertTemp('F')">
+                                    <input type="number" step="any" id="fahrenheitVal" inputmode="decimal" placeholder="°F" 
+                                        oninput="convertTemp('F')" 
+                                        onkeydown="if(event.key==='Enter') { event.preventDefault(); this.blur(); }">
                                 </div>
                             </div>
                         </form>
