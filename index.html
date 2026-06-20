@@ -4448,7 +4448,7 @@
                         </div>
                         <div style="width: 100%;">
                             <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Event</div>
-                            <textarea placeholder="Event description..." oninput="updateTimestampEvent('${ts.id}', this.value); autoResizeTextarea(this)" style="width: 100%; min-height: 40px; padding: 8px 0px; background: transparent; border: none; outline: none; resize: none; overflow-y: hidden; font-family: inherit; font-size: inherit; margin: 0; box-sizing: border-box; transition: 0.2s;">${(ts.event || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                            <textarea placeholder="Event description..." oninput="updateTimestampEvent('${ts.id}', this.value); autoResizeTextarea(this)" style="width: 100%; min-height: 40px; padding: 8px 12px; background: transparent; border: none; outline: none; resize: none; overflow-y: hidden; font-family: inherit; font-size: inherit; margin: 0; box-sizing: border-box; transition: 0.2s;">${(ts.event || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
                         </div>
                     `;
                     container.appendChild(div);
