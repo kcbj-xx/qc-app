@@ -4689,5 +4689,44 @@
             </script>
         </div>
     </div>
+    <script>
+        // --- GLOBAL KEYBOARD DISMISSAL ---
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const activeInput = document.activeElement;
+    
+                // 1. Target only standard INPUT fields (leave TEXTAREA alone so Quick Notes still gets new lines)
+                if (activeInput && activeInput.tagName === 'INPUT') {
+                    
+                    // 2. EXCEPTION: Keep keyboard open for the Sum & Averaging 'Add Number' field
+                    if (activeInput.id === 'numberInput') {
+                        return; 
+                    }
+    
+                    // 3. Stop the browser's default behavior (which causes the "next-field jump")
+                    e.preventDefault();
+                    e.stopPropagation();
+    
+                    // 4. Manually trigger form submissions if the input is inside a form
+                    const form = activeInput.closest('form');
+                    if (form) {
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            // Click the button if it exists (e.g., Timestamps, Production Pace, Sampling)
+                            submitBtn.click(); 
+                        } else {
+                            // Otherwise trigger the form directly (e.g., Temp Converter, Pickup)
+                            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); 
+                        }
+                    }
+    
+                    // 5. Dismiss the keyboard smoothly
+                    setTimeout(() => {
+                        activeInput.blur();
+                    }, 10);
+                }
+            }
+        }, true); // Use capture phase to ensure this runs before native browser jumps
+    </script>
 </body>
 </html>
