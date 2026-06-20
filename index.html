@@ -1107,7 +1107,7 @@
                             </div>
                             <div class="input-group">
                                 <label>Event</label>
-                                <input type="text" id="newTimestampEvent" placeholder="Enter event details..." required>
+                                <input type="text" id="newTimestampEvent" required>
                             </div>
                             <button type="submit" style="margin-bottom: 10px;">Add Log</button>
                             <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-bottom: 5px;">Leave time blank to auto-log the current time.</div>
@@ -4442,7 +4442,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 10px;">
                             <div>
                                 <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Time</div>
-                                <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: auto; padding: 6px 10px; border-radius: 6px; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); background: #e2e8f0; border: 1px solid #cbd5e1; outline: none; text-align: left; transition: 0.2s;">
+                                <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: 120px; padding: 6px 10px; border-radius: 6px; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); background: #e2e8f0; border: 1px solid #cbd5e1; outline: none; text-align: left; transition: 0.2s;">
                             </div>
                             <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove" style="flex-shrink: 0;">&times;</button>
                         </div>
@@ -4474,17 +4474,16 @@
                     return; 
                 }
                 
-                // Auto-fill time if empty
-                if (!timeVal) {
-                    const now = new Date();
-                    timeVal = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-                }
-                
                 if (!p.timestamps) p.timestamps = [];
                 const newId = 'ts_' + Date.now() + Math.random();
                 p.timestamps.push({ id: newId, time: timeVal, event: eventVal });
                 
-                p.timestamps.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                // Sort chronologically, putting empty times at the bottom
+                p.timestamps.sort((a, b) => {
+                    let valA = a.time ? parseTimeToMinutes(a.time) : Infinity;
+                    let valB = b.time ? parseTimeToMinutes(b.time) : Infinity;
+                    return valA - valB;
+                });
                 
                 timeInput.value = ''; 
                 if (eventInput) eventInput.value = '';
@@ -4508,8 +4507,11 @@
                     if (ts) { 
                         ts.time = val; 
                         
-                        // Re-sort and re-render if a time is manually edited so it jumps to the correct spot
-                        p.timestamps.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                        p.timestamps.sort((a, b) => {
+                            let valA = a.time ? parseTimeToMinutes(a.time) : Infinity;
+                            let valB = b.time ? parseTimeToMinutes(b.time) : Infinity;
+                            return valA - valB;
+                        });
                         
                         saveAllGroupData(); 
                         renderTimestamps();
