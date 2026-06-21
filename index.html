@@ -530,34 +530,41 @@
         }
 
         /* --- Perfectly Center Timestamp Time Field --- */
-        .ts-time-input {
-            position: relative !important; 
-        }
-        
-        .ts-time-input::-webkit-calendar-picker-indicator {
-            position: absolute !important;
-            right: 10px !important; /* Anchors the icon to the right */
-            margin: 0 !important;
-            padding: 0 !important;
-        }
+        .ts-time-input {
+            position: relative !important; 
+            text-align: center !important;
+        }
+        
+        .ts-time-input::-webkit-calendar-picker-indicator {
+            position: absolute !important;
+            right: 10px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
 
-        /* --- Force Mobile Time Inputs to Center (The Nuclear Option) --- */
-        .ts-time-input {
-            text-align: center !important;
-        }
-        
-        .ts-time-input::-webkit-datetime-edit {
-            text-align: center !important;
-            display: block !important;
-            width: 100% !important;
-        }
-        
-        .ts-time-input::-webkit-date-and-time-value {
-            text-align: center !important;
-            display: block !important;
-            margin: 0 auto !important;
-            width: 100% !important;
-        } 
+        /* --- Force Mobile Time Inputs to Center (The Nuclear Option) --- */
+        .ts-time-input::-webkit-datetime-edit {
+            text-align: center !important;
+            display: block !important;
+            width: 100% !important;
+        }
+        
+        .ts-time-input::-webkit-date-and-time-value {
+            text-align: center !important;
+            display: block !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+        }
+
+        /* --- iOS/iPadOS Vertical Alignment Override --- */
+        /* Targets Apple devices to fix the vertical shift */
+        @supports (-webkit-touch-callout: none) {
+            .ts-time-input::-webkit-datetime-edit {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+        }
         
         /* --- Auto Dark Mode --- */
         @media (prefers-color-scheme: dark) {
