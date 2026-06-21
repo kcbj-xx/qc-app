@@ -669,26 +669,25 @@
                 box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25) !important; 
             }
             
-            /* --- Minimalist Dark Mode Pin Button Hover --- */
-            @media (hover: hover) {
-                .pin-btn:hover { 
-                    background: transparent !important; /* Removes the background highlight entirely */
-                    color: #f8fafc !important; /* Brightens the pin icon to pure white */
-                }
-            }
-            
             /* --- Invert Native Icons to White --- */
             input::-webkit-calendar-picker-indicator {
                 filter: invert(1) brightness(200%) !important; /* Flips the dark icon to bright white */
                 opacity: 0.8;
             }
 
-            @media (hover: hover) {
-                .card h2 .pin-btn:hover { 
-                    background-color: transparent !important; 
-                    color: #f8fafc !important; 
+            /* --- Ultimate Dark Mode Pin Hover Fix --- */
+                @media (prefers-color-scheme: dark) {
+                    @media (hover: hover) {
+                        .card h2 .pin-btn:hover { 
+                            background-color: transparent !important; 
+                            color: #f8fafc !important; 
+                        }
+                        /* This forces the inside of the pin to turn solid white */
+                        .card h2 .pin-btn:hover svg {
+                            fill: #f8fafc !important; 
+                        }
+                    }
                 }
-            }
         } /* <--- THIS BRACKET CLOSES DARK MODE! */
     </style>
 </head>
