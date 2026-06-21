@@ -529,12 +529,19 @@
             outline: none !important;
         }
 
-        /* --- Perfectly Center Timestamp Time Field --- */
+        /* --- Simplest Cross-Platform Centering --- */
         .ts-time-input {
-            position: relative !important; 
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             text-align: center !important;
+            height: 46px !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
         }
-        
+
+        /* Keep the icon anchored to the right */
         .ts-time-input::-webkit-calendar-picker-indicator {
             position: absolute !important;
             right: 10px !important;
@@ -542,30 +549,13 @@
             padding: 0 !important;
         }
 
-        /* --- Force Mobile Time Inputs to Center (The Nuclear Option) --- */
+        /* Force internal time value to fill the centered space */
         .ts-time-input::-webkit-datetime-edit {
-            text-align: center !important;
-            display: block !important;
+            flex: 1 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             width: 100% !important;
-        }
-        
-        .ts-time-input::-webkit-date-and-time-value {
-            text-align: center !important;
-            display: block !important;
-            margin: 0 auto !important;
-            width: 100% !important;
-        }
-
-        /* --- iOS/iPadOS Vertical Alignment Override --- */
-        @supports (-webkit-touch-callout: none) {
-            .ts-time-input::-webkit-datetime-edit-hour-field,
-            .ts-time-input::-webkit-datetime-edit-minute-field,
-            .ts-time-input::-webkit-datetime-edit-ampm-field,
-            .ts-time-input::-webkit-datetime-edit-text {
-                display: inline-block !important;
-                vertical-align: middle !important;
-                padding-top: 4px !important; /* Forces the internal digits down */
-            }
         }
         
         /* --- Auto Dark Mode --- */
