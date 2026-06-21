@@ -1455,7 +1455,7 @@
                 let oldSum = JSON.parse(localStorage.getItem('qc_tabs_data')) || [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [] }];
                 let oldEstimator = JSON.parse(localStorage.getItem('qc_estimator_tabs_data')) || [{ id: 'etab_'+Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }];
                 
-                let initialPickupSet = [{ id: 'pset_'+Date.now(), name: 'Set 1', tabs: oldPickup, activeTabId: oldPickup[0].id }];
+                let initialPickupSet = [{ id: 'pset_'+Date.now(), name: 'Set 1', unit: '', tabs: oldPickup, activeTabId: oldPickup[0].id }];
                 let initialSumSet = [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: oldSum, activeTabId: oldSum[0].id }];
         
                 parentGroups = [{
@@ -1840,7 +1840,7 @@
                     date: '',
                     startTime: '',
                     endTime: '',
-                    pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
+                    pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', unit: '', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
                     sumSets: [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
                     estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
                     salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
