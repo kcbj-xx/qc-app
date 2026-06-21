@@ -180,7 +180,10 @@
         }
 
         @media (hover: hover) {
-            .pin-btn:hover { background: #f1f5f9 !important; color: #94a3b8; }
+            .pin-btn:hover { 
+                background: rgba(0, 0, 0, 0.08) !important; /* Subtle dark background */
+                color: #475569; /* Darkens the pin icon slightly to match */
+            }
         }
         
         .pin-btn svg { pointer-events: none; transition: fill 0.2s; }
@@ -676,18 +679,16 @@
             }
 
             /* --- Ultimate Dark Mode Pin Hover Fix --- */
-                @media (prefers-color-scheme: dark) {
-                    @media (hover: hover) {
-                        .card h2 .pin-btn:hover { 
-                            background-color: transparent !important; 
-                            color: var(--accent) !important; 
-                        }
-                        /* This forces the inside of the pin to turn solid white */
-                        .card h2 .pin-btn:hover svg {
-                            fill: var(--accent)  !important; 
-                        }
-                    }
+            @media (hover: hover) {
+                .card h2 .pin-btn:hover { 
+                    background-color: rgba(255, 255, 255, 0.08) !important; /* Subtle light background */
+                    color: #f8fafc !important; 
                 }
+                /* This forces the inside of the pin to turn solid white */
+                .card h2 .pin-btn:hover svg {
+                    fill: #f8fafc !important; 
+                }
+            }
         } /* <--- THIS BRACKET CLOSES DARK MODE! */
     </style>
 </head>
