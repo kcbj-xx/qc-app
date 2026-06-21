@@ -556,13 +556,15 @@
             width: 100% !important;
         }
 
-        /* --- iOS/iPadOS Vertical Alignment Override --- */
-        /* Targets Apple devices to fix the vertical shift */
+        /* --- Fine-Tuned iPadOS/iOS Vertical Alignment --- */
         @supports (-webkit-touch-callout: none) {
             .ts-time-input::-webkit-datetime-edit {
+                /* Force flex to center it */
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
+                /* If it's still too high, adjust this padding-top */
+                padding-top: 2px !important; 
             }
         }
         
