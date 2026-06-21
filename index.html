@@ -529,27 +529,35 @@
             outline: none !important;
         }
 
-        /* --- Optimized Timestamp Field Centering (Android & Desktop) --- */
-        .ts-time-input {
-            position: relative !important;
-            text-align: center !important;
+        /* --- Desktop and iPad: Use Flex for perfect vertical alignment --- */
+        @media (min-width: 481px) {
+            .ts-time-input::-webkit-datetime-edit {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
         }
         
-        /* Anchors the icon to the right so it doesn't push the text */
+        /* --- Mobile (Android): Keep the Nuclear Option for horizontal center --- */
+        @media (max-width: 480px) {
+            .ts-time-input { text-align: center !important; }
+            
+            .ts-time-input::-webkit-datetime-edit,
+            .ts-time-input::-webkit-date-and-time-value {
+                text-align: center !important;
+                display: block !important;
+                width: 100% !important;
+                margin: 0 auto !important;
+            }
+        }
+        
+        /* --- Shared Icon Positioning --- */
+        .ts-time-input { position: relative !important; }
         .ts-time-input::-webkit-calendar-picker-indicator {
             position: absolute !important;
             right: 10px !important;
             margin: 0 !important;
             padding: 0 !important;
-        }
-        
-        /* Force internal structures to behave as block elements for centering */
-        .ts-time-input::-webkit-datetime-edit,
-        .ts-time-input::-webkit-date-and-time-value {
-            text-align: center !important;
-            display: block !important;
-            width: 100% !important;
-            margin: 0 auto !important;
         }
         
         /* --- Auto Dark Mode --- */
