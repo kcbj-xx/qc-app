@@ -529,37 +529,27 @@
             outline: none !important;
         }
 
-        /* --- Unified Timestamp Field Centering & Vertical Alignment --- */
+        /* --- Optimized Timestamp Field Centering (Android & Desktop) --- */
         .ts-time-input {
             position: relative !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
             text-align: center !important;
-            line-height: normal !important;
         }
         
-        /* Anchor the icon to the right without affecting text centering */
+        /* Anchors the icon to the right so it doesn't push the text */
         .ts-time-input::-webkit-calendar-picker-indicator {
             position: absolute !important;
-            right: 8px !important;
+            right: 10px !important;
             margin: 0 !important;
             padding: 0 !important;
         }
-
-        /* Force internal text to center horizontally and vertically */
-        .ts-time-input::-webkit-datetime-edit {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            width: 100% !important;
-            height: 100% !important;
-        }
         
-        .ts-time-input::-webkit-datetime-edit-fields-wrapper {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
+        /* Force internal structures to behave as block elements for centering */
+        .ts-time-input::-webkit-datetime-edit,
+        .ts-time-input::-webkit-date-and-time-value {
+            text-align: center !important;
+            display: block !important;
+            width: 100% !important;
+            margin: 0 auto !important;
         }
         
         /* --- Auto Dark Mode --- */
