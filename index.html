@@ -529,46 +529,35 @@
             outline: none !important;
         }
 
-        /* --- Desktop and iPad: Override vertical spacing --- */
-        @media (min-width: 481px) {
-            .ts-time-input {
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-                /* Force height control */
-                line-height: 1 !important;
-                height: 46px !important; /* Match your input height */
-            }
-        
-            .ts-time-input::-webkit-datetime-edit {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                padding: 0 !important;
-                height: 46px !important; /* Match container height */
-            }
-        }
-        
-        /* --- Mobile (Android): Keep the Nuclear Option for horizontal center --- */
-        @media (max-width: 480px) {
-            .ts-time-input { text-align: center !important; }
-            
-            .ts-time-input::-webkit-datetime-edit,
-            .ts-time-input::-webkit-date-and-time-value {
-                text-align: center !important;
-                display: block !important;
-                width: 100% !important;
-                margin: 0 auto !important;
-            }
-        }
-        
-        /* --- Shared Icon Positioning --- */
-        .ts-time-input { position: relative !important; }
-        .ts-time-input::-webkit-calendar-picker-indicator {
-            position: absolute !important;
-            right: 10px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
+        /* --- Perfectly Center Timestamp Time Field --- */
+        .ts-time-input {
+            position: relative !important; 
+        }
+        
+        .ts-time-input::-webkit-calendar-picker-indicator {
+            position: absolute !important;
+            right: 10px !important; /* Anchors the icon to the right */
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* --- Force Mobile Time Inputs to Center (The Nuclear Option) --- */
+        .ts-time-input {
+            text-align: center !important;
+        }
+        
+        .ts-time-input::-webkit-datetime-edit {
+            text-align: center !important;
+            display: block !important;
+            width: 100% !important;
+        }
+        
+        .ts-time-input::-webkit-date-and-time-value {
+            text-align: center !important;
+            display: block !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+        } 
         
         /* --- Auto Dark Mode --- */
         @media (prefers-color-scheme: dark) {
