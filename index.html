@@ -529,7 +529,7 @@
             outline: none !important;
         }
 
-        /* --- Simplest Cross-Platform Centering --- */
+        /* --- Universal Cross-Platform Centering --- */
         .ts-time-input {
             position: relative !important;
             display: flex !important;
@@ -537,11 +537,10 @@
             justify-content: center !important;
             text-align: center !important;
             height: 46px !important;
-            padding: 0 !important;
             box-sizing: border-box !important;
         }
 
-        /* Keep the icon anchored to the right */
+        /* Anchor the icon to the right */
         .ts-time-input::-webkit-calendar-picker-indicator {
             position: absolute !important;
             right: 10px !important;
@@ -549,13 +548,19 @@
             padding: 0 !important;
         }
 
-        /* Force internal time value to fill the centered space */
+        /* iPad/iOS: Handled by the parent flex above */
         .ts-time-input::-webkit-datetime-edit {
-            flex: 1 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+        }
+
+        /* Android/Desktop: Explicitly center the value node */
+        .ts-time-input::-webkit-date-and-time-value {
+            text-align: center !important;
+            margin: 0 auto !important;
             width: 100% !important;
+            display: block !important;
         }
         
         /* --- Auto Dark Mode --- */
