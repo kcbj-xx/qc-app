@@ -24,6 +24,12 @@
             --error: #ef4444;
         }
 
+        /* --- Timestamp Time Field (Light Mode) --- */
+        .ts-time-input {
+            background-color: #f8fafc !important; /* Change this hex to whatever color you want */
+            border: 1px solid var(--border) !important;
+        }
+        
         /* --- Dragging State Colors (Light Mode Base) --- */
         .tab-btn.is-dragging-tab {
             background-color: #f1f5f9 !important;
@@ -49,6 +55,12 @@
                 --accent: #fbbf24;        
             }
 
+            /* --- Timestamp Time Field (Dark Mode) --- */
+            .ts-time-input {
+                background-color: #0f172a !important; /* Change this hex to match your dark theme */
+                border: 1px solid var(--border) !important;
+            }
+            
             /* 1. Fix Folder Tabs */
             .tab-btn { background: #0f172a; color: #94a3b8; border-color: var(--border); }
             .tab-btn.active { background: var(--card-bg); color: var(--primary); border-top-color: var(--primary); }
@@ -4470,7 +4482,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 10px;">
                             <div>
                                 <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Time</div>
-                                <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: 130px; padding: 6px 10px; border-radius: 6px; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); background: #e2e8f0; border: 0px solid #cbd5e1; outline: none; text-align: left; transition: 0.2s;">
+                                <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: 120px; padding: 6px 10px; border-radius: 6px; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); outline: none; text-align: left; transition: 0.2s;">
                             </div>
                             <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove" style="flex-shrink: 0;">&times;</button>
                         </div>
