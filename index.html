@@ -186,8 +186,12 @@
                 box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25) !important; 
             }
             
+            /* --- Minimalist Dark Mode Pin Button Hover --- */
             @media (hover: hover) {
-                .pin-btn:hover { background: #334155 !important; color: #cbd5e1; }
+                .pin-btn:hover { 
+                    background: transparent !important; /* Removes the background highlight entirely */
+                    color: #f8fafc !important; /* Brightens the pin icon to pure white */
+                }
             }
             
             /* --- Invert Native Icons to White --- */
@@ -4482,7 +4486,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 10px;">
                             <div>
                                 <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Time</div>
-                                <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: 120px; padding: 6px 10px; border-radius: 6px; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; color: var(--primary); outline: none; text-align: left; transition: 0.2s;">
+                                <input type="time" value="${ts.time}" onchange="updateTimestampTime('${ts.id}', this.value)" class="ts-time-input" style="width: 120px; padding: 6px 10px; border-radius: 6px; box-sizing: border-box; min-height: 36px; font-weight: bold; font-family: monospace; outline: none; text-align: center; transition: 0.2s;">
                             </div>
                             <button class="remove-btn" onclick="removeTimestamp('${ts.id}')" title="Remove" style="flex-shrink: 0;">&times;</button>
                         </div>
