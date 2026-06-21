@@ -131,8 +131,8 @@
             /* --- UPDATE 3: Tally Counter Box Fix --- */
             /* Grabs every div inside the Tally List regardless of inline styles */
             #tallyList > div {
-                background-color: #0f172a !important; 
-                border-color: var(--border) !important;
+                background-color: #151e32 !important; /* Matches the lifted dark mode cards */
+                border: none !important; /* Removes the outer border */
             }
 
             /* --- Force Border on Set Average --- */
@@ -154,6 +154,11 @@
                 border-bottom: 2px solid var(--primary) !important;
             }
 
+            /* --- Force Transparent Background on Timestamp Event Fields --- */
+            #timestampsList textarea {
+                background-color: transparent !important;
+            }
+            
             /* --- Match Timer Display to Inputs --- */
             .timer-display { 
                 background-color: #0f172a !important; 
@@ -171,6 +176,12 @@
             
             @media (hover: hover) {
                 .pin-btn:hover { background: #334155 !important; color: #cbd5e1; }
+            }
+            
+            /* --- Invert Native Icons to White --- */
+            input::-webkit-calendar-picker-indicator {
+                filter: invert(1) brightness(200%) !important; /* Flips the dark icon to bright white */
+                opacity: 0.8;
             }
         } /* <--- THIS BRACKET CLOSES DARK MODE! */
         
@@ -527,6 +538,18 @@
             -webkit-user-select: auto;
             user-select: auto;
         }
+        
+        /* --- Native Input Icons (Clock/Calendar) --- */
+        input::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(0); /* Keeps the icon dark in light mode */
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        input::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+        
         input { min-height: 46px; }
         input.input-error { border: 2px solid var(--error); background-color: #fff1f2; }
         
@@ -637,7 +660,13 @@
             align-items: center;
             justify-content: center;
         }
-        
+
+        /* --- Tally Counter Input Border Removal --- */
+        #tallyList input[type="number"] {
+            border: none !important;
+            background: transparent !important;
+            outline: none !important;
+        }
     </style>
 </head>
 <body>
@@ -4324,32 +4353,32 @@
                 const container = document.getElementById('tallyList');
                 container.innerHTML = '';
                 
-                let totalCount = 0; // Setup our total tracker
+                let totalCount = 0;
                 
                 p.tallies.forEach((tally, index) => {
-                    totalCount += tally.count; // Add each tally to the total
+                    totalCount += tally.count; 
                     
                     const div = document.createElement('div');
-                    div.style.cssText = "background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
+                    // Removed the 1px solid border from the inline style below
+                    div.style.cssText = "background: #f8fafc; border: none; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
                     
                     div.innerHTML = `
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent;" placeholder="Tally Name">
+                            <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
                             <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove">&times;</button>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: stretch;">
                             <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-                            <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px;">
+                            <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
                             <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
                         </div>
                     `;
                     container.appendChild(div);
                 });
                 
-                // Push the final sum to the new HTML display
                 const totalDisplay = document.getElementById('tallyTotalDisplay');
                 if (totalDisplay) {
-                    totalDisplay.innerText = safeRound(totalCount, 4); // Caps floating-point drift
+                    totalDisplay.innerText = safeRound(totalCount, 4); 
                 }
                 
                 document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
