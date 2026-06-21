@@ -821,6 +821,7 @@
                             
                             <div class="panel-row">
                                 <input type="text" id="renamePickupSetInput" placeholder="Set Name" class="panel-input">
+                                <input type="text" id="unitPickupSetInput" placeholder="Unit (e.g. g)" class="panel-input" style="max-width: 100px;">
                                 <button onclick="savePickupSetName()" class="panel-btn">Save</button>
                             </div>
                             
@@ -855,11 +856,11 @@
                         <form onsubmit="event.preventDefault();">
                             <div class="row">
                                 <div class="input-group">
-                                    <label>Pre-sample</label>
+                                    <label>Pre-sample <span id="lblPickupUnitPre" style="font-size: 0.75rem; color: #64748b; font-weight: normal; margin-left: 4px;"></span></label>
                                     <input type="number" step="any" id="preSampleVal" inputmode="decimal" oninput="savePickupInputs()">
                                 </div>
                                 <div class="input-group">
-                                    <label>Post-sample</label>
+                                    <label>Post-sample <span id="lblPickupUnitPost" style="font-size: 0.75rem; color: #64748b; font-weight: normal; margin-left: 4px;"></span></label>
                                     <input type="number" step="any" id="postSampleVal" inputmode="decimal" oninput="savePickupInputs()">
                                 </div>
                             </div>
@@ -888,7 +889,7 @@
                             
                             <div class="panel-row">
                                 <input type="text" id="renameSumSetInput" placeholder="Set Name" class="panel-input">
-                                <input type="text" id="unitSumSetInput" placeholder="Unit (e.g. g)" class="panel-input" style="max-width: 100px;">
+                                <input type="text" id="unitSumSetInput" placeholder="Unit" class="panel-input" style="max-width: 100px;">
                                 <button onclick="saveSumSetName()" class="panel-btn">Save</button>
                             </div>
 
@@ -2842,7 +2843,8 @@
                 if (isPickupSetMenuOpen) {
                     const activeSet = pickupSets.find(s => s.id === activePickupSetId);
                     document.getElementById('renamePickupSetInput').value = activeSet.name;
-                    updatePickupSetAverage(); // Recalculates when the menu is opened
+                    document.getElementById('unitPickupSetInput').value = activeSet.unit || ''; // NEW
+                    updatePickupSetAverage(); 
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -2851,14 +2853,17 @@
         
             function savePickupSetName() {
                 const newName = document.getElementById('renamePickupSetInput').value.trim();
-                if (newName !== '') {
-                    const set = pickupSets.find(s => s.id === activePickupSetId);
-                    set.name = newName;
-                    saveAllGroupData();
-                    isPickupSetMenuOpen = false;
-                    renderPickupSets();
-                    updatePickupSetMenuState();
-                }
+                const newUnit = document.getElementById('unitPickupSetInput').value.trim(); // NEW
+                const set = pickupSets.find(s => s.id === activePickupSetId);
+                
+                if (newName !== '') set.name = newName;
+                set.unit = newUnit; // NEW
+                
+                saveAllGroupData();
+                isPickupSetMenuOpen = false;
+                renderPickupSets();
+                updatePickupSetMenuState();
+                loadPickupInputs(); // NEW: Refreshes the UI to show the unit instantly
             }
         
             function confirmDeletePickupSet() {
@@ -2894,6 +2899,7 @@
                 const newSet = { 
                     id: 'pset_' + Date.now(), 
                     name: newName, 
+                    unit: '', // NEW
                     tabs: [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }],
                     activeTabId: null
                 };
@@ -3046,9 +3052,17 @@
         
             function loadPickupInputs() {
                 const tab = pickupTabs.find(t => t.id === activePickupTabId);
+                const activeSet = pickupSets.find(s => s.id === activePickupSetId); // NEW
+                
                 if (tab) {
                     document.getElementById('preSampleVal').value = tab.pre || '';
                     document.getElementById('postSampleVal').value = tab.post || '';
+                    
+                    // NEW: Update unit labels
+                    const unitText = activeSet && activeSet.unit ? `(${activeSet.unit})` : '';
+                    document.getElementById('lblPickupUnitPre').innerText = unitText;
+                    document.getElementById('lblPickupUnitPost').innerText = unitText;
+                    
                     calculatePickup();
                 }
             }
@@ -4722,9 +4736,10 @@
                                 }
                             });
                             let setAvgStr = validCount === 0 ? "N/A" : safeRound(sumPct / validCount, 2).toFixed(2) + "%";
-            
+
                             csv += `Set,"${set.name}"\n`;
-                            csv += `Set Average,"${setAvgStr}"\n`; // Prints right below the Set Name
+                            if (set.unit) csv += `Unit,"${set.unit}"\n`; // ADD THIS LINE HERE
+                            csv += `Set Average,"${setAvgStr}"\n`;
                             
                             let sNames = [], preVals = [], postVals = [], decVals = [], pctVals = [];                
                             
