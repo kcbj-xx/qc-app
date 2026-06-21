@@ -556,15 +556,15 @@
             width: 100% !important;
         }
 
-        /* --- Fine-Tuned iPadOS/iOS Vertical Alignment --- */
+        /* --- iOS/iPadOS Vertical Alignment Override --- */
         @supports (-webkit-touch-callout: none) {
-            .ts-time-input::-webkit-datetime-edit {
-                /* Force flex to center it */
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                /* If it's still too high, adjust this padding-top */
-                padding-top: 20px !important; 
+            .ts-time-input::-webkit-datetime-edit-hour-field,
+            .ts-time-input::-webkit-datetime-edit-minute-field,
+            .ts-time-input::-webkit-datetime-edit-ampm-field,
+            .ts-time-input::-webkit-datetime-edit-text {
+                display: inline-block !important;
+                vertical-align: middle !important;
+                padding-top: 4px !important; /* Forces the internal digits down */
             }
         }
         
