@@ -529,6 +529,18 @@
             outline: none !important;
         }
 
+        /* --- Perfectly Center Timestamp Time Field --- */
+        .ts-time-input {
+            position: relative !important; 
+        }
+        
+        .ts-time-input::-webkit-calendar-picker-indicator {
+            position: absolute !important;
+            right: 10px !important; /* Anchors the icon to the right */
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
         /* --- Auto Dark Mode --- */
         @media (prefers-color-scheme: dark) {
             :root {
