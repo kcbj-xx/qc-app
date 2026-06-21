@@ -540,6 +540,21 @@
             margin: 0 !important;
             padding: 0 !important;
         }
+
+        /* --- Force Mobile Time Inputs to Center --- */
+        .ts-time-input::-webkit-datetime-edit {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100% !important;
+        }
+        
+        .ts-time-input::-webkit-datetime-edit-fields-wrapper {
+            display: flex !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
         
         /* --- Auto Dark Mode --- */
         @media (prefers-color-scheme: dark) {
