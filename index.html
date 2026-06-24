@@ -703,9 +703,11 @@
             <div class="container" id="main-container">
     
                 <div id="batch-header" style="width: 100%; margin-bottom: 0px; padding-top: 5px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%; gap: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%; gap: 10px; box-sizing: border-box;">
 					    <button onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 5px; cursor:pointer; flex-shrink:0;">&#10094;</button>
-					    <div id="batchTitleDisplay" style="flex: 1; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active File</div>
+					    
+					    <div id="batchTitleDisplay" style="flex: 1; min-width: 0; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active File</div>
+					    
 					    <button onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 5px; cursor:pointer; flex-shrink:0;">&#10095;</button>
 					</div>
                     
