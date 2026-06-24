@@ -1322,11 +1322,11 @@
             }
             
             function setToolFilter(filter, btn) {
-                currentToolFilter = filter;
-                document.querySelectorAll('#toolFilterTabs .tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                reorderCards();
-            }
+			    currentToolFilter = filter;
+			    document.querySelectorAll('#toolFilterTabs .set-tab-btn').forEach(b => b.classList.remove('active'));
+			    btn.classList.add('active');
+			    reorderCards();
+			}
 
             function toggleCard(cardId) {
                 const card = document.getElementById(cardId);
@@ -1386,18 +1386,18 @@
                 let pinnedCount = 0;
                 
                 const categoryMap = {
-                    'card-pickup': 'computing',
-                    'card-averaging': 'computing',
-                    'card-salinity': 'computing',
-                    'card-percentage': 'computing',
-                    'card-temp': 'computing',
-                    'card-estimator': 'computing',
-                    'card-notes': 'tools',
-                    'card-tally': 'tools',
-                    'card-stopwatch': 'tools',
-                    'card-sampling': 'time',
-                    'card-timestamps': 'time'
-                };
+				    'card-pickup': 'computing',
+				    'card-averaging': 'computing',
+				    'card-salinity': 'computing',
+				    'card-percentage': 'computing',
+				    'card-temp': 'tools',          // Moved to tools
+				    'card-estimator': 'time',      // Moved to time
+				    'card-notes': 'tools',
+				    'card-tally': 'tools',
+				    'card-stopwatch': 'time',      // Moved to time
+				    'card-sampling': 'time',
+				    'card-timestamps': 'time'
+				};
 
                 allCardIds.forEach(id => {
                     const card = document.getElementById(id);
@@ -1623,111 +1623,224 @@
             }
         
             function renderSidebarList() {
-                const list = document.getElementById('parentTabsList');
-                list.innerHTML = '';
-                
-                const currentFolder = appFolders.find(f => f.id === currentFolderId);
-                document.getElementById('sidebarHeaderTitle').childNodes[0].nodeValue = currentFolder ? currentFolder.name + " " : "Main ";
-                
-                const activeGroup = parentGroups.find(g => g.id === activeParentId);
-                if (activeGroup) {
-                    let dispName = activeGroup.name;
-                    if (!dispName || dispName.trim() === '') {
-                        dispName = (currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File";
-                    }
-                    document.getElementById('activeGroupHeaderTitle').innerText = dispName;
-                }
-
-                if (currentFolderId !== 'root') {
-                    const backBtn = document.createElement('button');
-                    backBtn.className = 'tab-btn parent-tab-btn no-drag';
-                    backBtn.innerHTML = '📁 [ . . ]';
-                    backBtn.onclick = () => {
-                        currentFolderId = 'root';
-                        localStorage.setItem('qc_current_folder', 'root');
-                        renderSidebarList();
-                    };
-                    list.appendChild(backBtn);
-                }
-
-                if (currentFolderId === 'root') {
-                    appFolders.forEach(folder => {
-                        if (folder.id === 'root') return;
-                        const fBtn = document.createElement('button');
-                        fBtn.className = 'tab-btn parent-tab-btn no-drag';
-                        fBtn.innerHTML = `📁 ${folder.name}`;
-                        fBtn.onclick = () => {
-                            currentFolderId = folder.id;
-                            localStorage.setItem('qc_current_folder', folder.id);
-                            renderSidebarList();
-                        };
-                        list.appendChild(fBtn);
-                    });
-                }
-
-                const visibleFiles = parentGroups.filter(f => f.folderId === currentFolderId);
-                let activeBtnElement = null;
-
-                visibleFiles.forEach(tab => {
-                    const btn = document.createElement('button');
-                    btn.className = `tab-btn parent-tab-btn draggable-file-btn ${tab.id === activeParentId ? 'active' : ''}`;
-                    
-                    let tabName = tab.name;
-                    if (!tabName || tabName.trim() === '') {
-                        tabName = (currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File";
-                    }
-                    btn.innerText = tabName;
-                    btn.dataset.id = tab.id;
-                    if (tab.id === activeParentId) activeBtnElement = btn;
-
-                    btn.onclick = (e) => {
-                        const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
-                        const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
-                        const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
-                        
-                        if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
-
-                        if (activeParentId !== tab.id) {
-                            switchToFile(tab.id);
-                            if (window.innerWidth < 768) toggleSidebar();
-                        }
-                    };
-                    list.appendChild(btn);
-                });
-
-                const addContainer = document.createElement('div');
-                addContainer.style.display = 'flex';
-                addContainer.style.gap = '5px';
-                addContainer.style.marginTop = '10px';
-                
-                const addFileBtn = document.createElement('button');
-                addFileBtn.className = 'add-tab-btn parent-tab-btn no-drag';
-                addFileBtn.style.flex = '1';
-                addFileBtn.style.fontSize = '0.9rem';
-                addFileBtn.innerText = '+ File';
-                addFileBtn.onclick = () => addNewParentGroup();
-                addContainer.appendChild(addFileBtn);
-
-                if (currentFolderId === 'root') {
-                    const addFolderBtn = document.createElement('button');
-                    addFolderBtn.className = 'add-tab-btn parent-tab-btn no-drag';
-                    addFolderBtn.style.flex = '1';
-                    addFolderBtn.style.fontSize = '0.9rem';
-                    addFolderBtn.innerText = '+ Folder';
-                    addFolderBtn.onclick = () => addNewFolder(); 
-                    addContainer.appendChild(addFolderBtn);
-                }
-
-                list.appendChild(addContainer);
-                
-                setTimeout(() => {
-                    if (activeBtnElement && !isTabDraggingGlobal) {
-                        const container = list.parentElement;
-                        const scrollPos = activeBtnElement.offsetTop - (container.clientHeight / 2) + (activeBtnElement.clientHeight / 2);
-                        container.scrollTo({ top: Math.max(0, scrollPos), behavior: 'smooth' });
-                    }
-                }, 50);
-            }
+			    const list = document.getElementById('parentTabsList');
+			    list.innerHTML = '';
+			    
+			    const currentFolder = appFolders.find(f => f.id === currentFolderId);
+			    document.getElementById('sidebarHeaderTitle').childNodes[0].nodeValue = currentFolder ? currentFolder.name + " " : "Main ";
+			    
+			    const activeGroup = parentGroups.find(g => g.id === activeParentId);
+			    if (activeGroup) {
+			        let dispName = activeGroup.name;
+			        if (!dispName || dispName.trim() === '') {
+			            dispName = (currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File";
+			        }
+			        document.getElementById('activeGroupHeaderTitle').innerText = dispName;
+			    }
+			
+			    if (currentFolderId !== 'root') {
+			        const backBtn = document.createElement('button');
+			        backBtn.className = 'tab-btn parent-tab-btn no-drag';
+			        backBtn.innerHTML = '📁 [ . . ]';
+			        backBtn.onclick = () => {
+			            currentFolderId = 'root';
+			            localStorage.setItem('qc_current_folder', 'root');
+			            renderSidebarList();
+			        };
+			        list.appendChild(backBtn);
+			    }
+			
+			    if (currentFolderId === 'root') {
+			        appFolders.forEach(folder => {
+			            if (folder.id === 'root') return;
+			            
+			            const fBtn = document.createElement('div');
+			            fBtn.className = 'tab-btn parent-tab-btn no-drag';
+			            fBtn.style.display = 'flex';
+			            fBtn.style.padding = '0';
+			            fBtn.style.justifyContent = 'space-between';
+			            fBtn.style.cursor = 'pointer';
+			            
+			            const nameSpan = document.createElement('div');
+			            nameSpan.style.flex = '1';
+			            nameSpan.style.padding = '0 0 0 15px';
+			            nameSpan.style.lineHeight = '46px';
+			            nameSpan.style.overflow = 'hidden';
+			            nameSpan.style.textOverflow = 'ellipsis';
+			            nameSpan.innerHTML = `📁 ${folder.name}`;
+			            nameSpan.onclick = () => {
+			                currentFolderId = folder.id;
+			                localStorage.setItem('qc_current_folder', folder.id);
+			                renderSidebarList();
+			            };
+			            
+			            const optBtn = document.createElement('div');
+			            optBtn.style.width = '46px';
+			            optBtn.style.textAlign = 'center';
+			            optBtn.style.lineHeight = '46px';
+			            optBtn.innerHTML = '⚙️';
+			            optBtn.onclick = (e) => {
+			                e.stopPropagation();
+			                const action = prompt(`Manage Folder: "${folder.name}"\nType 'r' to rename, or 'd' to delete.`);
+			                if (action && action.toLowerCase() === 'r') {
+			                    const newName = prompt("Enter new folder name:", folder.name);
+			                    if (newName && newName.trim()) {
+			                        folder.name = newName.trim();
+			                        localStorage.setItem('qc_folders', JSON.stringify(appFolders));
+			                        renderSidebarList();
+			                    }
+			                } else if (action && action.toLowerCase() === 'd') {
+			                    if (confirm(`CAUTION: Delete folder "${folder.name}" AND all files inside it?`)) {
+			                        appFolders = appFolders.filter(f => f.id !== folder.id);
+			                        parentGroups = parentGroups.filter(g => g.folderId !== folder.id);
+			                        
+			                        if (parentGroups.length === 0) {
+			                            parentGroups.push({
+			                                id: 'pg_' + Date.now(), folderId: 'root', name: 'File 1', 
+			                                pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
+			                                sumSets: [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
+			                                estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
+			                                salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
+			                                temp: { c: '', f: '' }, stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
+			                                sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
+			                                notes: { text: '' }, timestamps: [], tallies: [], percentage: { total: '', part: '', pct: '' }
+			                            });
+			                            parentGroups[0].pickupSets[0].activeTabId = parentGroups[0].pickupSets[0].tabs[0].id;
+			                            parentGroups[0].sumSets[0].activeTabId = parentGroups[0].sumSets[0].tabs[0].id;
+			                            parentGroups[0].activePickupSetId = parentGroups[0].pickupSets[0].id;
+			                            parentGroups[0].activeSumSetId = parentGroups[0].sumSets[0].id;
+			                            parentGroups[0].activeEstimatorTabId = parentGroups[0].estimatorTabs[0].id;
+			                            parentGroups[0].activeSalinityTabId = parentGroups[0].salinityTabs[0].id;
+			                        }
+			                        
+			                        localStorage.setItem('qc_folders', JSON.stringify(appFolders));
+			                        activeParentId = parentGroups[0].id;
+			                        currentFolderId = parentGroups[0].folderId;
+			                        switchToFile(activeParentId);
+			                    }
+			                }
+			            };
+			            
+			            fBtn.appendChild(nameSpan);
+			            fBtn.appendChild(optBtn);
+			            list.appendChild(fBtn);
+			        });
+			    }
+			
+			    const visibleFiles = parentGroups.filter(f => f.folderId === currentFolderId);
+			    let activeBtnElement = null;
+			
+			    visibleFiles.forEach(tab => {
+			        const btn = document.createElement('div');
+			        btn.className = `tab-btn parent-tab-btn draggable-file-btn ${tab.id === activeParentId ? 'active' : ''}`;
+			        btn.style.display = 'flex';
+			        btn.style.padding = '0';
+			        btn.style.justifyContent = 'space-between';
+			        btn.style.cursor = 'pointer';
+			        btn.dataset.id = tab.id;
+			        if (tab.id === activeParentId) activeBtnElement = btn;
+			
+			        let tabName = tab.name;
+			        if (!tabName || tabName.trim() === '') {
+			            tabName = (currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File";
+			        }
+			
+			        const nameSpan = document.createElement('div');
+			        nameSpan.style.flex = '1';
+			        nameSpan.style.padding = '0 0 0 15px';
+			        nameSpan.style.lineHeight = '46px';
+			        nameSpan.style.overflow = 'hidden';
+			        nameSpan.style.textOverflow = 'ellipsis';
+			        nameSpan.innerText = tabName;
+			        nameSpan.onclick = (e) => {
+			            const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+			            const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+			            const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+			            if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
+			
+			            if (activeParentId !== tab.id) {
+			                switchToFile(tab.id);
+			                if (window.innerWidth < 768) toggleSidebar();
+			            }
+			        };
+			
+			        const optBtn = document.createElement('div');
+			        optBtn.style.width = '46px';
+			        optBtn.style.textAlign = 'center';
+			        optBtn.style.lineHeight = '46px';
+			        optBtn.innerHTML = '⚙️';
+			        optBtn.onclick = (e) => {
+			            e.stopPropagation();
+			            const action = prompt(`Manage File: "${tab.name}"\nType 'r' to rename, or 'd' to delete.`);
+			            if (action && action.toLowerCase() === 'r') {
+			                const newName = prompt("Rename file:", tab.name);
+			                if (newName && newName.trim()) {
+			                    tab.name = newName.trim();
+			                    saveAllGroupData();
+			                    renderSidebarList();
+			                }
+			            } else if (action && action.toLowerCase() === 'd') {
+			                if (parentGroups.length > 1) {
+			                    if (confirm(`Are you sure you want to delete file "${tab.name}"?`)) {
+			                        parentGroups = parentGroups.filter(g => g.id !== tab.id);
+			                        if (activeParentId === tab.id) {
+			                            const nextFiles = parentGroups.filter(f => f.folderId === currentFolderId);
+			                            if (nextFiles.length > 0) {
+			                                activeParentId = nextFiles[0].id;
+			                            } else {
+			                                activeParentId = parentGroups[0].id;
+			                                currentFolderId = parentGroups[0].folderId;
+			                            }
+			                            switchToFile(activeParentId);
+			                        } else {
+			                            saveAllGroupData();
+			                            renderSidebarList();
+			                        }
+			                    }
+			                } else {
+			                    alert("You must have at least one file. Create another before deleting this one.");
+			                }
+			            }
+			        };
+			
+			        btn.appendChild(nameSpan);
+			        btn.appendChild(optBtn);
+			        list.appendChild(btn);
+			    });
+			
+			    const addContainer = document.createElement('div');
+			    addContainer.style.display = 'flex';
+			    addContainer.style.gap = '5px';
+			    addContainer.style.marginTop = '10px';
+			    
+			    const addFileBtn = document.createElement('button');
+			    addFileBtn.className = 'add-tab-btn parent-tab-btn no-drag';
+			    addFileBtn.style.flex = '1';
+			    addFileBtn.style.fontSize = '0.9rem';
+			    addFileBtn.innerText = '+ File';
+			    addFileBtn.onclick = () => addNewParentGroup();
+			    addContainer.appendChild(addFileBtn);
+			
+			    if (currentFolderId === 'root') {
+			        const addFolderBtn = document.createElement('button');
+			        addFolderBtn.className = 'add-tab-btn parent-tab-btn no-drag';
+			        addFolderBtn.style.flex = '1';
+			        addFolderBtn.style.fontSize = '0.9rem';
+			        addFolderBtn.innerText = '+ Folder';
+			        addFolderBtn.onclick = () => addNewFolder(); 
+			        addContainer.appendChild(addFolderBtn);
+			    }
+			
+			    list.appendChild(addContainer);
+			    
+			    setTimeout(() => {
+			        if (activeBtnElement && !isTabDraggingGlobal) {
+			            const container = list.parentElement;
+			            const scrollPos = activeBtnElement.offsetTop - (container.clientHeight / 2) + (activeBtnElement.clientHeight / 2);
+			            container.scrollTo({ top: Math.max(0, scrollPos), behavior: 'smooth' });
+			        }
+			    }, 50);
+			}
 
             function switchToFile(id) {
                 activeParentId = id;
