@@ -703,12 +703,14 @@
             <div class="container" id="main-container">
     
                 <div id="batch-header" style="width: 100%; margin-bottom: 0px; padding-top: 5px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%; gap: 10px; box-sizing: border-box;">
-					    <button onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 5px; cursor:pointer; flex-shrink:0;">&#10094;</button>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 auto 24px auto; width: 100%; max-width: 600px; gap: 10px; box-sizing: border-box; padding: 0 5px;">
+    
+					    <button onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 10px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center;">&#10094;</button>
 					    
 					    <div id="batchTitleDisplay" style="flex: 1; min-width: 0; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active File</div>
 					    
-					    <button onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 5px; cursor:pointer; flex-shrink:0;">&#10095;</button>
+					    <button onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 10px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center;">&#10095;</button>
+					
 					</div>
                     
                     <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px; width: 100%; padding: 0 4px; box-sizing: border-box; align-items: center;">
