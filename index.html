@@ -24,13 +24,11 @@
             --error: #ef4444;
         }
 
-        /* --- Timestamp Time Field (Light Mode) --- */
         .ts-time-input {
-            background-color: #e5e7eb !important; /* Change this hex to whatever color you want */
+            background-color: #e5e7eb !important; 
             border: 0px solid var(--border) !important;
         }
         
-        /* --- Dragging State Colors (Light Mode Base) --- */
         .tab-btn.is-dragging-tab {
             background-color: #f1f5f9 !important;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
@@ -55,7 +53,6 @@
             transition: background-color 0.3s; 
         }
 
-        /* --- App Wrapper & Slide-Out Drawer --- */
         .app-wrapper {
             display: flex;
             width: 100vw;
@@ -70,7 +67,7 @@
             background-color: var(--card-bg);
             border-right: 1px solid var(--border);
             position: absolute;
-            left: -280px; /* Hidden off-screen by default */
+            left: -280px; 
             transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 2000;
             display: flex;
@@ -83,7 +80,7 @@
             padding: 20px;
             font-weight: 800;
             font-size: 1.2rem;
-            color: var(--text); /* Changed from var(--primary) to standard text color */
+            color: var(--text); 
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -103,15 +100,12 @@
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Desktop/iPad: Pushes content right without overlay */
         @media (min-width: 768px) {
             .sidebar { position: static; margin-left: -280px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); left: auto; }
             .sidebar.open { margin-left: 0; }
             .sidebar-overlay { display: none !important; }
-            /* .sidebar-close-btn { display: none !important; } */
         }
 
-        /* Mobile: Dims background */
         .sidebar-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); z-index: 1999;
@@ -119,14 +113,9 @@
         }
         .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
 
-        /* Vertical Tabs Styling */
         #parentTabsContainer { flex: 1; overflow-y: auto; padding: 15px; border: none; align-items: flex-start; display: block; }
         #parentTabsList { display: flex; flex-direction: column; gap: 8px; align-items: stretch; margin: 0; width: 100%; }
 
-        /* Sidebar Group Tabs */
-        
-        /* Sidebar Add Button */
-        
         .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px; }
         .section-container { width: 100%; display: flex; flex-direction: column; gap: 20px; }
         .divider { text-align: center; color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: -5px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -142,7 +131,7 @@
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
-            -webkit-tap-highlight-color: transparent; /* Add this line */
+            -webkit-tap-highlight-color: transparent; 
         }
         
         .card h2 { 
@@ -190,8 +179,8 @@
 
         @media (hover: hover) {
             .pin-btn:hover { 
-                background: rgba(0, 0, 0, 0.08) !important; /* Subtle dark background */
-                color: #475569; /* Darkens the pin icon slightly to match */
+                background: rgba(0, 0, 0, 0.08) !important; 
+                color: #475569; 
             }
         }
         
@@ -211,7 +200,6 @@
 
         .footer-version { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 20px; }
         
-        /* --- Form Utility Classes --- */
         .panel-input {
             flex: 1;
             min-height: 40px;
@@ -273,7 +261,7 @@
             line-height: 1.2;
             touch-action: pan-x pan-y; 
             outline: none;
-            -webkit-user-select: none; /* Add these 3 lines */
+            -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
         }
@@ -288,7 +276,6 @@
             z-index: 2; 
         }
         
-        /* --- Pill Tabs (Sets and Batches) --- */
         .tabs-list .parent-tab-btn { 
             background: #e2e8f0; 
             color: #475569; 
@@ -336,7 +323,6 @@
             height: 28px;
         }
 
-        /* --- Add Buttons --- */
         .add-tab-btn { 
             margin: 0; 
             background: transparent; 
@@ -374,7 +360,6 @@
         }
         .tabs-list .add-tab-btn.set-tab-btn:hover { color: var(--primary); }
 
-        /* --- Inline Tab Options Menu --- */
         .tab-options-panel {
             display: none; 
             flex-direction: column; 
@@ -409,10 +394,9 @@
             user-select: auto;
         }
         
-        /* --- Native Input Icons (Clock/Calendar) --- */
         input::-webkit-calendar-picker-indicator {
             cursor: pointer;
-            filter: invert(0); /* Keeps the icon dark in light mode */
+            filter: invert(0); 
             opacity: 0.6;
             transition: opacity 0.2s;
         }
@@ -435,7 +419,6 @@
             cursor: pointer;
         }
 
-        /* Notes Textarea Styling - Auto Resizing */
         textarea {
             min-height: 120px;
             resize: none; 
@@ -481,7 +464,6 @@
         .edit-input { flex: 1; border: 1px solid transparent; background: transparent; font-weight: 600; font-size: 1.1rem; padding: 4px; text-align: center; transition: border-color 0.2s; }
         .edit-input:focus { border-bottom: 2px solid var(--primary); outline: none; border-radius: 0; }
         
-        /* Out-of-Range Styling */
         .edit-input.out-of-range-low { color: var(--error) !important; }
         .edit-input.out-of-range-high { color: var(--success) !important; }
         
@@ -490,7 +472,6 @@
         .last-added-text { font-size: 0.85rem; color: var(--primary); font-weight: 600; margin-top: 5px; min-height: 1.2em; transition: color 0.3s; display: flex; justify-content: flex-start; align-items: center; }
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
         
-        /* Export Mode Styles */
         body.export-mode { background-color: #cbd5e1; }
         body.export-mode .card { cursor: pointer; }
         body.export-mode .card * { pointer-events: none !important; }
@@ -498,19 +479,17 @@
         body.export-mode .card[data-exportable="true"].export-selected { outline: 4px solid var(--primary); opacity: 1; transform: scale(1.02); box-shadow: 0 10px 20px rgba(37,99,235,0.25); background-color: #f0fdf4; }
         body.export-mode .card[data-exportable="false"] { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
 
-        /* --- Timestamp Responsive Alignment --- */
-        .ts-time-input { padding: 4px 12px; } /* Perfect for iPad / Desktop */
+        .ts-time-input { padding: 4px 12px; } 
         @media (max-width: 480px) { 
-            .ts-time-input { padding: 4px 12px 4px 8px; } /* Minus 4px for Mobile Shadow DOM */
+            .ts-time-input { padding: 4px 12px 4px 8px; } 
         }
         
         @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
 
-        /* --- FIX: Force Sidebar Groups to Truncate & Remove Add Button Pill --- */
-        #parentTabsList .parent-tab-btn:not(.add-tab-btn) {
+        #parentTabsList .parent-tab-btn:not(.add-tab-btn):not(.no-drag) {
             text-align: left; 
             height: 46px; 
-            padding: 0 30px 0 15px; /* The 30px right padding forces earlier truncation */
+            padding: 0 30px 0 15px; 
             margin: 0; 
             width: 100%; 
             box-sizing: border-box; 
@@ -518,27 +497,25 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            display: block; /* Required for the ellipsis to trigger properly */
+            display: block; 
             line-height: 46px;
         }
         
         #parentTabsList .add-tab-btn.parent-tab-btn {
-            background: transparent !important; /* Removes the gray pill background */
-            border: none;            /* Removes any dashed borders */
+            background: transparent !important; 
+            border: none;            
             box-shadow: none;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* --- Tally Counter Input Border Removal --- */
         #tallyList input[type="number"] {
             border: none !important;
             background: transparent !important;
             outline: none !important;
         }
 
-        /* --- Universal Cross-Platform Centering --- */
         .ts-time-input {
             position: relative !important;
             display: flex !important;
@@ -549,7 +526,6 @@
             box-sizing: border-box !important;
         }
 
-        /* Anchor the icon to the right */
         .ts-time-input::-webkit-calendar-picker-indicator {
             position: absolute !important;
             right: 10px !important;
@@ -557,14 +533,12 @@
             padding: 0 !important;
         }
 
-        /* iPad/iOS: Handled by the parent flex above */
         .ts-time-input::-webkit-datetime-edit {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
         }
 
-        /* Android/Desktop: Explicitly center the value node */
         .ts-time-input::-webkit-date-and-time-value {
             text-align: center !important;
             margin: 0 auto !important;
@@ -572,7 +546,6 @@
             display: block !important;
         }
         
-        /* --- Auto Dark Mode --- */
         @media (prefers-color-scheme: dark) {
             :root {
                 --primary: #3b82f6;       
@@ -584,42 +557,34 @@
                 --accent: #fbbf24;        
             }
 
-            /* --- Timestamp Time Field (Dark Mode) --- */
             .ts-time-input {
-                background-color: #0f172a !important; /* Change this hex to match your dark theme */
+                background-color: #0f172a !important; 
                 border: 0px solid var(--border) !important;
             }
             
-            /* 1. Fix Folder Tabs */
             .tab-btn { background: #0f172a; color: #94a3b8; border-color: var(--border); }
             .tab-btn.active { background: var(--card-bg); color: var(--primary); border-top-color: var(--primary); }
             
-            /* 2. Fix Set/Batch Pill Tabs */
             .tabs-list .parent-tab-btn, .tabs-list .set-tab-btn { background: #334155; color: #cbd5e1; }
             .tabs-list .parent-tab-btn.active { background: var(--primary); color: white; }
             .tabs-list .set-tab-btn.active { background: #64748b; color: white; }
             
-            /* 3. Fix Inputs, Textareas, Menus, Stat Boxes, and List Items */
             input, textarea, .tab-options-panel, .stat-box, .number-item, .result { 
                 background-color: #0f172a !important; 
                 color: var(--text) !important; 
                 border-color: var(--border) !important;
             }
 
-            /* 4. Fix Inline-Styled Elements (Like Tally Counters and Set Averages) */
             div[style*="background: #f8fafc"], div[style*="background: #e2e8f0"] { 
                 background-color: #0f172a !important; 
                 border-color: var(--border) !important; 
             }
             
-            /* 5. Keep the "Remove" button red background soft */
             .remove-btn { background: #7f1d1d !important; color: #fca5a5 !important; }
 
-            /* 6. Custom Group Menu Buttons */
             button.btn-duplicate { background-color: #059669 !important; }
             button.btn-warning { background-color: #b45309 !important; }
             
-            /* --- 1. Sample Tabs (Folder style) --- */
             .tab-btn { 
                 background-color: #0f172a !important; 
                 color: #94a3b8; 
@@ -631,7 +596,6 @@
                 border-top-color: var(--primary) !important; 
             }
             
-            /* --- 2. Pill Tabs (Groups & Sets) --- */
             .tabs-list .parent-tab-btn, .tabs-list .set-tab-btn { 
                 background-color: #334155 !important; 
                 color: #cbd5e1 !important; 
@@ -641,7 +605,6 @@
                 color: white !important; 
             }
 
-            /* Dark Mode Dragging State Overrides */
             .tab-btn.is-dragging-tab {
                 background-color: #1e293b !important;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
@@ -653,35 +616,28 @@
                 background-color: var(--primary-hover) !important;
                 color: white !important;
             }
-            /* --- 3. Tally Counter Boxes & Buttons --- */
-            /* Targets the inline light-gray backgrounds generated by JS */
+            
             div[style*="background: #f8fafc"] { 
                 background-color: #0f172a !important; 
                 border-color: var(--border) !important; 
             }
-            /* Fixes the text color inside the tally name and number inputs */
             #tallyList input {
                 color: var(--text) !important; 
             }
-            /* Dims the bright gray "-" minus button on the tally counter */
             button[style*="background-color: #cbd5e1"] {
                 background-color: #334155 !important;
                 color: var(--text) !important;
             }
 
-            /* --- UPDATE 3: Tally Counter Box Fix --- */
-            /* Grabs every div inside the Tally List regardless of inline styles */
             #tallyList > div {
-                background-color: #151e32 !important; /* Matches the lifted dark mode cards */
-                border: none !important; /* Removes the outer border */
+                background-color: #151e32 !important; 
+                border: none !important; 
             }
 
-            /* --- Force Border on Set Average --- */
             div[style*="background: #e2e8f0"] { 
                 border: 1px solid var(--border) !important; 
             }
 
-            /* --- Match Number Items to Field Styling --- */
             .number-item {
                 background-color: #151e32 !important;
                 border: 1px solid var(--border) !important;
@@ -695,44 +651,38 @@
                 border-bottom: 2px solid var(--primary) !important;
             }
 
-            /* --- Force Transparent Background on Timestamp Event Fields --- */
             #timestampsList textarea {
                 background-color: transparent !important;
             }
             
-            /* --- Match Timer Display to Inputs --- */
             .timer-display { 
                 background-color: #0f172a !important; 
             }
 
-            /* --- Export Mode Fixes --- */
             body.export-mode { 
-                background-color: #020617 !important; /* Dims the main background drastically */
+                background-color: #020617 !important; 
             }
             body.export-mode .card[data-exportable="true"].export-selected { 
-                background-color: #1e293b !important; /* Standard card background */
-                outline: 2px solid var(--primary) !important; /* Blue border */
+                background-color: #1e293b !important; 
+                outline: 2px solid var(--primary) !important; 
                 box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25) !important; 
             }
             
-            /* --- Invert Native Icons to White --- */
             input::-webkit-calendar-picker-indicator {
-                filter: invert(1) brightness(200%) !important; /* Flips the dark icon to bright white */
+                filter: invert(1) brightness(200%) !important; 
                 opacity: 0.8;
             }
 
-            /* --- Ultimate Dark Mode Pin Hover Fix --- */
             @media (hover: hover) {
                 .card h2 .pin-btn:hover { 
-                    background-color: rgba(255, 255, 255, 0.08) !important; /* Subtle light background */
+                    background-color: rgba(255, 255, 255, 0.08) !important; 
                     color: #f8fafc !important; 
                 }
-                /* This forces the inside of the pin to turn solid white */
                 .card h2 .pin-btn:hover svg {
                     fill: #f8fafc !important; 
                 }
             }
-        } /* <--- THIS BRACKET CLOSES DARK MODE! */
+        } 
     </style>
 </head>
 <body>
@@ -740,8 +690,8 @@
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
         
         <div class="sidebar" id="appSidebar">
-            <div class="sidebar-header">
-                Groups
+            <div class="sidebar-header" id="sidebarHeaderTitle">
+                Main
                 <button onclick="toggleSidebar()" class="sidebar-close-btn" style="background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; padding: 0; margin: 0; width: auto; outline: none;">&times;</button>
             </div>
             <div class="tabs-container" id="parentTabsContainer">
@@ -753,7 +703,11 @@
             <div class="container" id="main-container">
     
                 <div id="batch-header" style="width: 100%; margin-bottom: 0px; padding-top: 5px;">
-                    <div id="batchTitleDisplay" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 24px; text-align: center;">Active Group / Batch</div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%;">
+                        <button onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 15px; cursor:pointer;">&#10094;</button>
+                        <div id="batchTitleDisplay" style="flex: 1; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; text-align: center;">Active File</div>
+                        <button onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 15px; cursor:pointer;">&#10095;</button>
+                    </div>
                     
                     <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px; width: 100%; padding: 0 4px; box-sizing: border-box; align-items: center;">
     
@@ -761,15 +715,15 @@
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
                         </button>
                         
-                        <h1 id="activeGroupHeaderTitle" onclick="toggleParentGroupMenu()" style="margin: 0; font-size: 1.5rem; font-weight: 800; text-align: left; color: var(--text); line-height: 1.2; overflow-wrap: break-word; white-space: normal; cursor: pointer; -webkit-tap-highlight-color: transparent;">Group 1</h1>
+                        <h1 id="activeGroupHeaderTitle" onclick="toggleParentGroupMenu()" style="margin: 0; font-size: 1.5rem; font-weight: 800; text-align: left; color: var(--text); line-height: 1.2; overflow-wrap: break-word; white-space: normal; cursor: pointer; -webkit-tap-highlight-color: transparent;">File 1</h1>
                         
                     </div>
                     
                     <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
-                        <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
+                        <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage File</label>
                         
                         <div class="panel-row" style="margin-bottom: 15px;">
-                            <input type="text" id="renameParentTabInput" placeholder="Group Name" class="panel-input" oninput="saveParentGroupSettings()">
+                            <input type="text" id="renameParentTabInput" placeholder="File Name" class="panel-input" oninput="saveParentGroupSettings()">
                         </div>
 
                         <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
@@ -792,9 +746,18 @@
                                 <input type="time" id="groupEndTimeInput" oninput="saveParentGroupSettings()" style="min-height: 40px;">
                             </div>
                         </div>
-                        <button onclick="duplicateParentGroup()" class="btn-duplicate" style="margin:0; min-height:40px; margin-bottom: 10px;">Duplicate Group Layout</button>
-                        <button onclick="clearParentGroupData()" class="btn-warning" style="margin:0; min-height:40px; margin-bottom: 10px;">Clear Group Data</button>
-                        <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire Group</button>
+                        <button onclick="duplicateParentGroup()" class="btn-duplicate" style="margin:0; min-height:40px; margin-bottom: 10px;">Duplicate File Layout</button>
+                        <button onclick="clearParentGroupData()" class="btn-warning" style="margin:0; min-height:40px; margin-bottom: 10px;">Clear File Data</button>
+                        <button onclick="confirmDeleteParentTab()" class="secondary" style="margin:0; min-height:40px;">Delete Entire File</button>
+                    </div>
+                </div>
+
+                <div class="tabs-container" id="toolFilterTabs" style="margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-top: 5px; justify-content: space-around;">
+                    <div class="tabs-list" style="width: 100%; justify-content: space-between;">
+                        <button class="tab-btn active" onclick="setToolFilter('all', this)" style="flex:1; text-align:center;">All</button>
+                        <button class="tab-btn" onclick="setToolFilter('computing', this)" style="flex:1; text-align:center;">Computing</button>
+                        <button class="tab-btn" onclick="setToolFilter('tools', this)" style="flex:1; text-align:center;">Tools</button>
+                        <button class="tab-btn" onclick="setToolFilter('time', this)" style="flex:1; text-align:center;">Time</button>
                     </div>
                 </div>
     
@@ -823,7 +786,7 @@
                                 <input type="text" id="renamePickupSetInput" placeholder="Set Name" class="panel-input">
                             </div>
                             <div class="panel-row">
-                                <input type="text" id="unitPickupSetInput" placeholder="Unit of Measurement" class="panel-input">
+                                <input type="text" id="unitPickupSetInput" placeholder="Unit..." class="panel-input">
                                 <button onclick="savePickupSetName()" class="panel-btn">Save</button>
                             </div>
                             
@@ -893,12 +856,12 @@
                                 <input type="text" id="renameSumSetInput" placeholder="Set Name" class="panel-input">
                             </div>
                             <div class="panel-row">
-                                <input type="text" id="unitSumSetInput" placeholder="Unit of Measurement" class="panel-input">
+                                <input type="text" id="unitSumSetInput" placeholder="Unit..." class="panel-input">
                                 <button onclick="saveSumSetName()" class="panel-btn">Save</button>
                             </div>
 
+                            <button onclick="duplicateSumSet()" class="btn-duplicate" style="margin:0; min-height:40px; margin-bottom:10px;">Duplicate Set</button>
                             <button onclick="clearSumSetData()" class="action-btn" style="margin:0; min-height:40px; margin-bottom:10px;">Clear Data Only</button>
-                            
                             <button onclick="confirmDeleteSumSet()" class="secondary" style="margin:0; min-height:40px;">Delete Set</button>
                         </div>
         
@@ -932,8 +895,8 @@
                         
                         <div class="stats-grid" id="rangeStatsGrid" style="display: none; margin-top: -5px; margin-bottom: 15px;">
                             <div class="stat-box"><div class="stat-label">Range</div><div class="stat-value" id="statRange">0-0</div></div>
-                            <div class="stat-box"><div class="stat-label">Under</div><div class="stat-value" id="statUnder" style="color:var(--error)">0</div></div>
-                            <div class="stat-box"><div class="stat-label">Over</div><div class="stat-value" id="statOver" style="color:var(--success)">0</div></div>
+                            <div class="stat-box"><div class="stat-label">Under/Over</div><div class="stat-value" id="statUnderOver"><span style="color:var(--error)">0</span> / <span style="color:var(--success)">0</span></div></div>
+                            <div class="stat-box"><div class="stat-label">Out of Range %</div><div class="stat-value" id="statOutOfRangePct">0.00%</div></div>
                         </div>
         
                         <div class="input-group">
@@ -1233,7 +1196,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v77</div>
+            <div class="footer-version">v78</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1252,9 +1215,6 @@
                 });
             }
         
-            // ==========================================
-            // --- PREVENT KEYBOARD DISMISSAL ON REMOVE BUTTONS ---
-            // ==========================================
             ['mousedown', 'touchstart'].forEach(eventType => {
                 document.addEventListener(eventType, function(e) {
                     const removeBtn = e.target.closest('.remove-btn');
@@ -1270,7 +1230,6 @@
                 }, { passive: false });
             });
             
-            // --- GLOBALS FOR TAB STATE & GESTURES ---
             let preventTabClick = false; 
             let isTabDraggingGlobal = false; 
             let vibrationInterval = null;
@@ -1284,20 +1243,19 @@
             let isEstimatorTabMenuOpen = false;
             let isSalinityTabMenuOpen = false;
         
-            // Export Mode Globals
             let isExportMode = false;
             let selectedExportCards = new Set();
             
+            // Current Filter Category
+            let currentToolFilter = 'all';
+
             const alarm = document.getElementById('alarmSound');
             const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-timestamps', 'card-notes'];
             
-            // --- SAFE ROUNDING HELPER ---
-            // Fixes native floating-point errors to ensure true "half-up" rounding
             function safeRound(value, decimals) {
                 return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
             }
             
-            // --- TIME FORMATTING HELPERS ---
             function format12Hour(hours, minutes) {
                 const ampm = hours >= 12 ? 'PM' : 'AM';
                 const h12 = hours % 12 || 12;
@@ -1359,7 +1317,14 @@
                 document.getElementById('batchTitleDisplay').innerText = `Day ${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
             }
             
-           function toggleCard(cardId) {
+            function setToolFilter(filter, btn) {
+                currentToolFilter = filter;
+                document.querySelectorAll('#toolFilterTabs .tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                reorderCards();
+            }
+
+            function toggleCard(cardId) {
                 const card = document.getElementById(cardId);
                 card.classList.toggle('collapsed');
                 const p = parentGroups.find(g => g.id === activeParentId);
@@ -1367,7 +1332,6 @@
                 p.collapsedCards[cardId] = card.classList.contains('collapsed');
                 saveAllGroupData();
                 
-                // --- NEW FIX: Auto-resize any textareas when the card is opened ---
                 if (!card.classList.contains('collapsed')) {
                     const textareas = card.querySelectorAll('textarea');
                     textareas.forEach(ta => autoResizeTextarea(ta));
@@ -1417,8 +1381,31 @@
                 const divider = document.getElementById('pinned-divider');
                 let pinnedCount = 0;
                 
+                const categoryMap = {
+                    'card-pickup': 'computing',
+                    'card-averaging': 'computing',
+                    'card-salinity': 'computing',
+                    'card-percentage': 'computing',
+                    'card-temp': 'computing',
+                    'card-estimator': 'computing',
+                    'card-notes': 'tools',
+                    'card-tally': 'tools',
+                    'card-stopwatch': 'tools',
+                    'card-sampling': 'time',
+                    'card-timestamps': 'time'
+                };
+
                 allCardIds.forEach(id => {
                     const card = document.getElementById(id);
+                    const cat = categoryMap[id];
+                    
+                    if (currentToolFilter !== 'all' && cat !== currentToolFilter) {
+                        card.style.display = 'none';
+                        return; 
+                    } else {
+                        card.style.display = 'block';
+                    }
+
                     if (card.classList.contains('pinned')) {
                         pinnedContainer.appendChild(card);
                         pinnedCount++;
@@ -1440,7 +1427,8 @@
                 let maxNum = 0;
                 const regex = new RegExp(`^${prefix}\\s+(\\d+)$`, 'i');
                 tabsArray.forEach(t => {
-                    const match = t.name.trim().match(regex);
+                    let nameToCheck = t.name ? t.name.trim() : '';
+                    const match = nameToCheck.match(regex);
                     if (match) {
                         const num = parseInt(match[1]);
                         if (num > maxNum) maxNum = num;
@@ -1450,8 +1438,9 @@
             }
         
             // ==========================================
-            // ---- DATA MIGRATION & PARENT GROUPS ------
+            // ---- DATA MIGRATION & FILE/FOLDER SYSTEM -
             // ==========================================
+            let appFolders = JSON.parse(localStorage.getItem('qc_folders')) || [{id: 'root', name: 'Main'}];
             let parentGroups = JSON.parse(localStorage.getItem('qc_parent_groups'));
             
             if (!parentGroups) {
@@ -1464,7 +1453,8 @@
         
                 parentGroups = [{
                     id: 'pg_' + Date.now(),
-                    name: 'Group 1',
+                    folderId: 'root',
+                    name: 'File 1',
                     productCode: '',
                     date: '',
                     startTime: '',
@@ -1486,8 +1476,8 @@
                 localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
             }
         
-            // Automated Migration Script & Fallbacks
             parentGroups.forEach(g => {
+                if (!g.folderId) g.folderId = 'root';
                 if (!g.pinnedCards) g.pinnedCards = [];
                 if (!g.collapsedCards) g.collapsedCards = {};
                 if (!g.notes) g.notes = { text: '' };
@@ -1500,7 +1490,6 @@
                 if (!g.tallies) g.tallies = [];
                 if (!g.percentage) g.percentage = { total: '', part: '', pct: '' };
                 
-                // Migrate old flat pickupTabs into pickupSets
                 if (g.pickupTabs && !g.pickupSets) {
                     g.pickupSets = [{
                         id: 'pset_' + Date.now() + Math.random(),
@@ -1513,7 +1502,6 @@
                     delete g.activePickupTabId;
                 }
         
-                // Migrate old flat sumTabs into sumSets
                 if (g.sumTabs && !g.sumSets) {
                     g.sumSets = [{
                         id: 'sset_' + Date.now() + Math.random(),
@@ -1526,14 +1514,12 @@
                     delete g.activeTabId;
                 }
         
-                // Migrate flat Salinity to Tabs
                 if (!g.salinityTabs) {
                     g.salinityTabs = [{ id: 'stab_' + Date.now() + Math.random(), name: 'Sample 1', brix: g.salinity?.brix || '' }];
                     g.activeSalinityTabId = g.salinityTabs[0].id;
                 }
                 if (g.salinity) delete g.salinity;
         
-                // Failsafes to ensure proper references exist
                 if (!g.activePickupSetId || !g.pickupSets.find(s => s.id === g.activePickupSetId)) {
                     g.activePickupSetId = g.pickupSets[0].id;
                 }
@@ -1560,6 +1546,7 @@
                 if (!g.sampling) g.sampling = { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false };
             });
         
+            let currentFolderId = localStorage.getItem('qc_current_folder') || 'root';
             let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
         
             let pickupSets, sumSets, estimatorTabs, salinityTabs;
@@ -1579,7 +1566,16 @@
             }
         
             function refreshGroupDataReferences() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                let p = parentGroups.find(g => g.id === activeParentId);
+                if (!p) {
+                    p = parentGroups.find(g => g.folderId === currentFolderId);
+                    if (!p) {
+                        p = parentGroups[0];
+                        currentFolderId = p.folderId;
+                        localStorage.setItem('qc_current_folder', currentFolderId);
+                    }
+                    activeParentId = p.id;
+                }
                 
                 pickupSets = p.pickupSets;
                 activePickupSetId = p.activePickupSetId;
@@ -1619,75 +1615,170 @@
                 
                 localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
                 localStorage.setItem('qc_active_parent_id', activeParentId);
+                localStorage.setItem('qc_current_folder', currentFolderId);
             }
         
-            function renderParentTabs() {
+            function renderSidebarList() {
                 const list = document.getElementById('parentTabsList');
                 list.innerHTML = '';
-                let activeBtnElement = null;
-        
+                
+                const currentFolder = appFolders.find(f => f.id === currentFolderId);
+                document.getElementById('sidebarHeaderTitle').childNodes[0].nodeValue = currentFolder ? currentFolder.name + " " : "Main ";
+                
                 const activeGroup = parentGroups.find(g => g.id === activeParentId);
-                if (activeGroup) document.getElementById('activeGroupHeaderTitle').innerText = activeGroup.name;
-        
-                parentGroups.forEach((tab) => {
+                if (activeGroup) {
+                    let dispName = activeGroup.name;
+                    if (!dispName || dispName.trim() === '') {
+                        dispName = (currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File";
+                    }
+                    document.getElementById('activeGroupHeaderTitle').innerText = dispName;
+                }
+
+                if (currentFolderId !== 'root') {
+                    const backBtn = document.createElement('button');
+                    backBtn.className = 'tab-btn parent-tab-btn no-drag';
+                    backBtn.innerHTML = '📁 [ . . ]';
+                    backBtn.onclick = () => {
+                        currentFolderId = 'root';
+                        localStorage.setItem('qc_current_folder', 'root');
+                        renderSidebarList();
+                    };
+                    list.appendChild(backBtn);
+                }
+
+                if (currentFolderId === 'root') {
+                    appFolders.forEach(folder => {
+                        if (folder.id === 'root') return;
+                        const fBtn = document.createElement('button');
+                        fBtn.className = 'tab-btn parent-tab-btn no-drag';
+                        fBtn.innerHTML = `📁 ${folder.name}`;
+                        fBtn.onclick = () => {
+                            currentFolderId = folder.id;
+                            localStorage.setItem('qc_current_folder', folder.id);
+                            renderSidebarList();
+                        };
+                        list.appendChild(fBtn);
+                    });
+                }
+
+                const visibleFiles = parentGroups.filter(f => f.folderId === currentFolderId);
+                let activeBtnElement = null;
+
+                visibleFiles.forEach(tab => {
                     const btn = document.createElement('button');
-                    btn.className = `tab-btn parent-tab-btn ${tab.id === activeParentId ? 'active' : ''}`;
-                    btn.innerText = tab.name;
-                    btn.dataset.id = tab.id; 
+                    btn.className = `tab-btn parent-tab-btn draggable-file-btn ${tab.id === activeParentId ? 'active' : ''}`;
                     
+                    let tabName = tab.name;
+                    if (!tabName || tabName.trim() === '') {
+                        tabName = (currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File";
+                    }
+                    btn.innerText = tabName;
+                    btn.dataset.id = tab.id;
                     if (tab.id === activeParentId) activeBtnElement = btn;
-        
+
                     btn.onclick = (e) => {
                         const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
                         const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
                         const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
                         
                         if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
-        
+
                         if (activeParentId !== tab.id) {
-                            activeParentId = tab.id;
-                            isParentTabMenuOpen = false;
-                            refreshGroupDataReferences();
-                            saveAllGroupData();
-                            applyCardStatesToDOM(); 
-                            updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes(); renderTimestamps();
-                            updatePctDOM(); renderTallies();
-                            
-                            renderParentTabs(); updateParentTabMenuState();
-                            renderPickupSets(); updatePickupSetMenuState();
-                            renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
-                            renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
-                            renderSalinityTabs(); updateSalinityDOM(); updateSalinityTabMenuState();
-                            renderSumSets(); updateSumSetMenuState();
-                            renderTabs(); renderList(); updateTabMenuState();
-                            
-                            // Auto-close sidebar on mobile when an item is tapped
+                            switchToFile(tab.id);
                             if (window.innerWidth < 768) toggleSidebar();
                         }
                     };
                     list.appendChild(btn);
                 });
+
+                const addContainer = document.createElement('div');
+                addContainer.style.display = 'flex';
+                addContainer.style.gap = '5px';
+                addContainer.style.marginTop = '10px';
                 
-                const addBtn = document.createElement('button');
-                addBtn.className = 'add-tab-btn parent-tab-btn';
-                addBtn.innerText = '+';
-                list.appendChild(addBtn);
+                const addFileBtn = document.createElement('button');
+                addFileBtn.className = 'add-tab-btn parent-tab-btn no-drag';
+                addFileBtn.style.flex = '1';
+                addFileBtn.style.fontSize = '0.9rem';
+                addFileBtn.innerText = '+ File';
+                addFileBtn.onclick = () => addNewParentGroup();
+                addContainer.appendChild(addFileBtn);
+
+                if (currentFolderId === 'root') {
+                    const addFolderBtn = document.createElement('button');
+                    addFolderBtn.className = 'add-tab-btn parent-tab-btn no-drag';
+                    addFolderBtn.style.flex = '1';
+                    addFolderBtn.style.fontSize = '0.9rem';
+                    addFolderBtn.innerText = '+ Folder';
+                    addFolderBtn.onclick = () => addNewFolder(); 
+                    addContainer.appendChild(addFolderBtn);
+                }
+
+                list.appendChild(addContainer);
                 
                 setTimeout(() => {
                     if (activeBtnElement && !isTabDraggingGlobal) {
                         const container = list.parentElement;
-                        // Updated to vertical scroll
                         const scrollPos = activeBtnElement.offsetTop - (container.clientHeight / 2) + (activeBtnElement.clientHeight / 2);
                         container.scrollTo({ top: Math.max(0, scrollPos), behavior: 'smooth' });
                     }
                 }, 50);
+            }
+
+            function switchToFile(id) {
+                activeParentId = id;
+                isParentTabMenuOpen = false;
+                refreshGroupDataReferences();
+                saveAllGroupData();
+                applyCardStatesToDOM(); 
+                updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes(); renderTimestamps();
+                updatePctDOM(); renderTallies();
+                
+                renderSidebarList(); updateParentTabMenuState();
+                renderPickupSets(); updatePickupSetMenuState();
+                renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
+                renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
+                renderSalinityTabs(); updateSalinityDOM(); updateSalinityTabMenuState();
+                renderSumSets(); updateSumSetMenuState();
+                renderTabs(); renderList(); updateTabMenuState();
+                reorderCards();
+            }
+
+            function prevFile() {
+                const files = parentGroups.filter(f => f.folderId === currentFolderId);
+                const idx = files.findIndex(f => f.id === activeParentId);
+                if (idx > 0) {
+                    switchToFile(files[idx - 1].id);
+                } else if (idx === 0 && files.length > 1) {
+                    switchToFile(files[files.length - 1].id); 
+                }
+            }
+
+            function nextFile() {
+                const files = parentGroups.filter(f => f.folderId === currentFolderId);
+                const idx = files.findIndex(f => f.id === activeParentId);
+                if (idx < files.length - 1) {
+                    switchToFile(files[idx + 1].id);
+                } else if (idx === files.length - 1 && files.length > 1) {
+                    switchToFile(files[0].id); 
+                }
+            }
+
+            function addNewFolder() {
+                const name = prompt("Enter new folder name:", "New Folder");
+                if (name && name.trim() !== '') {
+                    const newFolder = { id: 'fold_' + Date.now(), name: name.trim() };
+                    appFolders.push(newFolder);
+                    localStorage.setItem('qc_folders', JSON.stringify(appFolders));
+                    renderSidebarList();
+                }
             }
         
             function updateParentTabMenuState() {
                 const panel = document.getElementById('parentTabOptionsPanel');
                 if (isParentTabMenuOpen) {
                     const p = parentGroups.find(t => t.id === activeParentId);
-                    document.getElementById('renameParentTabInput').value = p.name;
+                    document.getElementById('renameParentTabInput').value = p.name || '';
                     document.getElementById('groupProductCodeInput').value = p.productCode || '';
                     document.getElementById('groupDateInput').value = p.date || '';
                     document.getElementById('groupStartTimeInput').value = p.startTime || '';
@@ -1699,7 +1790,7 @@
             }
         
             function saveParentGroupSettings() {
-                const newName = document.getElementById('renameParentTabInput').value.trim();
+                const newName = document.getElementById('renameParentTabInput').value;
                 const newProductCode = document.getElementById('groupProductCodeInput').value.trim();
                 const date = document.getElementById('groupDateInput').value;
                 const startTime = document.getElementById('groupStartTimeInput').value;
@@ -1708,7 +1799,7 @@
                 const p = parentGroups.find(t => t.id === activeParentId);
                 
                 let nameChanged = false;
-                if (newName !== '' && p.name !== newName) {
+                if (p.name !== newName) {
                     p.name = newName;
                     nameChanged = true;
                 }
@@ -1720,26 +1811,25 @@
                 
                 saveAllGroupData();
                 
-                // Only re-render the physical tabs if the actual Group Name changes.
-                // This stops the UI from stuttering if you are just typing in the Product Code or Date.
                 if (nameChanged) {
-                    renderParentTabs();
+                    renderSidebarList();
                 }
             }
         
             function confirmDeleteParentTab() {
                 const p = parentGroups.find(t => t.id === activeParentId);
                 if (parentGroups.length === 1) {
-                    alert("You must have at least one active group.");
+                    alert("You must have at least one active file.");
                     return;
                 }
-                if (confirm(`Are you sure you want to delete the entire group "${p.name}"? This removes all data inside it.`)) {
+                if (confirm(`Are you sure you want to delete the entire file "${p.name || 'Unnamed'}"? This removes all data inside it.`)) {
                     let currentIndex = parentGroups.findIndex(t => t.id === activeParentId);
                     parentGroups = parentGroups.filter(t => t.id !== activeParentId);
                     let newIndex = currentIndex - 1;
                     if (newIndex < 0) newIndex = 0; 
                     
                     activeParentId = parentGroups[newIndex].id; 
+                    currentFolderId = parentGroups[newIndex].folderId;
                     isParentTabMenuOpen = false;
                     refreshGroupDataReferences();
                     saveAllGroupData();
@@ -1752,7 +1842,7 @@
                     loadNotes();
                     renderTimestamps();
                     
-                    renderParentTabs(); updateParentTabMenuState();
+                    renderSidebarList(); updateParentTabMenuState();
                     renderPickupSets(); updatePickupSetMenuState();
                     renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
                     renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
@@ -1764,15 +1854,13 @@
         
             function clearParentGroupData() {
                 const p = parentGroups.find(t => t.id === activeParentId);
-                if (confirm(`Are you sure you want to clear ALL data in group "${p.name}"?\n\nThis will keep your sample names, limits, and tabs for Sum & Averaging and Pickup, but erase everything else.`)) {
+                if (confirm(`Are you sure you want to clear ALL data in file "${p.name || 'Unnamed'}"?\n\nThis will keep your sample names, limits, and tabs for Sum & Averaging and Pickup, but erase everything else.`)) {
                     
-                    // 1. Clear Group Header Info (keep the group name)
                     p.productCode = '';
                     p.date = '';
                     p.startTime = '';
                     p.endTime = '';
         
-                    // 2. Keep Pickup structure, clear pre/post data
                     p.pickupSets.forEach(set => {
                         set.tabs.forEach(tab => {
                             tab.pre = '';
@@ -1780,7 +1868,6 @@
                         });
                     });
         
-                    // 3. Keep Sum/Avg structure & ranges, clear number data
                     p.sumSets.forEach(set => {
                         set.tabs.forEach(tab => {
                             tab.data = [];
@@ -1788,7 +1875,6 @@
                         });
                     });
         
-                    // 4. Reset everything else to a completely blank slate
                     p.estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }];
                     p.activeEstimatorTabId = p.estimatorTabs[0].id;
         
@@ -1803,15 +1889,12 @@
                     p.tallies = [];
                     p.percentage = { total: '', part: '', pct: '' };
         
-                    // Stop any active alarms globally if needed
                     stopTimer(); 
                     
-                    // Close the menu and save
                     isParentTabMenuOpen = false;
                     refreshGroupDataReferences();
                     saveAllGroupData();
         
-                    // Force a massive UI repaint to reflect the wiped data
                     updateParentTabMenuState();
                     applyCardStatesToDOM();
                     
@@ -1836,16 +1919,18 @@
             }
             
             function addNewParentGroup() {
-                const newName = getNextTabName(parentGroups, "Group");
+                const filesInFolder = parentGroups.filter(f => f.folderId === currentFolderId);
+                const newName = getNextTabName(filesInFolder, "File");
                 const newGroup = {
                     id: 'pg_' + Date.now(),
+                    folderId: currentFolderId,
                     name: newName,
                     productCode: '',
                     date: '',
                     startTime: '',
                     endTime: '',
                     pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', unit: '', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
-                    sumSets: [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
+                    sumSets: [{ id: 'sset_'+Date.now(), name: 'Set 1', unit: '', tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
                     estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
                     salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
                     pinnedCards: [],
@@ -1884,7 +1969,7 @@
                 updatePctDOM();
                 renderTallies();
                 
-                renderParentTabs(); updateParentTabMenuState();
+                renderSidebarList(); updateParentTabMenuState();
                 renderPickupSets(); updatePickupSetMenuState();
                 renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
                 renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
@@ -1896,7 +1981,6 @@
             function duplicateParentGroup() {
                 const p = parentGroups.find(t => t.id === activeParentId);
                 
-                // 1. Clone Pickup Sets (Keep structure, wipe data)
                 const clonedPickupSets = p.pickupSets.map((set, setIdx) => {
                     const newSetId = 'pset_' + Date.now() + '_' + setIdx;
                     const clonedTabs = set.tabs.map((tab, tabIdx) => ({
@@ -1908,12 +1992,12 @@
                     return {
                         id: newSetId,
                         name: set.name,
+                        unit: set.unit || '',
                         tabs: clonedTabs,
                         activeTabId: clonedTabs[0] ? clonedTabs[0].id : null
                     };
                 });
         
-                // 2. Clone Sum & Avg Sets (Keep structure and ranges, wipe data)
                 const clonedSumSets = p.sumSets.map((set, setIdx) => {
                     const newSetId = 'sset_' + Date.now() + '_' + setIdx;
                     const clonedTabs = set.tabs.map((tab, tabIdx) => ({
@@ -1927,15 +2011,18 @@
                     return {
                         id: newSetId,
                         name: set.name,
+                        unit: set.unit || '',
                         tabs: clonedTabs,
                         activeTabId: clonedTabs[0] ? clonedTabs[0].id : null
                     };
                 });
         
-                // 3. Construct the fresh duplicate group
+                let newNameBase = p.name ? p.name : (appFolders.find(f=>f.id===p.folderId)?.name || "File");
+
                 const newGroup = {
                     id: 'pg_' + Date.now(),
-                    name: p.name + " (Copy)",
+                    folderId: p.folderId,
+                    name: newNameBase + " (Copy)",
                     productCode: '',
                     date: '',
                     startTime: '',
@@ -1946,8 +2033,8 @@
                     activeSumSetId: clonedSumSets[0] ? clonedSumSets[0].id : null,
                     estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
                     salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
-                    pinnedCards: [...(p.pinnedCards || [])], // Carry over your pinned setup
-                    collapsedCards: {...(p.collapsedCards || {})}, // Carry over your open/closed states
+                    pinnedCards: [...(p.pinnedCards || [])], 
+                    collapsedCards: {...(p.collapsedCards || {})}, 
                     temp: { c: '', f: '' },
                     stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
                     sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
@@ -1960,7 +2047,6 @@
                 newGroup.activeEstimatorTabId = newGroup.estimatorTabs[0].id;
                 newGroup.activeSalinityTabId = newGroup.salinityTabs[0].id;
                 
-                // 4. Push to memory and switch to it immediately
                 parentGroups.push(newGroup);
                 activeParentId = newGroup.id;
                 isParentTabMenuOpen = false;
@@ -1969,7 +2055,6 @@
                 saveAllGroupData();
                 applyCardStatesToDOM();
                 
-                // 5. Repaint the UI
                 updateTempDOM();
                 updateSamplingDOM();
                 updateStopwatchDOMToggle();
@@ -1979,7 +2064,7 @@
                 updatePctDOM();
                 renderTallies();
                 
-                renderParentTabs(); updateParentTabMenuState();
+                renderSidebarList(); updateParentTabMenuState();
                 renderPickupSets(); updatePickupSetMenuState();
                 renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
                 renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
@@ -1995,7 +2080,6 @@
                 
                 applyCardStatesToDOM(); 
                 
-                // Ensure menus start closed
                 isParentTabMenuOpen = false;
                 isPickupSetMenuOpen = false;
                 isPickupTabMenuOpen = false;
@@ -2004,7 +2088,7 @@
                 isEstimatorTabMenuOpen = false;
                 isSalinityTabMenuOpen = false;
                 
-                renderParentTabs(); updateParentTabMenuState();
+                renderSidebarList(); updateParentTabMenuState();
                 renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
                 renderSalinityTabs(); updateSalinityDOM(); updateSalinityTabMenuState();
                 
@@ -2026,65 +2110,26 @@
                 startGlobalStopwatch(); 
                 startGlobalSamplingTimer(); 
         
-                setupTabDragManager('parentTabsContainer', 'parentTabsList', () => parentGroups, saveAllGroupData, renderParentTabs, 'y');
+                setupTabDragManager('parentTabsContainer', 'parentTabsList', 
+                    () => parentGroups.filter(f => f.folderId === currentFolderId), 
+                    saveAllGroupData, renderSidebarList, 'y',
+                    (newVisibleOrder) => {
+                        let indices = [];
+                        parentGroups.forEach((f, i) => { if(f.folderId === currentFolderId) indices.push(i); });
+                        indices.forEach((pos, i) => { parentGroups[pos] = newVisibleOrder[i]; });
+                    }
+                );
+                
                 setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveAllGroupData, renderEstimatorTabs);
                 setupTabDragManager('salinityTabsContainer', 'salinityTabsList', () => salinityTabs, saveAllGroupData, renderSalinityTabs);
                 
-                // Drag for Sets
                 setupTabDragManager('pickupSetsContainer', 'pickupSetsList', () => pickupSets, saveAllGroupData, renderPickupSets);
                 setupTabDragManager('sumSetsContainer', 'sumSetsList', () => sumSets, saveAllGroupData, renderSumSets);
                 
-                // Drag for Samples
                 setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
                 setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveAllGroupData, renderTabs);
                 
-                setupAddButtonHold('parentTabsList', addNewParentGroup, () => {
-                    parentGroups = [{
-                        id: 'pg_' + Date.now(),
-                        name: 'Group 1',
-                        productCode: '',
-                        date: '',
-                        startTime: '',
-                        endTime: '',
-                        pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
-                        sumSets: [{ id: 'sset_'+Date.now(), name: 'Set 1', tabs: [{ id: 'tab_'+Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
-                        estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
-                        salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
-                        pinnedCards: [],
-                        collapsedCards: {},
-                        temp: { c: '', f: '' },
-                        stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
-                        sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
-                        notes: { text: '' }
-                    }];
-                    parentGroups[0].pickupSets[0].activeTabId = parentGroups[0].pickupSets[0].tabs[0].id;
-                    parentGroups[0].activePickupSetId = parentGroups[0].pickupSets[0].id;
-                    
-                    parentGroups[0].sumSets[0].activeTabId = parentGroups[0].sumSets[0].tabs[0].id;
-                    parentGroups[0].activeSumSetId = parentGroups[0].sumSets[0].id;
-        
-                    parentGroups[0].activeEstimatorTabId = parentGroups[0].estimatorTabs[0].id;
-                    parentGroups[0].activeSalinityTabId = parentGroups[0].salinityTabs[0].id;
-                    
-                    activeParentId = parentGroups[0].id;
-                    isParentTabMenuOpen = false;
-                    refreshGroupDataReferences();
-                    saveAllGroupData();
-                    applyCardStatesToDOM();
-                    updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes(); renderTimestamps();
-        
-                    updatePctDOM();
-                    renderTallies();
-                    
-                    renderParentTabs(); updateParentTabMenuState();
-                    renderPickupSets(); updatePickupSetMenuState();
-                    renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
-                    renderEstimatorTabs(); loadEstimatorInputs(); updateEstimatorTabMenuState();
-                    renderSalinityTabs(); updateSalinityDOM(); updateSalinityTabMenuState();
-                    renderSumSets(); updateSumSetMenuState();
-                    renderTabs(); renderList(); updateTabMenuState();
-                }, "Delete ALL groups and start completely fresh?");
-        
+                // Prompt deletes for safety
                 setupAddButtonHold('estimatorTabsList', addNewEstimatorTab, () => {
                     estimatorTabs.splice(0, estimatorTabs.length, { id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] });
                     activeEstimatorTabId = estimatorTabs[0].id;
@@ -2107,7 +2152,7 @@
         
                 setupAddButtonHold('pickupSetsList', addNewPickupSet, () => {
                     pickupSets.splice(0, pickupSets.length, { 
-                        id: 'pset_' + Date.now(), name: 'Set 1', 
+                        id: 'pset_' + Date.now(), name: 'Set 1', unit: '',
                         tabs: [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }],
                         activeTabId: null
                     });
@@ -2126,7 +2171,7 @@
         
                 setupAddButtonHold('sumSetsList', addNewSumSet, () => {
                     sumSets.splice(0, sumSets.length, { 
-                        id: 'sset_' + Date.now(), name: 'Set 1', 
+                        id: 'sset_' + Date.now(), name: 'Set 1', unit: '',
                         tabs: [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }],
                         activeTabId: null
                     });
@@ -2163,7 +2208,6 @@
                     renderTabs(); renderList(); updateTabMenuState();
                 }, "Delete ALL Samples from this Set? This cannot be undone.");
         
-                // Force UI Repaint for Manage Tabs fix 
                 setTimeout(() => {
                     ['tabsList', 'estimatorTabsList', 'salinityTabsList', 'pickupTabsList', 'pickupSetsList', 'sumSetsList'].forEach(id => {
                         const list = document.getElementById(id);
@@ -2171,12 +2215,11 @@
                     });
                 }, 100);
         
-                // Setup Card Long Press for Export Mode
                 const cards = document.querySelectorAll('.card');
                 cards.forEach(card => {
                     let holdTimer = null;
                     let startTouchX = 0, startTouchY = 0;
-                    const title = card.querySelector('h2'); // Target the title specifically
+                    const title = card.querySelector('h2'); 
         
                     const startHold = (e) => {
                         if (isExportMode) return;
@@ -2195,7 +2238,6 @@
                         if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
                     };
         
-                    // Attach hold events strictly to the title header
                     if (title) {
                         title.addEventListener('touchstart', startHold, {passive: true});
                         title.addEventListener('mousedown', startHold);
@@ -2209,10 +2251,8 @@
                         title.addEventListener('mouseleave', cancelHold);
                     }
         
-                    // Keep the click interceptor on the whole card for toggling selection once mode is active
                     card.addEventListener('click', (e) => {
                         if (isExportMode) {
-                            // Allow the chevron to expand/collapse the card without selecting it for export
                             if (e.target.classList.contains('chevron') || e.target.closest('.chevron')) {
                                 toggleCard(card.id);
                                 e.preventDefault();
@@ -2230,10 +2270,7 @@
                 });
             });
         
-            // ==========================================
-            // ---- SMOOTH TAB DRAG ENGINE --------------
-            // ==========================================
-            function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn, axis = 'x') {
+            function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn, axis = 'x', setArrayFn = null) {
                 const list = document.getElementById(listId);
                 const container = document.getElementById(containerId);
                 
@@ -2252,7 +2289,7 @@
         
                 const startDrag = (e) => {
                     const btn = e.target.closest('.tab-btn');
-                    if (!btn || btn.classList.contains('add-tab-btn')) return;
+                    if (!btn || btn.classList.contains('add-tab-btn') || btn.classList.contains('no-drag')) return;
                     if (e.type === 'mousedown' && e.button !== 0) return;
         
                     startX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -2268,7 +2305,7 @@
                         isTabDraggingGlobal = true; 
                         if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
         
-                        elements = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn)'));
+                        elements = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn):not(.no-drag)'));
                         const gap = parseInt(window.getComputedStyle(list).gap) || (axis === 'x' ? 4 : 8);
                         
                         elementsData = elements.map((el, index) => ({
@@ -2380,6 +2417,10 @@
                             const arr = getArrayFn();
                             const item = arr.splice(dragIdx, 1)[0];
                             arr.splice(currentTargetIdx, 0, item);
+                            
+                            if (setArrayFn) {
+                                setArrayFn(arr);
+                            }
                             saveFn();
                         }
                         renderFn();
@@ -2402,7 +2443,7 @@
                 let holdStartX = 0, holdStartY = 0;
         
                 const startHold = (e) => {
-                    if (preventTabClick) return; // Block incoming ghost clicks
+                    if (preventTabClick) return; 
                     const btn = e.target.closest('.add-tab-btn');
                     if (!btn || (e.type === 'mousedown' && e.button !== 0)) return;
                     
@@ -2414,14 +2455,11 @@
                         isHold = true;
                         if (navigator.vibrate) navigator.vibrate(50);
                         
-                        // Defer the confirm slightly to allow UI to settle, 
-                        // and block clicks immediately after to stop "ghost taps"
                         setTimeout(() => {
                             preventTabClick = true;
                             if (confirm(promptMessage)) {
                                 resetAction();
                             }
-                            // Swallow any click-throughs from hitting "OK" on the alert
                             setTimeout(() => preventTabClick = false, 400); 
                         }, 10);
                     }, 800);
@@ -2453,10 +2491,6 @@
                 list.addEventListener('touchcancel', () => clearTimeout(holdTimer));
             }
         
-        
-            // ==========================================
-            // ---- PRODUCTION PACE LOGIC ----------
-            // ==========================================
             function getActiveEstimator() { return estimatorTabs.find(t => t.id === activeEstimatorTabId); }
         
             function renderEstimatorTabs() {
@@ -2622,7 +2656,7 @@
                 saveAllGroupData();
                 
                 document.getElementById('estAmountInput').value = '';
-                document.getElementById('estTimeInput').value = ''; // Wipes the clock time
+                document.getElementById('estTimeInput').value = ''; 
                 renderEstimatorList();
             }
         
@@ -2782,10 +2816,6 @@
                 saveAllGroupData();
             }
         
-        
-            // ==========================================
-            // ---- PICKUP SETS & TABS SYSTEM LOGIC ----
-            // ==========================================
             function renderPickupSets() {
                 const list = document.getElementById('pickupSetsList');
                 list.innerHTML = '';
@@ -2847,7 +2877,7 @@
                 if (isPickupSetMenuOpen) {
                     const activeSet = pickupSets.find(s => s.id === activePickupSetId);
                     document.getElementById('renamePickupSetInput').value = activeSet.name;
-                    document.getElementById('unitPickupSetInput').value = activeSet.unit || ''; // NEW
+                    document.getElementById('unitPickupSetInput').value = activeSet.unit || ''; 
                     updatePickupSetAverage(); 
                     panel.style.display = 'flex';
                 } else {
@@ -2857,17 +2887,17 @@
         
             function savePickupSetName() {
                 const newName = document.getElementById('renamePickupSetInput').value.trim();
-                const newUnit = document.getElementById('unitPickupSetInput').value.trim(); // NEW
+                const newUnit = document.getElementById('unitPickupSetInput').value.trim(); 
                 const set = pickupSets.find(s => s.id === activePickupSetId);
                 
                 if (newName !== '') set.name = newName;
-                set.unit = newUnit; // NEW
+                set.unit = newUnit; 
                 
                 saveAllGroupData();
                 isPickupSetMenuOpen = false;
                 renderPickupSets();
                 updatePickupSetMenuState();
-                loadPickupInputs(); // NEW: Refreshes the UI to show the unit instantly
+                loadPickupInputs(); 
             }
         
             function confirmDeletePickupSet() {
@@ -2903,7 +2933,7 @@
                 const newSet = { 
                     id: 'pset_' + Date.now(), 
                     name: newName, 
-                    unit: '', // NEW
+                    unit: '', 
                     tabs: [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }],
                     activeTabId: null
                 };
@@ -2924,7 +2954,6 @@
                 loadPickupInputs();
                 updatePickupTabMenuState();
             }
-        
         
             function renderPickupTabs() {
                 const list = document.getElementById('pickupTabsList');
@@ -3050,19 +3079,18 @@
                     tab.post = post;
                     saveAllGroupData();
                     calculatePickup();
-                    updatePickupSetAverage(); // Updates live while typing
+                    updatePickupSetAverage(); 
                 }
             }
         
             function loadPickupInputs() {
                 const tab = pickupTabs.find(t => t.id === activePickupTabId);
-                const activeSet = pickupSets.find(s => s.id === activePickupSetId); // NEW
+                const activeSet = pickupSets.find(s => s.id === activePickupSetId); 
                 
                 if (tab) {
                     document.getElementById('preSampleVal').value = tab.pre || '';
                     document.getElementById('postSampleVal').value = tab.post || '';
                     
-                    // NEW: Update unit labels
                     const unitText = activeSet && activeSet.unit ? `(${activeSet.unit})` : '';
                     document.getElementById('lblPickupUnitPre').innerText = unitText;
                     document.getElementById('lblPickupUnitPost').innerText = unitText;
@@ -3115,18 +3143,16 @@
                 const set = pickupSets.find(s => s.id === activePickupSetId);
                 if (!set) return;
         
-                let sumPct = 0; // We will sum the percentages, not raw decimals
+                let sumPct = 0; 
                 let validCount = 0;
         
                 set.tabs.forEach(tab => {
                     let pre = parseFloat(tab.pre);
                     let post = parseFloat(tab.post);
                     if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
-                        // Get the raw decimal
                         let rawDec = (pre - post) / pre;
-                        // Force it to round to 2 decimal places exactly like the screen display
                         let roundedPct = safeRound(rawDec * 100, 2); 
-                        sumPct += roundedPct; // Add the displayed number to our total
+                        sumPct += roundedPct; 
                         validCount++;
                     }
                 });
@@ -3136,17 +3162,11 @@
                     display.innerText = "N/A";
                     display.style.color = "#94a3b8";
                 } else {
-                    // Average the rounded percentages and do one final safe round
                     let avgPct = sumPct / validCount;
                     display.innerText = safeRound(avgPct, 2).toFixed(2) + "%";
                     display.style.color = "var(--primary)";
                 }
             }
-        
-        
-            // ==========================================
-            // ---- SUM & AVERAGING SETS & TABS SYSTEM --
-            // ==========================================
         
             function renderSumSets() {
                 const list = document.getElementById('sumSetsList');
@@ -3231,6 +3251,39 @@
                 updateStats(); 
                 renderList();  
             }
+            
+            function duplicateSumSet() {
+                const activeSet = sumSets.find(s => s.id === activeSumSetId);
+                const clonedTabs = activeSet.tabs.map((tab, tabIdx) => ({
+                    id: 'tab_' + Date.now() + '_' + tabIdx,
+                    name: tab.name,
+                    minRange: tab.minRange || '',
+                    maxRange: tab.maxRange || '',
+                    data: [],
+                    lastAddedStr: ''
+                }));
+                const newSetId = 'sset_' + Date.now();
+                const newSet = {
+                    id: newSetId,
+                    name: activeSet.name + " (Copy)",
+                    unit: activeSet.unit || '',
+                    tabs: clonedTabs,
+                    activeTabId: clonedTabs[0] ? clonedTabs[0].id : null
+                };
+                sumSets.push(newSet);
+                activeSumSetId = newSetId;
+                isSumSetMenuOpen = false;
+                
+                const p = parentGroups.find(g => g.id === activeParentId);
+                p.activeSumSetId = activeSumSetId;
+                
+                saveAllGroupData();
+                renderSumSets();
+                updateSumSetMenuState();
+                renderTabs();
+                renderList();
+                updateTabMenuState();
+            }
         
             function confirmDeleteSumSet() {
                 const set = sumSets.find(s => s.id === activeSumSetId);
@@ -3279,6 +3332,7 @@
                 const newSet = { 
                     id: 'sset_' + Date.now(), 
                     name: newName, 
+                    unit: '',
                     tabs: [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }],
                     activeTabId: null
                 };
@@ -3329,7 +3383,7 @@
                             isTabMenuOpen = !isTabMenuOpen;
                             updateTabMenuState();
                         } else {
-                            document.getElementById('numberInput').value = ''; // Wipes the input
+                            document.getElementById('numberInput').value = ''; 
                             activeTabId = tab.id;
                             isTabMenuOpen = false;
                             const activeSSet = sumSets.find(s => s.id === activeSumSetId);
@@ -3419,7 +3473,7 @@
             }
         
             function addNewTab() {
-                document.getElementById('numberInput').value = ''; // Wipes the input 
+                document.getElementById('numberInput').value = ''; 
                 const newName = getNextTabName(appTabs, "Sample");
                 const newTab = { id: 'tab_' + Date.now(), name: newName, data: [], lastAddedStr: '', minRange: '', maxRange: '' };
                 appTabs.push(newTab);
@@ -3459,10 +3513,6 @@
                 updateTabMenuState();
             }
         
-        
-            // ==========================================
-            // ---- SALINITY TABS SYSTEM ----
-            // ==========================================
             function getActiveSalinityTab() { return salinityTabs.find(t => t.id === activeSalinityTabId); }
         
             function renderSalinityTabs() {
@@ -3570,11 +3620,6 @@
                 updateSalinityDOM();
                 updateSalinityTabMenuState();
             }
-        
-        
-            // ==========================================
-            // ---- GENERAL LOGIC ----
-            // ==========================================
         
             function loadNotes() {
                 const p = parentGroups.find(g => g.id === activeParentId);
@@ -3999,11 +4044,10 @@
                         color = "var(--success)"; 
                     } else {
                         statusText = " (within range)";
-                        color = "var(--primary)"; // Back to blue!
+                        color = "var(--primary)"; 
                     }
                 }
         
-                // Wrapping the whole line in a <span> protects the standard spaces
                 activeTab.lastAddedStr = `<span>Last added: <u>${val}</u>${statusText}</span>`;
                 activeTab.lastAddedColor = color;
                 
@@ -4042,11 +4086,10 @@
                             color = "var(--success)";
                         } else {
                             statusText = " (within range)";
-                            color = "var(--accent)"; // Stays orange to indicate it was an edit
+                            color = "var(--accent)"; 
                         }
                     }
         
-                    // Wrapping the whole line in a <span> protects the standard spaces
                     activeTab.lastAddedStr = `<span>Edited: <u>${oldVal}</u> <span style="margin: 0 5px;">&#10142;</span> <u>${newVal}</u>${statusText}</span>`;
                     activeTab.lastAddedColor = color;
                     
@@ -4058,26 +4101,20 @@
         
             function removeNumber(index) {
                 if (confirm("Are you sure you want to remove this number?")) {
-                    // 1. Remove the number from the array
                     getActiveData().splice(index, 1);
                     
-                    // 2. Check if the list is now empty
                     const arr = getActiveData();
                     if (arr.length === 0) {
                         const activeTab = appTabs.find(t => t.id === activeTabId);
-                        activeTab.lastAddedStr = '';   // Wipe the text
-                        activeTab.lastAddedColor = ''; // Wipe the color styling
+                        activeTab.lastAddedStr = '';   
+                        activeTab.lastAddedColor = ''; 
                     }
                     
-                    // 3. Save the data AFTER the wipe happens!
                     saveAllGroupData();
-                    
-                    // 4. Update the screen
                     renderList();
                 }
             }
         
-            // --- List Drag & Auto-Scroll Specific Vars ---
             let listDraggingIdx = null;
             let listStartY = 0;
             let listStartScrollTop = 0;
@@ -4174,7 +4211,7 @@
                 const clearBtn = document.getElementById('clearAllBtn');
                 const arr = getActiveData();
                 const activeTab = appTabs.find(t => t.id === activeTabId);
-                const activeSet = sumSets.find(s => s.id === activeSumSetId); // Add this
+                const activeSet = sumSets.find(s => s.id === activeSumSetId); 
                         
                 container.innerHTML = '';
                 container.style.display = arr.length ? "flex" : "none";
@@ -4188,12 +4225,10 @@
                     clearBtn.innerText = `Clear ${activeTab.name}`;
                 }
                 
-                // --- RANGE HIGHLIGHTING LOGIC ---
                 let minVal = parseFloat(activeTab.minRange);
                 let maxVal = parseFloat(activeTab.maxRange);
                 let hasRange = !isNaN(minVal) && !isNaN(maxVal);
                 
-                // Auto-correct if user swapped min/max
                 if (hasRange && minVal > maxVal) {
                     let temp = minVal;
                     minVal = maxVal;
@@ -4210,15 +4245,14 @@
                         else if (n > maxVal) rangeClass = "out-of-range-high";
                     }
                 
-                    // Add the unit next to the number input
-    const unitDisplay = activeSet && activeSet.unit ? `<span style="color: #64748b; font-size: 0.9rem; font-weight: 600; padding-right: 10px;">${activeSet.unit}</span>` : '';
+                    const unitDisplay = activeSet && activeSet.unit ? `<span style="color: #64748b; font-size: 0.9rem; font-weight: 600; padding-right: 10px;">${activeSet.unit}</span>` : '';
 
-    div.innerHTML = `
-        <div class="drag-handle" title="Hold to reorder">&#x2261;</div>
-        <input type="number" class="edit-input ${rangeClass}" value="${n}" onchange="updateNumber(${i}, this); this.blur();" inputmode="decimal">
-        ${unitDisplay}
-        <button class="remove-btn" onclick="removeNumber(${i})" title="Remove">&times;</button>
-    `;
+                    div.innerHTML = `
+                        <div class="drag-handle" title="Hold to reorder">&#x2261;</div>
+                        <input type="number" class="edit-input ${rangeClass}" value="${n}" onchange="updateNumber(${i}, this); this.blur();" inputmode="decimal">
+                        ${unitDisplay}
+                        <button class="remove-btn" onclick="removeNumber(${i})" title="Remove">&times;</button>
+                    `;
         
                     const handle = div.querySelector('.drag-handle');
                     const inputField = div.querySelector('.edit-input');
@@ -4252,7 +4286,6 @@
                             document.addEventListener('pointerup', onListPointerUp);
                             document.addEventListener('pointercancel', onListPointerUp);
                             
-                            // Add touch explicit events for mobile resilience
                             document.addEventListener('touchmove', onListPointerMove, { passive: false });
                             document.addEventListener('touchend', onListPointerUp);
                             document.addEventListener('touchcancel', onListPointerUp);
@@ -4303,7 +4336,6 @@
                         if (len > maxDec) maxDec = len;
                     }
                 });
-                // Default to 2 decimal places if all whole numbers, otherwise use the highest found
                 return maxDec === 0 ? 2 : maxDec; 
             }
         
@@ -4312,14 +4344,12 @@
                 const activeTab = appTabs.find(t => t.id === activeTabId);
                 const activeSet = sumSets.find(s => s.id === activeSumSetId);
                 
-                // Grab the unit for display
                 const unitStr = activeSet && activeSet.unit ? ` <span style="font-size: 0.8rem; color: #64748b;">${activeSet.unit}</span>` : '';
                 
                 const sum = arr.reduce((a, b) => a + b, 0);
                 const precision = getDynamicPrecision(arr);
             
                 document.getElementById('statCount').innerText = arr.length;
-                // Changed to innerHTML to render the unit span correctly
                 document.getElementById('statSum').innerHTML = (arr.length ? safeRound(sum, precision) : 0) + unitStr;
                 document.getElementById('statAvg').innerHTML = (arr.length ? safeRound(sum / arr.length, precision) : 0) + unitStr;
                 
@@ -4339,8 +4369,11 @@
                         if (n < minVal) under++;
                         else if (n > maxVal) over++;
                     });
-                    document.getElementById('statUnder').innerText = under;
-                    document.getElementById('statOver').innerText = over;
+                    
+                    document.getElementById('statUnderOver').innerHTML = `<span style="color:var(--error)">${under}</span> / <span style="color:var(--success)">${over}</span>`;
+                    
+                    let outOfRangePct = arr.length > 0 ? ((under + over) / arr.length) * 100 : 0;
+                    document.getElementById('statOutOfRangePct').innerText = safeRound(outOfRangePct, 2).toFixed(2) + "%";
                 } else {
                     rangeGrid.style.display = 'none';
                 }
@@ -4392,11 +4425,8 @@
                     updateSalinityDOM();
                 }
             }
-        
-            // ==========================================
-            // ---- PERCENTAGE CALCULATOR ENGINE ----
-            // ==========================================
-            function calcPercentage(source) {
+
+	function calcPercentage(source) {
                 const p = parentGroups.find(g => g.id === activeParentId);
                 const totalEl = document.getElementById('pctTotal');
                 const partEl = document.getElementById('pctPart');
@@ -4464,7 +4494,6 @@
                     totalCount += tally.count; 
                     
                     const div = document.createElement('div');
-                    // Removed the 1px solid border from the inline style below
                     div.style.cssText = "background: #f8fafc; border: none; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
                     
                     div.innerHTML = `
@@ -4491,7 +4520,6 @@
         
             function addTally() {
                 const p = parentGroups.find(g => g.id === activeParentId);
-                // Use your existing smart-naming function to check for the highest number!
                 const newName = getNextTabName(p.tallies, "Counter");
                 p.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0 });
                 saveAllGroupData();
@@ -4518,11 +4546,9 @@
                 const p = parentGroups.find(g => g.id === activeParentId);
                 const tally = p.tallies.find(t => t.id === id);
                 if (tally) {
-                    // This triggers a quick 20ms vibration for every click
                     if ('vibrate' in navigator) {
                         navigator.vibrate(20);
                     }
-                    
                     tally.count = safeRound(tally.count + amount, 4);
                     saveAllGroupData();
                     renderTallies();
@@ -4600,7 +4626,6 @@
                 let timeVal = timeInput.value;
                 let eventVal = eventInput ? eventInput.value.trim() : '';
                 
-                // Reject if description is empty
                 if (!eventVal) {
                     eventInput.classList.add('input-error');
                     setTimeout(() => eventInput.classList.remove('input-error'), 3000);
@@ -4611,7 +4636,6 @@
                 const newId = 'ts_' + Date.now() + Math.random();
                 p.timestamps.push({ id: newId, time: timeVal, event: eventVal });
                 
-                // Sort chronologically, putting empty times at the bottom
                 p.timestamps.sort((a, b) => {
                     let valA = a.time ? parseTimeToMinutes(a.time) : Infinity;
                     let valB = b.time ? parseTimeToMinutes(b.time) : Infinity;
@@ -4634,301 +4658,307 @@
                 }, 50);
             }
             
-                function updateTimestampTime(id, val) {
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    const ts = p.timestamps.find(t => t.id === id);
-                    if (ts) { 
-                        ts.time = val; 
-                        
-                        p.timestamps.sort((a, b) => {
-                            let valA = a.time ? parseTimeToMinutes(a.time) : Infinity;
-                            let valB = b.time ? parseTimeToMinutes(b.time) : Infinity;
-                            return valA - valB;
-                        });
-                        
-                        saveAllGroupData(); 
-                        renderTimestamps();
-                    }
+            function updateTimestampTime(id, val) {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                const ts = p.timestamps.find(t => t.id === id);
+                if (ts) { 
+                    ts.time = val; 
+                    
+                    p.timestamps.sort((a, b) => {
+                        let valA = a.time ? parseTimeToMinutes(a.time) : Infinity;
+                        let valB = b.time ? parseTimeToMinutes(b.time) : Infinity;
+                        return valA - valB;
+                    });
+                    
+                    saveAllGroupData(); 
+                    renderTimestamps();
                 }
-            
-                function updateTimestampEvent(id, val) {
+            }
+        
+            function updateTimestampEvent(id, val) {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                const ts = p.timestamps.find(t => t.id === id);
+                if (ts) { ts.event = val; saveAllGroupData(); }
+            }
+        
+            function removeTimestamp(id) {
+                if (confirm("Are you sure you want to remove this time log?")) {
                     const p = parentGroups.find(g => g.id === activeParentId);
-                    const ts = p.timestamps.find(t => t.id === id);
-                    if (ts) { ts.event = val; saveAllGroupData(); }
+                    p.timestamps = p.timestamps.filter(t => t.id !== id);
+                    saveAllGroupData();
+                    renderTimestamps();
                 }
+            }
             
-                function removeTimestamp(id) {
-                    if (confirm("Are you sure you want to remove this time log?")) {
-                        const p = parentGroups.find(g => g.id === activeParentId);
-                        p.timestamps = p.timestamps.filter(t => t.id !== id);
-                        saveAllGroupData();
-                        renderTimestamps();
-                    }
+            function clearTimestamps() {
+                if (confirm("Are you sure you want to clear all timestamp logs?")) {
+                    const p = parentGroups.find(g => g.id === activeParentId);
+                    p.timestamps = [];
+                    saveAllGroupData();
+                    renderTimestamps();
+                }
+            }
+            
+            // ==========================================
+            // ---- EXPORT TO CSV ENGINE ----------------
+            // ==========================================
+            function toggleExportSelection(cardId) {
+                const card = document.getElementById(cardId);
+                if (selectedExportCards.has(cardId)) {
+                    selectedExportCards.delete(cardId);
+                    card.classList.remove('export-selected');
+                } else {
+                    selectedExportCards.add(cardId);
+                    card.classList.add('export-selected');
+                }
+            }
+        
+            function enterExportMode(startCardId) {
+                isExportMode = true;
+                document.body.classList.add('export-mode');
+                document.getElementById('exportModeBar').style.display = 'flex';
+                
+                const startCard = document.getElementById(startCardId);
+                if (startCard && startCard.dataset.exportable === "true") {
+                    toggleExportSelection(startCardId);
+                }
+            }
+        
+            function cancelExportMode() {
+                isExportMode = false;
+                document.body.classList.remove('export-mode');
+                document.getElementById('exportModeBar').style.display = 'none';
+                selectedExportCards.clear();
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('export-selected'));
+            }
+        
+            function executeExport() {
+                if (selectedExportCards.size === 0) {
+                    alert("Please tap to select at least one tool to export.");
+                    return;
                 }
                 
-                function clearTimestamps() {
-                    if (confirm("Are you sure you want to clear all timestamp logs?")) {
-                        const p = parentGroups.find(g => g.id === activeParentId);
-                        p.timestamps = [];
-                        saveAllGroupData();
-                        renderTimestamps();
-                    }
-                }
+                const p = parentGroups.find(g => g.id === activeParentId);
                 
-                // ==========================================
-                // ---- EXPORT TO CSV ENGINE ----------------
-                // ==========================================
-                function toggleExportSelection(cardId) {
-                    const card = document.getElementById(cardId);
-                    if (selectedExportCards.has(cardId)) {
-                        selectedExportCards.delete(cardId);
-                        card.classList.remove('export-selected');
-                    } else {
-                        selectedExportCards.add(cardId);
-                        card.classList.add('export-selected');
-                    }
-                }
-            
-                function enterExportMode(startCardId) {
-                    isExportMode = true;
-                    document.body.classList.add('export-mode');
-                    document.getElementById('exportModeBar').style.display = 'flex';
-                    
-                    // Only select the initial card if it is allowed to be exported
-                    const startCard = document.getElementById(startCardId);
-                    if (startCard && startCard.dataset.exportable === "true") {
-                        toggleExportSelection(startCardId);
-                    }
-                }
-            
-                function cancelExportMode() {
-                    isExportMode = false;
-                    document.body.classList.remove('export-mode');
-                    document.getElementById('exportModeBar').style.display = 'none';
-                    selectedExportCards.clear();
-                    document.querySelectorAll('.card').forEach(c => c.classList.remove('export-selected'));
-                }
-            
-                function executeExport() {
-                    if (selectedExportCards.size === 0) {
-                        alert("Please tap to select at least one tool to export.");
-                        return;
-                    }
-                    
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    
-                    // Grab the date and replace the built-in comma with " at " to prevent CSV cell splitting
-                    const safeExportDate = new Date().toLocaleString().replace(/,/g, ' at');
-                    
-                    // Group Info
-                    let csv = `Group Name,"${p.name || ''}"\nProduct Code,"${p.productCode || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${safeExportDate}"\n\n`;
-                    
-                    if (selectedExportCards.has('card-pickup')) {
-                        csv += "--- PICKUP CALCULATOR ---\n";
-                        p.pickupSets.forEach(set => {
-                            
-                            // Calculate the Set Average specifically for the export
-                            let sumPct = 0;
-                            let validCount = 0;
-                            set.tabs.forEach(tab => {
-                                let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
-                                if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
-                                    let rawDec = (pre - post) / pre;
-                                    let roundedPct = safeRound(rawDec * 100, 2); 
-                                    sumPct += roundedPct;
-                                    validCount++;
-                                }
-                            });
-                            let setAvgStr = validCount === 0 ? "N/A" : safeRound(sumPct / validCount, 2).toFixed(2) + "%";
+                // Fallback to parent folder name if file name is empty
+                let fileExportName = p.name ? p.name : (appFolders.find(f => f.id === p.folderId)?.name || "Unnamed File");
 
-                            csv += `Set,"${set.name}"\n`;
-                            if (set.unit) csv += `Unit,"${set.unit}"\n`; // ADD THIS LINE HERE
-                            csv += `Set Average,"${setAvgStr}"\n`;
-                            
-                            let sNames = [], preVals = [], postVals = [], decVals = [], pctVals = [];                
-                            
-                            set.tabs.forEach(tab => {
-                                sNames.push(`"${tab.name}"`);
-                                preVals.push(`"${tab.pre || ''}"`);
-                                postVals.push(`"${tab.post || ''}"`);
-                                
-                                let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
-                                let dec = "", pct = "";
-                                if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
-                                    dec = safeRound((pre - post) / pre, 4).toFixed(4);
-                                    pct = safeRound(((pre - post) / pre) * 100, 2).toFixed(2) + "%";
-                                }
-                                decVals.push(`"${dec}"`);
-                                pctVals.push(`"${pct}"`);
-                            });
-                            
-                            csv += `Sample,${sNames.join(",")}\n`;
-                            csv += `Pre-Sample,${preVals.join(",")}\n`;
-                            csv += `Post-Sample,${postVals.join(",")}\n`;
-                            csv += `Decimal,${decVals.join(",")}\n`;
-                            csv += `Percentage,${pctVals.join(",")}\n\n`;
-                        });
-                    }
-            
-                    if (selectedExportCards.has('card-averaging')) {
-                        csv += "--- SUM & AVERAGING ---\n";
-                        p.sumSets.forEach(set => {
-                            csv += `Set,"${set.name}"\n`;
-                            if (set.unit) csv += `Unit,"${set.unit}"\n`; // <--- Add this line
-                            
-                            let sNames = [], rLimits = [], counts = [], sums = [], avgs = [];
-                            let underR = [], overR = [], withinR = [];
-                            let maxDataLength = 0;
-                            let allData = [];
-                            
-                            set.tabs.forEach(tab => {
-                                let min = parseFloat(tab.minRange); let max = parseFloat(tab.maxRange);
-                                let hasRange = !isNaN(min) && !isNaN(max);
-                                if (hasRange && min > max) { let temp = min; min = max; max = temp; }
-            
-                                let sum = tab.data.reduce((a,b)=>a+b, 0);
-                                let precision = getDynamicPrecision(tab.data);
-                                
-                                let displaySum = tab.data.length ? safeRound(sum, precision) : 0;
-                                let avg = tab.data.length ? safeRound(sum/tab.data.length, precision) : 0;
-                                let count = tab.data.length;
-            
-                                let under = 0, over = 0, within = 0;
-                                if (hasRange) {
-                                    tab.data.forEach(n => { 
-                                        if (n < min) under++; 
-                                        else if (n > max) over++; 
-                                        else within++;
-                                    });
-                                }
-            
-                                sNames.push(`"${tab.name}"`);
-                                rLimits.push(`"${hasRange ? `${min} - ${max}` : 'N/A'}"`);
-                                counts.push(`"${count}"`);
-                                sums.push(`"${displaySum}"`);
-                                avgs.push(`"${avg}"`);
-                                underR.push(`"${hasRange ? under : 'N/A'}"`);
-                                overR.push(`"${hasRange ? over : 'N/A'}"`);
-                                withinR.push(`"${hasRange ? within : 'N/A'}"`);
-                                
-                                if (tab.data.length > maxDataLength) maxDataLength = tab.data.length;
-                                allData.push(tab.data);
-                            });
-                            
-                            csv += `Sample,${sNames.join(",")}\n`;
-                            csv += `Range Limit,${rLimits.join(",")}\n`;
-                            csv += `Count,${counts.join(",")}\n`;
-                            csv += `Sum,${sums.join(",")}\n`;
-                            csv += `Average,${avgs.join(",")}\n`;
-                            csv += `Below Range,${underR.join(",")}\n`;
-                            csv += `Above Range,${overR.join(",")}\n`;
-                            csv += `Within Range,${withinR.join(",")}\n`;
-                            csv += `Data Points\n`;
-                            
-                            // Plot data points vertically
-                            for (let i = 0; i < maxDataLength; i++) {
-                                let row = [];
-                                for (let t = 0; t < allData.length; t++) {
-                                    if (i < allData[t].length) row.push(`"${allData[t][i]}"`);
-                                    else row.push(""); 
-                                }
-                                csv += `,${row.join(",")}\n`; // Commas shift the array one column right
-                            }
-                            csv += `\n`; 
-                        });
-                    }
-            
-                    if (selectedExportCards.has('card-estimator')) {
-                        csv += "--- PRODUCTION PACE ---\n";
-                        p.estimatorTabs.forEach(tab => {
-                            let sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-                            
-                            csv += `Line,"${tab.name}"\n`;
-                            csv += `Unit,"${tab.unit || 'Units'}"\n`;
-                            csv += `Shift Start,"${formatTimeStringTo12Hour(tab.startTime) || ''}"\n`;
-                            
-                            if (sortedData.length === 0) {
-                                csv += `Amount,N/A\nClock Time,N/A\nStatus,No Logs\n\n`;
-                            } else {
-                                let amounts = sortedData.map(e => `"${e.amount}"`).join(",");
-                                let times = sortedData.map(e => `"${formatTimeStringTo12Hour(e.time)}"`).join(",");
-                                let statuses = sortedData.map(e => `"${e.checked ? 'Logged' : 'Ignored'}"`).join(",");
-                                
-                                csv += `Amount,${amounts}\nClock Time,${times}\nStatus,${statuses}\n\n`;
-                            }
-                        });
-                    }
-            
-                    if (selectedExportCards.has('card-salinity')) {
-                        csv += "--- SALINITY CALCULATOR ---\n";
-                        let sNames = [], brixVals = [], pctVals = [];
+                const safeExportDate = new Date().toLocaleString().replace(/,/g, ' at');
+                
+                let csv = `File Name,"${fileExportName}"\nProduct Code,"${p.productCode || ''}"\nDate,"${p.date || ''}"\nStart Time,"${formatTimeStringTo12Hour(p.startTime) || ''}"\nEnd Time,"${formatTimeStringTo12Hour(p.endTime) || ''}"\nExported On,"${safeExportDate}"\n\n`;
+                
+                if (selectedExportCards.has('card-pickup')) {
+                    csv += "--- PICKUP CALCULATOR ---\n";
+                    p.pickupSets.forEach(set => {
                         
-                        (p.salinityTabs || []).forEach(tab => {
-                            sNames.push(`"${tab.name}"`);
-                            brixVals.push(`"${tab.brix || ''}"`);
-                            
-                            let brix = parseFloat(tab.brix);
-                            let pct = "";
-                            if (!isNaN(brix)) {
-                                pct = safeRound((brix / 26.4) * 100, 2).toFixed(2) + "%";
+                        let sumPct = 0;
+                        let validCount = 0;
+                        set.tabs.forEach(tab => {
+                            let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
+                            if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
+                                let rawDec = (pre - post) / pre;
+                                let roundedPct = safeRound(rawDec * 100, 2); 
+                                sumPct += roundedPct;
+                                validCount++;
                             }
+                        });
+                        let setAvgStr = validCount === 0 ? "N/A" : safeRound(sumPct / validCount, 2).toFixed(2) + "%";
+
+                        csv += `Set,"${set.name}"\n`;
+                        if (set.unit) csv += `Unit,"${set.unit}"\n`; 
+                        csv += `Set Average,"${setAvgStr}"\n`;
+                        
+                        let sNames = [], preVals = [], postVals = [], decVals = [], pctVals = [];                
+                        
+                        set.tabs.forEach(tab => {
+                            sNames.push(`"${tab.name}"`);
+                            preVals.push(`"${tab.pre || ''}"`);
+                            postVals.push(`"${tab.post || ''}"`);
+                            
+                            let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
+                            let dec = "", pct = "";
+                            if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
+                                dec = safeRound((pre - post) / pre, 4).toFixed(4);
+                                pct = safeRound(((pre - post) / pre) * 100, 2).toFixed(2) + "%";
+                            }
+                            decVals.push(`"${dec}"`);
                             pctVals.push(`"${pct}"`);
                         });
                         
                         csv += `Sample,${sNames.join(",")}\n`;
-                        csv += `Brix,${brixVals.join(",")}\n`;
-                        csv += `Salinity Percentage,${pctVals.join(",")}\n\n`;
-                    }
-            
-                    if (selectedExportCards.has('card-tally')) {
-                        csv += "--- TALLY COUNTERS ---\n";
-                        (p.tallies || []).forEach(t => {
-                            csv += `"${t.name}","${t.count}"\n`;
+                        csv += `Pre-Sample,${preVals.join(",")}\n`;
+                        csv += `Post-Sample,${postVals.join(",")}\n`;
+                        csv += `Decimal,${decVals.join(",")}\n`;
+                        csv += `Percentage,${pctVals.join(",")}\n\n`;
+                    });
+                }
+        
+                if (selectedExportCards.has('card-averaging')) {
+                    csv += "--- SUM & AVERAGING ---\n";
+                    p.sumSets.forEach(set => {
+                        csv += `Set,"${set.name}"\n`;
+                        if (set.unit) csv += `Unit,"${set.unit}"\n`; 
+                        
+                        let sNames = [], rLimits = [], counts = [], sums = [], avgs = [];
+                        let underR = [], overR = [], withinR = [], outOfRangePctVals = [];
+                        let maxDataLength = 0;
+                        let allData = [];
+                        
+                        set.tabs.forEach(tab => {
+                            let min = parseFloat(tab.minRange); let max = parseFloat(tab.maxRange);
+                            let hasRange = !isNaN(min) && !isNaN(max);
+                            if (hasRange && min > max) { let temp = min; min = max; max = temp; }
+        
+                            let sum = tab.data.reduce((a,b)=>a+b, 0);
+                            let precision = getDynamicPrecision(tab.data);
+                            
+                            let displaySum = tab.data.length ? safeRound(sum, precision) : 0;
+                            let avg = tab.data.length ? safeRound(sum/tab.data.length, precision) : 0;
+                            let count = tab.data.length;
+        
+                            let under = 0, over = 0, within = 0;
+                            if (hasRange) {
+                                tab.data.forEach(n => { 
+                                    if (n < min) under++; 
+                                    else if (n > max) over++; 
+                                    else within++;
+                                });
+                            }
+                            
+                            let outOfRangePctStr = 'N/A';
+                            if (hasRange && count > 0) {
+                                let pct = ((under + over) / count) * 100;
+                                outOfRangePctStr = safeRound(pct, 2).toFixed(2) + "%";
+                            } else if (hasRange && count === 0) {
+                                outOfRangePctStr = "0.00%";
+                            }
+        
+                            sNames.push(`"${tab.name}"`);
+                            rLimits.push(`"${hasRange ? `${min} - ${max}` : 'N/A'}"`);
+                            counts.push(`"${count}"`);
+                            sums.push(`"${displaySum}"`);
+                            avgs.push(`"${avg}"`);
+                            underR.push(`"${hasRange ? under : 'N/A'}"`);
+                            overR.push(`"${hasRange ? over : 'N/A'}"`);
+                            withinR.push(`"${hasRange ? within : 'N/A'}"`);
+                            outOfRangePctVals.push(`"${outOfRangePctStr}"`);
+                            
+                            if (tab.data.length > maxDataLength) maxDataLength = tab.data.length;
+                            allData.push(tab.data);
+                        });
+                        
+                        csv += `Sample,${sNames.join(",")}\n`;
+                        csv += `Range Limit,${rLimits.join(",")}\n`;
+                        csv += `Count,${counts.join(",")}\n`;
+                        csv += `Sum,${sums.join(",")}\n`;
+                        csv += `Average,${avgs.join(",")}\n`;
+                        csv += `Below Range,${underR.join(",")}\n`;
+                        csv += `Above Range,${overR.join(",")}\n`;
+                        csv += `Within Range,${withinR.join(",")}\n`;
+                        csv += `Out of Range %,${outOfRangePctVals.join(",")}\n`;
+                        csv += `Data Points\n`;
+                        
+                        for (let i = 0; i < maxDataLength; i++) {
+                            let row = [];
+                            for (let t = 0; t < allData.length; t++) {
+                                if (i < allData[t].length) row.push(`"${allData[t][i]}"`);
+                                else row.push(""); 
+                            }
+                            csv += `,${row.join(",")}\n`; 
+                        }
+                        csv += `\n`; 
+                    });
+                }
+        
+                if (selectedExportCards.has('card-estimator')) {
+                    csv += "--- PRODUCTION PACE ---\n";
+                    p.estimatorTabs.forEach(tab => {
+                        let sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                        
+                        csv += `Line,"${tab.name}"\n`;
+                        csv += `Unit,"${tab.unit || 'Units'}"\n`;
+                        csv += `Shift Start,"${formatTimeStringTo12Hour(tab.startTime) || ''}"\n`;
+                        
+                        if (sortedData.length === 0) {
+                            csv += `Amount,N/A\nClock Time,N/A\nStatus,No Logs\n\n`;
+                        } else {
+                            let amounts = sortedData.map(e => `"${e.amount}"`).join(",");
+                            let times = sortedData.map(e => `"${formatTimeStringTo12Hour(e.time)}"`).join(",");
+                            let statuses = sortedData.map(e => `"${e.checked ? 'Logged' : 'Ignored'}"`).join(",");
+                            
+                            csv += `Amount,${amounts}\nClock Time,${times}\nStatus,${statuses}\n\n`;
+                        }
+                    });
+                }
+        
+                if (selectedExportCards.has('card-salinity')) {
+                    csv += "--- SALINITY CALCULATOR ---\n";
+                    let sNames = [], brixVals = [], pctVals = [];
+                    
+                    (p.salinityTabs || []).forEach(tab => {
+                        sNames.push(`"${tab.name}"`);
+                        brixVals.push(`"${tab.brix || ''}"`);
+                        
+                        let brix = parseFloat(tab.brix);
+                        let pct = "";
+                        if (!isNaN(brix)) {
+                            pct = safeRound((brix / 26.4) * 100, 2).toFixed(2) + "%";
+                        }
+                        pctVals.push(`"${pct}"`);
+                    });
+                    
+                    csv += `Sample,${sNames.join(",")}\n`;
+                    csv += `Brix,${brixVals.join(",")}\n`;
+                    csv += `Salinity Percentage,${pctVals.join(",")}\n\n`;
+                }
+        
+                if (selectedExportCards.has('card-tally')) {
+                    csv += "--- TALLY COUNTERS ---\n";
+                    (p.tallies || []).forEach(t => {
+                        csv += `"${t.name}","${t.count}"\n`;
+                    });
+                    csv += "\n";
+                }
+        
+                if (selectedExportCards.has('card-timestamps')) {
+                    csv += "--- TIMESTAMPS ---\n";
+                    if (!p.timestamps || p.timestamps.length === 0) {
+                        csv += "No logs recorded.\n\n";
+                    } else {
+                        csv += "Time,Event\n";
+                        let sortedTs = [...p.timestamps].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                        sortedTs.forEach(ts => {
+                            let formattedTime = formatTimeStringTo12Hour(ts.time);
+                            let safeEvent = ts.event.replace(/"/g, '""');
+                            csv += `"${formattedTime}","${safeEvent}"\n`;
                         });
                         csv += "\n";
                     }
-            
-                    if (selectedExportCards.has('card-timestamps')) {
-                        csv += "--- TIMESTAMPS ---\n";
-                        if (!p.timestamps || p.timestamps.length === 0) {
-                            csv += "No logs recorded.\n\n";
-                        } else {
-                            csv += "Time,Event\n";
-                            // Sort chronologically for the export
-                            let sortedTs = [...p.timestamps].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-                            sortedTs.forEach(ts => {
-                                let formattedTime = formatTimeStringTo12Hour(ts.time);
-                                let safeEvent = ts.event.replace(/"/g, '""');
-                                csv += `"${formattedTime}","${safeEvent}"\n`;
-                            });
-                            csv += "\n";
-                        }
-                    }
-                    
-                    if (selectedExportCards.has('card-notes')) {
-                        csv += "--- QUICK NOTES ---\n";
-                        let notes = p.notes?.text || "";
-                        csv += `"${notes.replace(/"/g, '""')}"\n\n`;
-                    }
-            
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-                    const link = document.createElement("a");
-                    const url = URL.createObjectURL(blob);
-                    
-                    link.setAttribute("href", url);
-                    let baseName = p.productCode ? `${p.productCode} - ${p.name}` : p.name;
-                    let safeName = baseName.replace(/[^a-z0-9 \-]/gi, '_');
-                    link.setAttribute("download", `${safeName}.csv`);
-                    
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-            
-                    cancelExportMode();
                 }
-            </script>
-        </div>
+                
+                if (selectedExportCards.has('card-notes')) {
+                    csv += "--- QUICK NOTES ---\n";
+                    let notes = p.notes?.text || "";
+                    csv += `"${notes.replace(/"/g, '""')}"\n\n`;
+                }
+        
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute("href", url);
+                let baseName = p.productCode ? `${p.productCode} - ${fileExportName}` : fileExportName;
+                let safeName = baseName.replace(/[^a-z0-9 \-]/gi, '_');
+                link.setAttribute("download", `${safeName}.csv`);
+                
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+        
+                cancelExportMode();
+            }
+        </script>
     </div>
 </body>
 </html>
