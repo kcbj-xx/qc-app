@@ -703,11 +703,11 @@
             <div class="container" id="main-container">
     
                 <div id="batch-header" style="width: 100%; margin-bottom: 0px; padding-top: 5px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%;">
-                        <button onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 15px; cursor:pointer;">&#10094;</button>
-                        <div id="batchTitleDisplay" style="flex: 1; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; text-align: center;">Active File</div>
-                        <button onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 15px; cursor:pointer;">&#10095;</button>
-                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%; gap: 10px;">
+					    <button onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 5px; cursor:pointer; flex-shrink:0;">&#10094;</button>
+					    <div id="batchTitleDisplay" style="flex: 1; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active File</div>
+					    <button onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0 5px; cursor:pointer; flex-shrink:0;">&#10095;</button>
+					</div>
                     
                     <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px; width: 100%; padding: 0 4px; box-sizing: border-box; align-items: center;">
     
@@ -752,14 +752,14 @@
                     </div>
                 </div>
 
-                <div class="tabs-container" id="toolFilterTabs" style="margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-top: 5px; justify-content: space-around;">
-                    <div class="tabs-list" style="width: 100%; justify-content: space-between;">
-                        <button class="tab-btn active" onclick="setToolFilter('all', this)" style="flex:1; text-align:center;">All</button>
-                        <button class="tab-btn" onclick="setToolFilter('computing', this)" style="flex:1; text-align:center;">Computing</button>
-                        <button class="tab-btn" onclick="setToolFilter('tools', this)" style="flex:1; text-align:center;">Tools</button>
-                        <button class="tab-btn" onclick="setToolFilter('time', this)" style="flex:1; text-align:center;">Time</button>
-                    </div>
-                </div>
+                <div class="tabs-container" id="toolFilterTabs" style="margin-bottom: 20px; padding-top: 5px; border: none;">
+				    <div class="tabs-list" style="display: flex; width: 100%; justify-content: space-between; gap: 8px;">
+				        <button class="set-tab-btn active" onclick="setToolFilter('all', this)" style="flex:1;">All</button>
+				        <button class="set-tab-btn" onclick="setToolFilter('computing', this)" style="flex:1;">Computing</button>
+				        <button class="set-tab-btn" onclick="setToolFilter('tools', this)" style="flex:1;">Tools</button>
+				        <button class="set-tab-btn" onclick="setToolFilter('time', this)" style="flex:1;">Time</button>
+				    </div>
+				</div>
     
             <div id="pinned-section" class="section-container" style="display: none;"></div>
             <div id="pinned-divider" class="divider" style="display: none;">Tools</div>
