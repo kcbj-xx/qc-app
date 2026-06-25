@@ -708,6 +708,25 @@
 		        left: 280px !important;
 		    }
 		}
+		@keyframes pulse-folder {
+		    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); transform: scale(1.02); }
+		    70% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); transform: scale(1.02); }
+		    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); transform: scale(1.02); }
+		}
+		
+		.folder-drop-target {
+		    background-color: #dbeafe !important;
+		    border: 2px dashed var(--primary) !important;
+		    animation: pulse-folder 1.5s infinite;
+		    z-index: 10;
+		}
+		
+		@media (prefers-color-scheme: dark) {
+		    .folder-drop-target {
+		        background-color: #1e3a8a !important;
+		        border-color: #60a5fa !important;
+		    }
+		}
     </style>
 </head>
 <body>
@@ -1225,7 +1244,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v79</div>
+            <div class="footer-version">v80</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -2404,25 +2423,31 @@
             function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn, axis = 'x', setArrayFn = null, targetClass = 'tab-btn') {
 			    const list = document.getElementById(listId);
 			    const container = document.getElementById(containerId);
-                
-                let holdTimer = null;
-                let isDragging = false;
-                let dragIdx = -1;
-                let elements = [];
-                let elementsData = [];
-                let draggedData = null;
-                let currentTargetIdx = -1;
-                let startScrollPos = 0;
-                
-                let scrollDirection = 0;
-                let autoScrollInterval = null;
-                let lastClientPos = 0;
-        
-                const startDrag = (e) => {
-			        // Target specific classes instead of hardcoding .tab-btn
+			    
+			    let holdTimer = null;
+			    let isDragging = false;
+			    let dragIdx = -1;
+			    let elements = [];
+			    let elementsData = [];
+			    let draggedData = null;
+			    let currentTargetIdx = -1;
+			    let startScrollPos = 0;
+			    
+			    let scrollDirection = 0;
+			    let autoScrollInterval = null;
+			    let lastClientPos = 0;
+			    let lastClientX = 0;
+			    let lastClientY = 0;
+			    
+			    let currentHoverFolder = null; // Track folder being hovered
+			
+			    const startDrag = (e) => {
 			        const btn = e.target.closest('.' + targetClass);
 			        if (!btn || btn.classList.contains('add-tab-btn') || btn.classList.contains('no-drag')) return;
 			        if (e.type === 'mousedown' && e.button !== 0) return;
+			        
+			        // Prevent folders from being dragged at all in edit mode
+			        if (typeof isSidebarEditMode !== 'undefined' && isSidebarEditMode && targetClass !== 'draggable-file-btn') return;
 			
 			        startX = e.touches ? e.touches[0].clientX : e.clientX;
 			        startY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -2437,137 +2462,203 @@
 			            isTabDraggingGlobal = true; 
 			            if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
 			
-			            // Fetch elements using the dynamic target class
 			            elements = Array.from(list.querySelectorAll('.' + targetClass + ':not(.add-tab-btn):not(.no-drag)'));
-                        const gap = parseInt(window.getComputedStyle(list).gap) || (axis === 'x' ? 4 : 8);
-                        
-                        elementsData = elements.map((el, index) => ({
-                            el: el,
-                            index: index,
-                            outerSize: axis === 'x' ? el.offsetWidth + gap : el.offsetHeight + gap,
-                            center: axis === 'x' ? el.offsetLeft + (el.offsetWidth / 2) : el.offsetTop + (el.offsetHeight / 2)
-                        }));
-                        draggedData = elementsData[dragIdx];
-        
-                        btn.style.transition = 'none';
-                        btn.style.zIndex = '100';
-                        btn.style.transformOrigin = 'center center';
-                        btn.style.transform = 'scale(1.03)';
-                        btn.classList.add('is-dragging-tab');
-        
-                        elements.forEach(el => {
-                            if (el !== btn) el.style.transition = 'transform 0.2s ease';
-                            el.dataset.offset = 0;
-                        });
-                    }, 400);
-                };
-        
-                const executeVisualMove = (clientPos) => {
-                    const delta = clientPos - (axis === 'x' ? startX : startY);
-                    const scrollShift = (axis === 'x' ? container.scrollLeft : container.scrollTop) - startScrollPos;
-                    const totalMove = delta + scrollShift;
-        
-                    elements[dragIdx].style.transform = axis === 'x' ? `translateX(${totalMove}px) scale(1.03)` : `translateY(${totalMove}px) scale(1.03)`;
-        
-                    const currentCenter = draggedData.center + totalMove;
-                    let targetIdx = dragIdx;
-        
-                    for (let i = 0; i < elementsData.length; i++) {
-                        if (i === dragIdx) continue;
-                        const other = elementsData[i];
-                        const moveRightThreshold = other.center - (other.outerSize * 0.15);
-                        const moveLeftThreshold = other.center + (other.outerSize * 0.15);
-        
-                        if (dragIdx < i && currentCenter > moveRightThreshold) targetIdx = Math.max(targetIdx, i);
-                        if (dragIdx > i && currentCenter < moveLeftThreshold) targetIdx = Math.min(targetIdx, i);
-                    }
-        
-                    currentTargetIdx = targetIdx;
-        
-                    elementsData.forEach((data, i) => {
-                        if (i === dragIdx) return;
-                        let offset = 0;
-                        if (i > dragIdx && i <= targetIdx) offset = -draggedData.outerSize;
-                        else if (i < dragIdx && i >= targetIdx) offset = draggedData.outerSize;
-                        
-                        if (data.el.dataset.offset != offset) {
-                            data.el.style.transform = axis === 'x' ? `translateX(${offset}px)` : `translateY(${offset}px)`;
-                            data.el.dataset.offset = offset;
-                        }
-                    });
-                }
-        
-                const moveDrag = (e) => {
-                    lastClientPos = axis === 'x' ? (e.touches ? e.touches[0].clientX : e.clientX) : (e.touches ? e.touches[0].clientY : e.clientY);
-                    
-                    if (!isDragging && holdTimer) {
-                        const moveX = e.touches ? e.touches[0].clientX : e.clientX;
-                        const moveY = e.touches ? e.touches[0].clientY : e.clientY;
-                        if (Math.abs(moveX - startX) > 10 || Math.abs(moveY - startY) > 10) {
-                            clearTimeout(holdTimer); holdTimer = null;
-                        }
-                        return;
-                    }
-        
-                    if (isDragging) {
-                        e.preventDefault(); 
-                        executeVisualMove(lastClientPos);
-        
-                        const rect = container.getBoundingClientRect();
-                        if (axis === 'x') {
-                            if (lastClientPos < rect.left + 60) scrollDirection = -4;
-                            else if (lastClientPos > rect.right - 60) scrollDirection = 4;
-                            else scrollDirection = 0;
-                        } else {
-                            if (lastClientPos < rect.top + 60) scrollDirection = -4;
-                            else if (lastClientPos > rect.bottom - 60) scrollDirection = 4;
-                            else scrollDirection = 0;
-                        }
-        
-                        if (scrollDirection !== 0 && !autoScrollInterval) {
-                            autoScrollInterval = setInterval(() => {
-                                if (axis === 'x') container.scrollLeft += scrollDirection;
-                                else container.scrollTop += scrollDirection;
-                                executeVisualMove(lastClientPos);
-                            }, 16); 
-                        } else if (scrollDirection === 0 && autoScrollInterval) {
-                            clearInterval(autoScrollInterval); autoScrollInterval = null;
-                        }
-                    }
-                };
-        
-                const endDrag = (e) => {
-                    clearTimeout(holdTimer); holdTimer = null;
-                    if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
-                    scrollDirection = 0;
-        
-                    if (isDragging) {
-                        isDragging = false;
-                        preventTabClick = true;
-                        setTimeout(() => { preventTabClick = false; isTabDraggingGlobal = false; }, 150);
-        
-                        if (dragIdx !== currentTargetIdx && currentTargetIdx !== -1) {
-                            const arr = getArrayFn();
-                            const item = arr.splice(dragIdx, 1)[0];
-                            arr.splice(currentTargetIdx, 0, item);
-                            
-                            if (setArrayFn) {
-                                setArrayFn(arr);
-                            }
-                            saveFn();
-                        }
-                        renderFn();
-                    }
-                };
-        
-                list.addEventListener('touchstart', startDrag, { passive: true });
-                list.addEventListener('mousedown', startDrag);
-                document.addEventListener('touchmove', moveDrag, { passive: false });
-                document.addEventListener('mousemove', moveDrag);
-                document.addEventListener('touchend', endDrag);
-                document.addEventListener('mouseup', endDrag);
-                document.addEventListener('touchcancel', endDrag);
-            }
+			            const gap = parseInt(window.getComputedStyle(list).gap) || (axis === 'x' ? 4 : 8);
+			            
+			            elementsData = elements.map((el, index) => ({
+			                el: el,
+			                index: index,
+			                outerSize: axis === 'x' ? el.offsetWidth + gap : el.offsetHeight + gap,
+			                center: axis === 'x' ? el.offsetLeft + (el.offsetWidth / 2) : el.offsetTop + (el.offsetHeight / 2)
+			            }));
+			            draggedData = elementsData[dragIdx];
+			
+			            btn.style.transition = 'none';
+			            btn.style.zIndex = '1000';
+			            btn.style.transformOrigin = 'center center';
+			            btn.style.transform = 'scale(1.03)';
+			            btn.classList.add('is-dragging-tab');
+			
+			            if (!(typeof isSidebarEditMode !== 'undefined' && isSidebarEditMode && targetClass === 'draggable-file-btn')) {
+			                elements.forEach(el => {
+			                    if (el !== btn) el.style.transition = 'transform 0.2s ease';
+			                    el.dataset.offset = 0;
+			                });
+			            }
+			        }, 400);
+			    };
+			
+			    const executeVisualMove = (clientPos, currentClientX, currentClientY) => {
+			        
+			        // --- EDIT MODE FILE-TO-FOLDER DRAG LOGIC ---
+			        if (typeof isSidebarEditMode !== 'undefined' && isSidebarEditMode && targetClass === 'draggable-file-btn') {
+			            const deltaX = currentClientX - startX;
+			            const scrollShiftY = container.scrollTop - startScrollPos;
+			            const deltaY = currentClientY - startY + scrollShiftY;
+			
+			            // Allow 2D free dragging
+			            elements[dragIdx].style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.03)`;
+			
+			            // Hit detection on folders
+			            let foundFolder = null;
+			            const folders = document.querySelectorAll('.draggable-folder-btn');
+			            folders.forEach(f => {
+			                const rect = f.getBoundingClientRect();
+			                if (currentClientX >= rect.left && currentClientX <= rect.right && currentClientY >= rect.top && currentClientY <= rect.bottom) {
+			                    foundFolder = f;
+			                }
+			            });
+			
+			            // Toggle highlight animation
+			            if (currentHoverFolder !== foundFolder) {
+			                if (currentHoverFolder) currentHoverFolder.classList.remove('folder-drop-target');
+			                if (foundFolder) foundFolder.classList.add('folder-drop-target');
+			                currentHoverFolder = foundFolder;
+			            }
+			            return;
+			        }
+			
+			        // --- NORMAL REORDERING LOGIC ---
+			        const delta = clientPos - (axis === 'x' ? startX : startY);
+			        const scrollShift = (axis === 'x' ? container.scrollLeft : container.scrollTop) - startScrollPos;
+			        const totalMove = delta + scrollShift;
+			
+			        elements[dragIdx].style.transform = axis === 'x' ? `translateX(${totalMove}px) scale(1.03)` : `translateY(${totalMove}px) scale(1.03)`;
+			
+			        const currentCenter = draggedData.center + totalMove;
+			        let targetIdx = dragIdx;
+			
+			        for (let i = 0; i < elementsData.length; i++) {
+			            if (i === dragIdx) continue;
+			            const other = elementsData[i];
+			            const moveRightThreshold = other.center - (other.outerSize * 0.15);
+			            const moveLeftThreshold = other.center + (other.outerSize * 0.15);
+			
+			            if (dragIdx < i && currentCenter > moveRightThreshold) targetIdx = Math.max(targetIdx, i);
+			            if (dragIdx > i && currentCenter < moveLeftThreshold) targetIdx = Math.min(targetIdx, i);
+			        }
+			
+			        currentTargetIdx = targetIdx;
+			
+			        elementsData.forEach((data, i) => {
+			            if (i === dragIdx) return;
+			            let offset = 0;
+			            if (i > dragIdx && i <= targetIdx) offset = -draggedData.outerSize;
+			            else if (i < dragIdx && i >= targetIdx) offset = draggedData.outerSize;
+			            
+			            if (data.el.dataset.offset != offset) {
+			                data.el.style.transform = axis === 'x' ? `translateX(${offset}px)` : `translateY(${offset}px)`;
+			                data.el.dataset.offset = offset;
+			            }
+			        });
+			    }
+			
+			    const moveDrag = (e) => {
+			        lastClientX = e.touches ? e.touches[0].clientX : e.clientX;
+			        lastClientY = e.touches ? e.touches[0].clientY : e.clientY;
+			        lastClientPos = axis === 'x' ? lastClientX : lastClientY;
+			        
+			        if (!isDragging && holdTimer) {
+			            if (Math.abs(lastClientX - startX) > 10 || Math.abs(lastClientY - startY) > 10) {
+			                clearTimeout(holdTimer); holdTimer = null;
+			            }
+			            return;
+			        }
+			
+			        if (isDragging) {
+			            e.preventDefault(); 
+			            executeVisualMove(lastClientPos, lastClientX, lastClientY);
+			
+			            const rect = container.getBoundingClientRect();
+			            if (axis === 'x') {
+			                if (lastClientX < rect.left + 60) scrollDirection = -4;
+			                else if (lastClientX > rect.right - 60) scrollDirection = 4;
+			                else scrollDirection = 0;
+			            } else {
+			                if (lastClientY < rect.top + 60) scrollDirection = -4;
+			                else if (lastClientY > rect.bottom - 60) scrollDirection = 4;
+			                else scrollDirection = 0;
+			            }
+			
+			            if (scrollDirection !== 0 && !autoScrollInterval) {
+			                autoScrollInterval = setInterval(() => {
+			                    if (axis === 'x') container.scrollLeft += scrollDirection;
+			                    else container.scrollTop += scrollDirection;
+			                    executeVisualMove(lastClientPos, lastClientX, lastClientY);
+			                }, 16); 
+			            } else if (scrollDirection === 0 && autoScrollInterval) {
+			                clearInterval(autoScrollInterval); autoScrollInterval = null;
+			            }
+			        }
+			    };
+			
+			    const endDrag = (e) => {
+			        clearTimeout(holdTimer); holdTimer = null;
+			        if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
+			        scrollDirection = 0;
+			
+			        if (isDragging) {
+			            isDragging = false;
+			            preventTabClick = true;
+			            setTimeout(() => { preventTabClick = false; isTabDraggingGlobal = false; }, 150);
+			
+			            if (typeof isSidebarEditMode !== 'undefined' && isSidebarEditMode && targetClass === 'draggable-file-btn') {
+			                // Drop into folder logic
+			                if (currentHoverFolder) {
+			                    const targetFolderId = currentHoverFolder.dataset.id;
+			                    const targetFolderName = currentHoverFolder.innerText.replace('📁 ', '').trim();
+			                    currentHoverFolder.classList.remove('folder-drop-target');
+			                    currentHoverFolder = null;
+			
+			                    const draggedFileId = elements[dragIdx].dataset.id;
+			                    let filesToMove = [];
+			                    
+			                    if (selectedSidebarItems.has(draggedFileId)) {
+			                        selectedSidebarItems.forEach(id => {
+			                            if (id.startsWith('pg_')) filesToMove.push(id);
+			                        });
+			                    } else {
+			                        filesToMove.push(draggedFileId);
+			                    }
+			
+			                    if (filesToMove.length > 0) {
+			                        if (confirm(`Move ${filesToMove.length} file(s) to folder "${targetFolderName}"?`)) {
+			                            filesToMove.forEach(id => {
+			                                const file = parentGroups.find(g => g.id === id);
+			                                if (file) file.folderId = targetFolderId;
+			                            });
+			                            saveFn();
+			                            selectedSidebarItems.clear();
+			                            if (typeof updateSidebarEditBar === 'function') updateSidebarEditBar();
+			                        }
+			                    }
+			                }
+			                renderFn();
+			            } else {
+			                // Standard reorder logic
+			                if (dragIdx !== currentTargetIdx && currentTargetIdx !== -1) {
+			                    const arr = getArrayFn();
+			                    const item = arr.splice(dragIdx, 1)[0];
+			                    arr.splice(currentTargetIdx, 0, item);
+			                    
+			                    if (setArrayFn) {
+			                        setArrayFn(arr);
+			                    }
+			                    saveFn();
+			                }
+			                renderFn();
+			            }
+			        }
+			    };
+			
+			    list.addEventListener('touchstart', startDrag, { passive: true });
+			    list.addEventListener('mousedown', startDrag);
+			    document.addEventListener('touchmove', moveDrag, { passive: false });
+			    document.addEventListener('mousemove', moveDrag);
+			    document.addEventListener('touchend', endDrag);
+			    document.addEventListener('mouseup', endDrag);
+			    document.addEventListener('touchcancel', endDrag);
+			}
         
             function setupAddButtonHold(listId, addAction, resetAction, promptMessage) {
                 const list = document.getElementById(listId);
