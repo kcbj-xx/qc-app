@@ -4771,44 +4771,59 @@
         
         
             // ==========================================
-            // ---- TALLY COUNTER ENGINE ----
-            // ==========================================
-            function renderTallies() {
-                const p = parentGroups.find(g => g.id === activeParentId);
-                if (!p.tallies) p.tallies = [];
-                
-                const container = document.getElementById('tallyList');
-                container.innerHTML = '';
-                
-                let totalCount = 0;
-                
-                p.tallies.forEach((tally, index) => {
-                    totalCount += tally.count; 
-                    
-                    const div = document.createElement('div');
-                    div.style.cssText = "background: #f8fafc; border: none; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
-                    
-                    div.innerHTML = `
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
-                            <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove">&times;</button>
-                        </div>
-                        <div style="display: flex; gap: 10px; align-items: stretch;">
-                            <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-                            <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
-                            <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-                
-                const totalDisplay = document.getElementById('tallyTotalDisplay');
-                if (totalDisplay) {
-                    totalDisplay.innerText = safeRound(totalCount, 4); 
-                }
-                
-                document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
-            }
+			// ---- TALLY COUNTER ENGINE ----
+			// ==========================================
+			function renderTallies() {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    if (!p.tallies) p.tallies = [];
+			    
+			    const container = document.getElementById('tallyList');
+			    container.innerHTML = '';
+			    
+			    // 1. Calculate the total count first so we can use it for percentages
+			    let totalCount = 0;
+			    p.tallies.forEach(tally => {
+			        totalCount += tally.count;
+			    });
+			    
+			    // 2. Render the UI
+			    p.tallies.forEach((tally, index) => {
+			        // Calculate percentage (avoid division by zero)
+			        let percentage = 0;
+			        if (totalCount > 0) {
+			            percentage = (tally.count / totalCount) * 100;
+			        }
+			        const pctString = totalCount > 0 ? `${percentage.toFixed(1)}%` : '0%';
+			        
+			        const div = document.createElement('div');
+			        div.style.cssText = "background: #f8fafc; border: none; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
+			        
+			        div.innerHTML = `
+			            <div style="display: flex; gap: 10px; align-items: center;">
+			                <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
+			                
+			                <div style="font-size: 0.85rem; font-weight: bold; color: var(--primary); background: #e2e8f0; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">
+			                    ${pctString}
+			                </div>
+			                
+			                <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove" style="margin-left: auto;">&times;</button>
+			            </div>
+			            <div style="display: flex; gap: 10px; align-items: stretch;">
+			                <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
+			                <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
+			                <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+			            </div>
+			        `;
+			        container.appendChild(div);
+			    });
+			    
+			    const totalDisplay = document.getElementById('tallyTotalDisplay');
+			    if (totalDisplay) {
+			        totalDisplay.innerText = safeRound(totalCount, 4); 
+			    }
+			    
+			    document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
+			}
         
             function addTally() {
                 const p = parentGroups.find(g => g.id === activeParentId);
