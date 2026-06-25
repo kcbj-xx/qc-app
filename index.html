@@ -85,6 +85,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+			-webkit-user-select: none;
+		    user-select: none;
+		    -webkit-touch-callout: none;
         }
 
         .main-content {
@@ -1402,12 +1405,12 @@
 				    'card-pickup': 'computing',
 				    'card-averaging': 'computing',
 				    'card-salinity': 'computing',
-				    'card-percentage': 'tools',    // Moved to tools
-				    'card-temp': 'tools',
-				    'card-estimator': 'time',
+				    'card-percentage': 'computing',
+				    'card-temp': 'tools',          // Moved to tools
+				    'card-estimator': 'time',      // Moved to time
 				    'card-notes': 'tools',
 				    'card-tally': 'tools',
-				    'card-stopwatch': 'time',
+				    'card-stopwatch': 'time',      // Moved to time
 				    'card-sampling': 'time',
 				    'card-timestamps': 'time'
 				};
@@ -1639,40 +1642,6 @@
 			    const fileList = document.getElementById('parentTabsList');
 			    fileList.innerHTML = '';
 			    
-			    // 1. Create a dedicated container for folders so they can be reordered independently
-			    let folderContainer = document.getElementById('folderTabsContainer');
-			    if (!folderContainer) {
-			        folderContainer = document.createElement('div');
-			        folderContainer.id = 'folderTabsContainer';
-			        folderContainer.className = 'tabs-container';
-			        folderContainer.style.borderBottom = 'none';
-			        folderContainer.style.paddingBottom = '5px';
-			        folderContainer.style.marginBottom = '5px';
-			        
-			        const fList = document.createElement('div');
-			        fList.id = 'folderTabsList';
-			        fList.className = 'tabs-list';
-			        
-			        folderContainer.appendChild(fList);
-			        
-			        const parentContainer = document.getElementById('parentTabsContainer');
-			        parentContainer.parentNode.insertBefore(folderContainer, parentContainer);
-			        
-			        // Independent drag manager for folders
-			        setupTabDragManager('folderTabsContainer', 'folderTabsList', 
-			            () => appFolders.filter(f => f.id !== 'root'), 
-			            () => localStorage.setItem('qc_folders', JSON.stringify(appFolders)), 
-			            renderSidebarList, 'y',
-			            (newVisibleOrder) => {
-			                const rootFolder = appFolders.find(f => f.id === 'root');
-			                appFolders = [rootFolder, ...newVisibleOrder];
-			            }
-			        );
-			    }
-			    
-			    const folderList = document.getElementById('folderTabsList');
-			    folderList.innerHTML = '';
-			
 			    const currentFolder = appFolders.find(f => f.id === currentFolderId);
 			    document.getElementById('sidebarHeaderTitle').childNodes[0].nodeValue = currentFolder ? currentFolder.name + " " : "Main ";
 			    
@@ -1683,8 +1652,6 @@
 			    }
 			
 			    if (currentFolderId !== 'root') {
-			        folderContainer.style.display = 'none';
-			        
 			        const backBtn = document.createElement('button');
 			        backBtn.className = 'tab-btn parent-tab-btn no-drag';
 			        backBtn.innerHTML = '📁 [ . . ]';
@@ -1695,8 +1662,7 @@
 			        };
 			        fileList.appendChild(backBtn);
 			    } else {
-			        folderContainer.style.display = 'flex';
-			        
+			        // Render Folders
 			        appFolders.forEach(folder => {
 			            if (folder.id === 'root') return;
 			            
@@ -1718,10 +1684,11 @@
 			                    renderSidebarList();
 			                }
 			            };
-			            folderList.appendChild(fBtn);
+			            fileList.appendChild(fBtn);
 			        });
 			    }
 			
+			    // Render Files
 			    const visibleFiles = parentGroups.filter(f => f.folderId === currentFolderId);
 			    let activeBtnElement = null;
 			
@@ -1731,8 +1698,7 @@
 			        btn.dataset.id = tab.id;
 			        if (tab.id === activeParentId) activeBtnElement = btn;
 			
-			        let tabName = tab.name || ((currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File");
-			        btn.innerText = tabName;
+			        btn.innerText = tab.name || ((currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File");
 			
 			        btn.onclick = (e) => {
 			            const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
@@ -1749,7 +1715,7 @@
 			        fileList.appendChild(btn);
 			    });
 			
-			    // 2. Unified Add Button
+			    // Unified Add Button
 			    const addContainer = document.createElement('div');
 			    addContainer.style.marginTop = '10px';
 			    
@@ -1760,8 +1726,8 @@
 			    addBtn.innerText = '+ Add';
 			    addContainer.appendChild(addBtn);
 			    fileList.appendChild(addContainer);
-			    
-			    // Tap/Hold logic for the Unified Button
+			
+			    // Tap/Hold logic for the Unified Add Button
 			    let holdTimer = null;
 			    let isHold = false;
 			    let btnStartX = 0, btnStartY = 0;
@@ -1795,7 +1761,7 @@
 			            if (!isHold && !preventTabClick && !isSidebarEditMode) {
 			                preventTabClick = true;
 			                setTimeout(() => preventTabClick = false, 150);
-			                addNewParentGroup(); // Acts as tap adding a file
+			                addNewParentGroup(); // Tap triggers a new file
 			            }
 			        }
 			    };
@@ -2206,15 +2172,27 @@
                 startGlobalStopwatch(); 
                 startGlobalSamplingTimer(); 
         
-                setupTabDragManager('parentTabsContainer', 'parentTabsList', 
-                    () => parentGroups.filter(f => f.folderId === currentFolderId), 
-                    saveAllGroupData, renderSidebarList, 'y',
-                    (newVisibleOrder) => {
-                        let indices = [];
-                        parentGroups.forEach((f, i) => { if(f.folderId === currentFolderId) indices.push(i); });
-                        indices.forEach((pos, i) => { parentGroups[pos] = newVisibleOrder[i]; });
-                    }
-                );
+                // 1. Setup Drag for Files
+		        setupTabDragManager('parentTabsContainer', 'parentTabsList', 
+		            () => parentGroups.filter(f => f.folderId === currentFolderId), 
+		            saveAllGroupData, renderSidebarList, 'y',
+		            (newVisibleOrder) => {
+		                let indices = [];
+		                parentGroups.forEach((f, i) => { if(f.folderId === currentFolderId) indices.push(i); });
+		                indices.forEach((pos, i) => { parentGroups[pos] = newVisibleOrder[i]; });
+		            }, 'draggable-file-btn'
+		        );
+		        
+		        // 2. Setup Drag for Folders
+		        setupTabDragManager('parentTabsContainer', 'parentTabsList', 
+		            () => appFolders.filter(f => f.id !== 'root'), 
+		            () => localStorage.setItem('qc_folders', JSON.stringify(appFolders)), 
+		            renderSidebarList, 'y',
+		            (newVisibleOrder) => {
+		                const rootFolder = appFolders.find(f => f.id === 'root');
+		                appFolders = [rootFolder, ...newVisibleOrder];
+		            }, 'draggable-folder-btn'
+		        );
                 
                 setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveAllGroupData, renderEstimatorTabs);
                 setupTabDragManager('salinityTabsContainer', 'salinityTabsList', () => salinityTabs, saveAllGroupData, renderSalinityTabs);
@@ -2406,9 +2384,9 @@
 			    }
             });
         
-            function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn, axis = 'x', setArrayFn = null) {
-                const list = document.getElementById(listId);
-                const container = document.getElementById(containerId);
+            function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn, axis = 'x', setArrayFn = null, targetClass = 'tab-btn') {
+			    const list = document.getElementById(listId);
+			    const container = document.getElementById(containerId);
                 
                 let holdTimer = null;
                 let isDragging = false;
@@ -2424,24 +2402,26 @@
                 let lastClientPos = 0;
         
                 const startDrag = (e) => {
-                    const btn = e.target.closest('.tab-btn');
-                    if (!btn || btn.classList.contains('add-tab-btn') || btn.classList.contains('no-drag')) return;
-                    if (e.type === 'mousedown' && e.button !== 0) return;
-        
-                    startX = e.touches ? e.touches[0].clientX : e.clientX;
-                    startY = e.touches ? e.touches[0].clientY : e.clientY;
-                    startScrollPos = axis === 'x' ? container.scrollLeft : container.scrollTop;
-        
-                    const arr = getArrayFn();
-                    dragIdx = arr.findIndex(t => t.id === btn.dataset.id);
-                    currentTargetIdx = dragIdx;
-        
-                    holdTimer = setTimeout(() => {
-                        isDragging = true;
-                        isTabDraggingGlobal = true; 
-                        if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
-        
-                        elements = Array.from(list.querySelectorAll('.tab-btn:not(.add-tab-btn):not(.no-drag)'));
+			        // Target specific classes instead of hardcoding .tab-btn
+			        const btn = e.target.closest('.' + targetClass);
+			        if (!btn || btn.classList.contains('add-tab-btn') || btn.classList.contains('no-drag')) return;
+			        if (e.type === 'mousedown' && e.button !== 0) return;
+			
+			        startX = e.touches ? e.touches[0].clientX : e.clientX;
+			        startY = e.touches ? e.touches[0].clientY : e.clientY;
+			        startScrollPos = axis === 'x' ? container.scrollLeft : container.scrollTop;
+			
+			        const arr = getArrayFn();
+			        dragIdx = arr.findIndex(t => t.id === btn.dataset.id);
+			        currentTargetIdx = dragIdx;
+			
+			        holdTimer = setTimeout(() => {
+			            isDragging = true;
+			            isTabDraggingGlobal = true; 
+			            if ('vibrate' in navigator) { try { navigator.vibrate(50); } catch(err){} }
+			
+			            // Fetch elements using the dynamic target class
+			            elements = Array.from(list.querySelectorAll('.' + targetClass + ':not(.add-tab-btn):not(.no-drag)'));
                         const gap = parseInt(window.getComputedStyle(list).gap) || (axis === 'x' ? 4 : 8);
                         
                         elementsData = elements.map((el, index) => ({
