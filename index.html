@@ -1655,11 +1655,17 @@
 			        const backBtn = document.createElement('button');
 			        backBtn.className = 'tab-btn parent-tab-btn no-drag';
 			        backBtn.innerHTML = '📁 [ . . ]';
-			        backBtn.onclick = () => {
-			            currentFolderId = 'root';
-			            localStorage.setItem('qc_current_folder', 'root');
-			            renderSidebarList();
-			        };
+			        
+			        if (isSidebarEditMode) {
+			            backBtn.style.opacity = '0.5';
+			            backBtn.style.cursor = 'not-allowed';
+			        } else {
+			            backBtn.onclick = () => {
+			                currentFolderId = 'root';
+			                localStorage.setItem('qc_current_folder', 'root');
+			                renderSidebarList();
+			            };
+			        }
 			        fileList.appendChild(backBtn);
 			    } else {
 			        // Render Folders
