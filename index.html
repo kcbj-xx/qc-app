@@ -123,18 +123,32 @@
             flex: 1; 
             overflow-y: auto; 
             padding: 15px; 
-            /* Increased default padding to give the Add button breathing room */
-            padding-bottom: 80px; 
+            /* Reduced normal spacing */
+            padding-bottom: 40px; 
             border: none; 
             align-items: flex-start; 
             display: block; 
             transition: padding-bottom 0.3s ease;
         }
 
-		/* Dynamically add space when the edit menu pops up */
+        /* Dynamically add space when the edit menu pops up */
         body.edit-mode-active #parentTabsContainer {
-            padding-bottom: 180px; 
+            /* Reduced edit-mode spacing */
+            padding-bottom: 120px; 
         }
+
+		/* Desktop-Specific Spacing */
+		@media (min-width: 768px) {
+		    #parentTabsContainer { 
+		        /* Tweak this to reduce or increase the space specifically on desktop */
+		        padding-bottom: 20px; 
+		    }
+		
+		    body.edit-mode-active #parentTabsContainer {
+		        /* Tweak this to account for your desktop edit menu */
+		        padding-bottom: 80px; 
+		    }
+		}
 		
         #parentTabsList { display: flex; flex-direction: column; gap: 8px; align-items: stretch; margin: 0; width: 100%; }
 
