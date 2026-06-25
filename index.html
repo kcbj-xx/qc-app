@@ -1716,12 +1716,15 @@
 			
 			    if (currentFolderId !== 'root') {
 			        const backBtn = document.createElement('button');
-			        backBtn.className = 'tab-btn parent-tab-btn no-drag';
+			        // Added 'directory-up-btn' class and data-id
+			        backBtn.className = 'tab-btn parent-tab-btn no-drag directory-up-btn';
+			        backBtn.dataset.id = 'root';
 			        backBtn.innerHTML = '📁 [ . . ]';
 			        
 			        if (isSidebarEditMode) {
-			            backBtn.style.opacity = '0.5';
-			            backBtn.style.cursor = 'not-allowed';
+			            // Keep it slightly faded, but indicate it can be interacted with
+			            backBtn.style.opacity = '0.7';
+			            backBtn.style.cursor = 'default';
 			        } else {
 			            backBtn.onclick = () => {
 			                currentFolderId = 'root';
@@ -2558,10 +2561,10 @@
 			            // Allow 2D free dragging
 			            elements[dragIdx].style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.03)`;
 			
-			            // Hit detection on folders
+			            // Hit detection on folders AND the directory up button
 			            let foundFolder = null;
-			            const folders = document.querySelectorAll('.draggable-folder-btn');
-			            folders.forEach(f => {
+			            const dropTargets = document.querySelectorAll('.draggable-folder-btn, .directory-up-btn');
+			            dropTargets.forEach(f => {
 			                const rect = f.getBoundingClientRect();
 			                if (currentClientX >= rect.left && currentClientX <= rect.right && currentClientY >= rect.top && currentClientY <= rect.bottom) {
 			                    foundFolder = f;
@@ -2665,7 +2668,13 @@
 			                // Drop into folder logic
 			                if (currentHoverFolder) {
 			                    const targetFolderId = currentHoverFolder.dataset.id;
-			                    const targetFolderName = currentHoverFolder.innerText.replace('📁 ', '').trim();
+			                    
+			                    // Format the name nicely for the prompt
+			                    let targetFolderName = currentHoverFolder.innerText.replace('📁 ', '').trim();
+			                    if (currentHoverFolder.classList.contains('directory-up-btn')) {
+			                        targetFolderName = 'Main Directory';
+			                    }
+			                    
 			                    currentHoverFolder.classList.remove('folder-drop-target');
 			                    currentHoverFolder = null;
 			
@@ -2681,7 +2690,7 @@
 			                    }
 			
 			                    if (filesToMove.length > 0) {
-			                        if (confirm(`Move ${filesToMove.length} file(s) to folder "${targetFolderName}"?`)) {
+			                        if (confirm(`Move ${filesToMove.length} file(s) to ${targetFolderName}?`)) {
 			                            filesToMove.forEach(id => {
 			                                const file = parentGroups.find(g => g.id === id);
 			                                if (file) file.folderId = targetFolderId;
