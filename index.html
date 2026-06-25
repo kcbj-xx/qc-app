@@ -1896,14 +1896,36 @@
             }
 
             function addNewFolder() {
-                const name = prompt("Enter new folder name:", "New Folder");
-                if (name && name.trim() !== '') {
-                    const newFolder = { id: 'fold_' + Date.now(), name: name.trim() };
-                    appFolders.push(newFolder);
-                    localStorage.setItem('qc_folders', JSON.stringify(appFolders));
-                    renderSidebarList();
-                }
-            }
+			    // 1. Scan existing folders to find the highest "Folder X" number
+			    let maxNum = 0;
+			    appFolders.forEach(folder => {
+			        // Regex looks specifically for names matching "Folder " followed by numbers
+			        const match = folder.name.match(/^Folder (\d+)$/i);
+			        if (match) {
+			            const num = parseInt(match[1], 10);
+			            if (num > maxNum) {
+			                maxNum = num;
+			            }
+			        }
+			    });
+			    
+			    // 2. Set the next available number
+			    const defaultName = `Folder ${maxNum + 1}`;
+			    
+			    // 3. Prompt the user with the auto-incremented name pre-filled
+			    const folderName = prompt("Enter folder name:", defaultName);
+			    
+			    if (folderName && folderName.trim()) {
+			        const newFolderId = 'fold_' + Date.now();
+			        appFolders.push({ 
+			            id: newFolderId, 
+			            name: folderName.trim() 
+			        });
+			        
+			        localStorage.setItem('qc_folders', JSON.stringify(appFolders));
+			        renderSidebarList();
+			    }
+			}
         
             function updateParentTabMenuState() {
                 const panel = document.getElementById('parentTabOptionsPanel');
@@ -5227,6 +5249,14 @@
 			function enterSidebarEditMode() {
 			    isSidebarEditMode = true;
 			    document.body.classList.add('edit-mode-active');
+			    
+			    // Clear any lingering selections and force the UI to reset 
+			    // before the bar is shown
+			    selectedSidebarItems.clear();
+			    if (typeof updateSidebarEditBar === 'function') {
+			        updateSidebarEditBar(); 
+			    }
+			    
 			    document.getElementById('sidebarEditModeBar').style.display = 'flex';
 			    renderSidebarList(); 
 			}
@@ -5234,7 +5264,13 @@
 			function cancelSidebarEditMode() {
 			    isSidebarEditMode = false;
 			    document.body.classList.remove('edit-mode-active');
+			    
+			    // Clear selections and reset the button layout for next time
 			    selectedSidebarItems.clear();
+			    if (typeof updateSidebarEditBar === 'function') {
+			        updateSidebarEditBar(); 
+			    }
+			    
 			    document.getElementById('sidebarEditModeBar').style.display = 'none';
 			    renderSidebarList();
 			}
