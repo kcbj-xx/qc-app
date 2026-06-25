@@ -123,12 +123,19 @@
             flex: 1; 
             overflow-y: auto; 
             padding: 15px; 
-            /* Extra bottom padding so the +Add button doesn't sit flush against the screen edge */
-            padding-bottom: 40px; 
+            /* Increased default padding to give the Add button breathing room */
+            padding-bottom: 80px; 
             border: none; 
             align-items: flex-start; 
             display: block; 
+            transition: padding-bottom 0.3s ease;
         }
+
+		/* Dynamically add space when the edit menu pops up */
+        body.edit-mode-active #parentTabsContainer {
+            padding-bottom: 180px; 
+        }
+		
         #parentTabsList { display: flex; flex-direction: column; gap: 8px; align-items: stretch; margin: 0; width: 100%; }
 
         .container { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px; }
@@ -5205,12 +5212,14 @@
 			
 			function enterSidebarEditMode() {
 			    isSidebarEditMode = true;
+			    document.body.classList.add('edit-mode-active');
 			    document.getElementById('sidebarEditModeBar').style.display = 'flex';
 			    renderSidebarList(); 
 			}
 			
 			function cancelSidebarEditMode() {
 			    isSidebarEditMode = false;
+			    document.body.classList.remove('edit-mode-active');
 			    selectedSidebarItems.clear();
 			    document.getElementById('sidebarEditModeBar').style.display = 'none';
 			    renderSidebarList();
