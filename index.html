@@ -699,6 +699,15 @@
 		        background-color: #1e293b !important;
 		    }
 		}
+		#exportModeBar {
+		    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+		
+		@media (min-width: 768px) {
+		    body.sidebar-open #exportModeBar {
+		        left: 280px !important;
+		    }
+		}
     </style>
 </head>
 <body>
@@ -1297,18 +1306,20 @@
             let isSidebarOpen = false;
     
             function toggleSidebar() {
-                isSidebarOpen = !isSidebarOpen;
-                const sidebar = document.getElementById('appSidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                
-                if (isSidebarOpen) {
-                    sidebar.classList.add('open');
-                    overlay.classList.add('show');
-                } else {
-                    sidebar.classList.remove('open');
-                    overlay.classList.remove('show');
-                }
-            }
+			    isSidebarOpen = !isSidebarOpen;
+			    const sidebar = document.getElementById('appSidebar');
+			    const overlay = document.getElementById('sidebarOverlay');
+			    
+			    if (isSidebarOpen) {
+			        sidebar.classList.add('open');
+			        overlay.classList.add('show');
+			        document.body.classList.add('sidebar-open');
+			    } else {
+			        sidebar.classList.remove('open');
+			        overlay.classList.remove('show');
+			        document.body.classList.remove('sidebar-open');
+			    }
+			}
         
             function toggleParentGroupMenu() {
                 isParentTabMenuOpen = !isParentTabMenuOpen;
