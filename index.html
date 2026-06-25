@@ -57,12 +57,10 @@
 		    height: 100dvh; /* Dynamic height for modern mobile browsers */
 		    transition: background-color 0.3s; 
 		    
-		    /* Allow vertical overscroll for native pull-to-refresh */
-		    overscroll-behavior-y: auto; 
-		    
-		    /* Prevent horizontal swaying */
-		    overflow-x: hidden; 
-		}
+			/* Lock the body to prevent native bouncing and pull-to-refresh */
+            overflow: hidden; 
+            overscroll-behavior-y: none; 
+        }
 
         .app-wrapper {
             display: flex;
@@ -2280,6 +2278,52 @@
                 
                 startGlobalStopwatch(); 
                 startGlobalSamplingTimer(); 
+
+				// ==========================================
+			    // Custom Pull-to-Refresh Engine (Main Content Only)
+			    // ==========================================
+			    let ptrStartX = 0;
+			    let ptrStartY = 0;
+			    let ptrIsAtTop = false;
+			
+			    document.addEventListener('touchstart', (e) => {
+			        // ONLY target the main content area. Ignore the sidebar entirely.
+			        const mainContent = e.target.closest('.main-content'); 
+			        
+			        // Prime the refresh only if touching the main content AND at the very top
+			        if (mainContent && mainContent.scrollTop <= 0) {
+			            ptrStartX = e.touches[0].clientX;
+			            ptrStartY = e.touches[0].clientY;
+			            ptrIsAtTop = true;
+			        } else {
+			            ptrIsAtTop = false;
+			        }
+			    }, { passive: true });
+			
+			    document.addEventListener('touchend', (e) => {
+			        if (!ptrIsAtTop) return;
+			        
+			        const ptrEndX = e.changedTouches[0].clientX;
+			        const ptrEndY = e.changedTouches[0].clientY;
+			        
+			        const deltaX = Math.abs(ptrEndX - ptrStartX);
+			        const deltaY = ptrEndY - ptrStartY; 
+			
+			        // If swiped strictly down by more than 150px
+			        if (deltaY > 150 && deltaX < 60) {
+			            // Haptic feedback
+			            if (navigator.vibrate) navigator.vibrate(50);
+			            
+			            // Visual fade feedback
+			            document.body.style.transition = 'opacity 0.2s ease';
+			            document.body.style.opacity = '0.5';
+			            
+			            // Reload the app
+			            setTimeout(() => {
+			                window.location.reload();
+			            }, 200);
+			        }
+			    });
 				
                 // 1. Setup Drag for Files
 		        setupTabDragManager('parentTabsContainer', 'parentTabsList', 
