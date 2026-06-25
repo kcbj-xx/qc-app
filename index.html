@@ -2406,18 +2406,21 @@
 			    sidebarHeader.addEventListener('mouseleave', cancelHeaderHold);
 			    
 			    // Inject bottom edit bar
-			    if (!document.getElementById('sidebarEditModeBar')) {
-			        const bar = document.createElement('div');
-			        bar.id = 'sidebarEditModeBar';
-			        bar.style.cssText = 'display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 2001; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;';
-			        
-			        bar.innerHTML = `
-			            <button id="sidebarRenameBtn" onclick="renameSelectedSidebarItem()" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem; display: none;">Rename</button>
-			            <button onclick="deleteSelectedSidebarItems()" class="secondary" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem;">Delete</button>
-			            <button onclick="cancelSidebarEditMode()" class="action-btn" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem;">Cancel</button>
-			        `;
-			        document.body.appendChild(bar);
-			    }
+		        if (!document.getElementById('sidebarEditModeBar')) {
+		            const bar = document.createElement('div');
+		            bar.id = 'sidebarEditModeBar';
+		            bar.style.cssText = 'display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 2001; flex-direction: column; gap: 10px; border-top-left-radius: 20px; border-top-right-radius: 20px;';
+		            
+		            bar.innerHTML = `
+		                <div style="font-weight: 800; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; width: 100%; text-align: center;">Edit Mode</div>
+		                <div style="display: flex; gap: 15px; width: 100%;">
+		                    <button id="sidebarRenameBtn" onclick="renameSelectedSidebarItem()" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem; display: none;">Rename</button>
+		                    <button onclick="deleteSelectedSidebarItems()" class="secondary" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem;">Delete</button>
+		                    <button onclick="cancelSidebarEditMode()" class="action-btn" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem;">Cancel</button>
+		                </div>
+		            `;
+		            document.body.appendChild(bar);
+		        }
             });
         
             function setupTabDragManager(containerId, listId, getArrayFn, saveFn, renderFn, axis = 'x', setArrayFn = null, targetClass = 'tab-btn') {
@@ -2439,19 +2442,20 @@
 			    let lastClientX = 0;
 			    let lastClientY = 0;
 			    
-			    let currentHoverFolder = null; // Track folder being hovered
+			    let currentHoverFolder = null; 
 			
 			    const startDrag = (e) => {
 			        const btn = e.target.closest('.' + targetClass);
 			        if (!btn || btn.classList.contains('add-tab-btn') || btn.classList.contains('no-drag')) return;
 			        if (e.type === 'mousedown' && e.button !== 0) return;
 			        
-			        // Prevent folders from being dragged at all in edit mode
-			        if (typeof isSidebarEditMode !== 'undefined' && isSidebarEditMode && targetClass !== 'draggable-file-btn') return;
-			
+			        // FIX: Update coordinates BEFORE we check for edit mode
 			        startX = e.touches ? e.touches[0].clientX : e.clientX;
 			        startY = e.touches ? e.touches[0].clientY : e.clientY;
 			        startScrollPos = axis === 'x' ? container.scrollLeft : container.scrollTop;
+			        
+			        // Prevent folders from being dragged at all in edit mode
+			        if (typeof isSidebarEditMode !== 'undefined' && isSidebarEditMode && targetClass !== 'draggable-file-btn') return;
 			
 			        const arr = getArrayFn();
 			        dragIdx = arr.findIndex(t => t.id === btn.dataset.id);
