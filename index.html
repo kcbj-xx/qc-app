@@ -1328,7 +1328,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v83</div>
+            <div class="footer-version">v84</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -2317,19 +2317,7 @@
                 startGlobalStopwatch(); 
                 startGlobalSamplingTimer(); 
 
-				// Creates a custom CSS variable for the exact real viewport height
-				function updateRealViewportHeight() {
-				    // Multiply by 0.01 to get a 1% value we can use in CSS
-				    let vh = window.innerHeight * 0.01;
-				    document.documentElement.style.setProperty('--real-vh', `${vh}px`);
-				}
-				
-				// Run it immediately, on resize, and on orientation change
-				updateRealViewportHeight();
-				window.addEventListener('resize', updateRealViewportHeight);
-				window.addEventListener('orientationchange', () => {
-				    setTimeout(updateRealViewportHeight, 150); // Small delay for foldables
-				});
+				document.body.style.overscrollBehaviorY = 'none';
 				
 				// ==========================================
 			    // Custom Pull-to-Refresh Engine (Main Content Only)
@@ -2376,6 +2364,20 @@
 			            }, 200);
 			        }
 			    });
+
+				// Creates a custom CSS variable for the exact real viewport height
+				function updateRealViewportHeight() {
+				    // Multiply by 0.01 to get a 1% value we can use in CSS
+				    let vh = window.innerHeight * 0.01;
+				    document.documentElement.style.setProperty('--real-vh', `${vh}px`);
+				}
+				
+				// Run it immediately, on resize, and on orientation change
+				updateRealViewportHeight();
+				window.addEventListener('resize', updateRealViewportHeight);
+				window.addEventListener('orientationchange', () => {
+				    setTimeout(updateRealViewportHeight, 150); // Small delay for foldables
+				});
 				
                 // 1. Setup Drag for Files
 		        setupTabDragManager('parentTabsContainer', 'parentTabsList', 
