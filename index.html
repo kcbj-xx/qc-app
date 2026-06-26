@@ -4611,11 +4611,32 @@
                 targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
         
                 if (listDraggingIdx !== targetIdx) {
-				    const arr = p.tallies; // Your Tally Array
-				    const item = arr.splice(listDraggingIdx, 1)[0];
-				    arr.splice(targetIdx, 0, item);
-				    saveAllGroupData();
-				    renderTallies(); // Re-render the list to finalize
+				    // Detect which list we are dragging in based on the parent container
+				    const isTallyList = listElements[0].closest('#tallyList') !== null;
+				    
+				    if (isTallyList) {
+				        // Tally Reorder Logic
+				        const p = parentGroups.find(g => g.id === activeParentId);
+				        const arr = p.tallies; 
+				        const item = arr.splice(listDraggingIdx, 1)[0];
+				        arr.splice(targetIdx, 0, item);
+				        saveAllGroupData();
+				        renderTallies(); 
+				    } else {
+				        // Sum & Averaging Reorder Logic
+				        const arr = getActiveData();
+				        const item = arr.splice(listDraggingIdx, 1)[0];
+				        arr.splice(targetIdx, 0, item);
+				        saveAllGroupData();
+				        renderList(); 
+				    }
+				}
+				
+				// Ensure we re-enable pointer events for the inputs after dropping!
+				if (listDraggingIdx !== null && listElements[listDraggingIdx]) {
+				    listElements[listDraggingIdx].classList.remove('dragging');
+				    const inputs = listElements[listDraggingIdx].querySelectorAll('input');
+				    if (inputs) inputs.forEach(inp => inp.style.pointerEvents = '');
 				}
         
                 listDraggingIdx = null;
@@ -4685,7 +4706,7 @@
                         listStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
     					listLastClientY = listStartY;
                         
-                        holdTimer = setTimeout(() => {
+                        let holdTimer = setTimeout(() => {
 					        if (navigator.vibrate) navigator.vibrate(50);
 					        
 					        listDraggingIdx = index; // index from your tally loop
@@ -4701,7 +4722,6 @@
 					            el.dataset.offset = 0;
 					        });
 					        
-					        div.classList.add('dragging');
                             div.style.transition = 'none'; 
                             div.classList.add('dragging');
                             inputField.style.pointerEvents = 'none'; 
@@ -4928,27 +4948,90 @@
 			        const pctString = totalCount > 0 ? `${percentage.toFixed(1)}%` : '0%';
 			        
 			        const div = document.createElement('div');
-			        div.style.cssText = "background: #f8fafc; border: none; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
+			        div.className = 'number-item'; // Added class for drag styling
+			        // Note: Changed flex-direction to row to accommodate the side-by-side drag handle
+			        div.style.cssText = "background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: row; gap: 10px; align-items: center;";
 			        
 			        div.innerHTML = `
-						<div class="drag-handle" title="Hold to reorder">&#x2261;</div> <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
-        					</div>
-			            <div style="display: flex; gap: 10px; align-items: center;">
-			                <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
-			                
-			                <div style="font-size: 0.85rem; font-weight: bold; color: var(--primary); background: #e2e8f0; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">
-			                    ${pctString}
+			            <div class="drag-handle" title="Hold to reorder">&#x2261;</div>
+			            <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+			                <div style="display: flex; gap: 10px; align-items: center;">
+			                    <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
+			                    
+			                    <div style="font-size: 0.85rem; font-weight: bold; color: var(--primary); background: #e2e8f0; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">
+			                        ${pctString}
+			                    </div>
+			                    
+			                    <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove" style="margin-left: auto;">&times;</button>
 			                </div>
-			                
-			                <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove" style="margin-left: auto;">&times;</button>
-			            </div>
-			            <div style="display: flex; gap: 10px; align-items: stretch;">
-			                <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-			                <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
-			                <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+			                <div style="display: flex; gap: 10px; align-items: stretch;">
+			                    <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
+			                    <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
+			                    <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+			                </div>
 			            </div>
 			        `;
-					div.className = 'number-item'; // Add this class to reuse existing CSS
+			        
+			        // --- DRAG EVENT LISTENER LOGIC ---
+			        const handle = div.querySelector('.drag-handle');
+			        const inputFields = div.querySelectorAll('input'); 
+			
+			        handle.addEventListener('pointerdown', (e) => {
+			            document.activeElement.blur(); 
+			            
+			            listStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+			            listLastClientY = listStartY;
+			            
+			            let holdTimer = setTimeout(() => {
+			                if (navigator.vibrate) navigator.vibrate(50);
+			                
+			                listDraggingIdx = index; 
+			                listStartScrollTop = container.scrollTop;
+			                listElements = Array.from(container.children);
+			                
+			                const gap = 10; 
+			                listRowHeight = listElements[0].offsetHeight + gap;
+			                
+			                listElements.forEach((el) => {
+			                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+			                    el.dataset.offset = 0;
+			                });
+			                
+			                div.style.transition = 'none'; 
+			                div.classList.add('dragging');
+			                inputFields.forEach(inp => inp.style.pointerEvents = 'none'); 
+			                
+			                document.addEventListener('pointermove', onListPointerMove, { passive: false });
+			                document.addEventListener('pointerup', onListPointerUp);
+			                document.addEventListener('pointercancel', onListPointerUp);
+			                
+			                document.addEventListener('touchmove', onListPointerMove, { passive: false });
+			                document.addEventListener('touchend', onListPointerUp);
+			                document.addEventListener('touchcancel', onListPointerUp);
+			            }, 400); 
+			
+			            const cancelHold = (eMove) => {
+			                const moveY = eMove.clientY || (eMove.touches ? eMove.touches[0].clientY : 0);
+			                if ((eMove.type === 'pointermove' || eMove.type === 'touchmove') && Math.abs(moveY - listStartY) < 10) return;
+			                
+			                clearTimeout(holdTimer);
+			                document.removeEventListener('pointermove', cancelHold);
+			                document.removeEventListener('pointerup', cancelHold);
+			                document.removeEventListener('pointercancel', cancelHold);
+			                document.removeEventListener('touchmove', cancelHold);
+			                document.removeEventListener('touchend', cancelHold);
+			                document.removeEventListener('touchcancel', cancelHold);
+			            };
+			
+			            document.addEventListener('pointermove', cancelHold);
+			            document.addEventListener('pointerup', cancelHold);
+			            document.addEventListener('pointercancel', cancelHold);
+			            document.addEventListener('touchmove', cancelHold);
+			            document.addEventListener('touchend', cancelHold);
+			            document.addEventListener('touchcancel', cancelHold);
+			        });
+			        // --- END DRAG EVENT LISTENER LOGIC ---
+			
 			        container.appendChild(div);
 			    });
 			    
