@@ -4611,11 +4611,12 @@
                 targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
         
                 if (listDraggingIdx !== targetIdx) {
-                    const arr = getActiveData();
-                    const item = arr.splice(listDraggingIdx, 1)[0];
-                    arr.splice(targetIdx, 0, item);
-                    saveAllGroupData();
-                }
+				    const arr = p.tallies; // Your Tally Array
+				    const item = arr.splice(listDraggingIdx, 1)[0];
+				    arr.splice(targetIdx, 0, item);
+				    saveAllGroupData();
+				    renderTallies(); // Re-render the list to finalize
+				}
         
                 listDraggingIdx = null;
                 document.removeEventListener('pointermove', onListPointerMove);
@@ -4682,23 +4683,25 @@
                         document.activeElement.blur(); 
                         
                         listStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-                        listLastClientY = listStartY;
+    					listLastClientY = listStartY;
                         
-                        let holdTimer = setTimeout(() => {
-                            if (navigator.vibrate) navigator.vibrate(50);
-                            
-                            listDraggingIdx = i;
-                            listStartScrollTop = container.scrollTop;
-                            listElements = Array.from(container.children);
-                            
-                            const gap = parseInt(window.getComputedStyle(container).gap) || 8;
-                            listRowHeight = listElements[0].offsetHeight + gap;
-                            
-                            listElements.forEach((el) => {
-                                el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
-                                el.dataset.offset = 0;
-                            });
-                            
+                        holdTimer = setTimeout(() => {
+					        if (navigator.vibrate) navigator.vibrate(50);
+					        
+					        listDraggingIdx = index; // index from your tally loop
+					        listStartScrollTop = container.scrollTop;
+					        listElements = Array.from(container.children);
+					        
+					        const gap = 10; // Match your tallyList gap
+					        listRowHeight = listElements[0].offsetHeight + gap;
+					        
+					        // Prepare elements for visual transition
+					        listElements.forEach((el) => {
+					            el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+					            el.dataset.offset = 0;
+					        });
+					        
+					        div.classList.add('dragging');
                             div.style.transition = 'none'; 
                             div.classList.add('dragging');
                             inputField.style.pointerEvents = 'none'; 
@@ -4928,6 +4931,8 @@
 			        div.style.cssText = "background: #f8fafc; border: none; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
 			        
 			        div.innerHTML = `
+						<div class="drag-handle" title="Hold to reorder">&#x2261;</div> <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+        					</div>
 			            <div style="display: flex; gap: 10px; align-items: center;">
 			                <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
 			                
@@ -4943,6 +4948,7 @@
 			                <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
 			            </div>
 			        `;
+					div.className = 'number-item'; // Add this class to reuse existing CSS
 			        container.appendChild(div);
 			    });
 			    
