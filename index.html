@@ -8,7 +8,6 @@
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	
     <link rel="manifest" href='data:application/manifest+json,%7B%22name%22%3A%22QC%20Toolset%20Pro%22%2C%22short_name%22%3A%22QC%20Tool%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f4f6%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1162%2F1162456.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D'>
 
@@ -17,6 +16,15 @@
 		#parentTabsContainer {
 		    overscroll-behavior-y: contain;
 		}
+
+		/* Creates an invisible physical block at the bottom of the scroll list */
+        #parentTabsContainer::after {
+            content: "";
+            display: block;
+            height: 40px; /* The breathing room you want below the Add button */
+            flex-shrink: 0;
+            width: 100%;
+        }
 		
         :root {
             --primary: #2563eb; 
@@ -72,10 +80,17 @@
 
         .sidebar {
             width: 280px;
-            height: 100%;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            
+            /* The Fallback */
+            height: 100vh; 
+            /* The Bulletproof Fix */
+            height: calc(var(--real-vh, 1vh) * 100); 
+            
             background-color: var(--card-bg);
             border-right: 1px solid var(--border);
-            position: absolute;
             left: -280px; 
             transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 2000;
@@ -83,6 +98,7 @@
             flex-direction: column;
             box-shadow: 4px 0 15px rgba(0,0,0,0.05);
         }
+		
         .sidebar.open { left: 0; }
 
         .sidebar-header {
@@ -113,7 +129,20 @@
         }
 
         @media (min-width: 768px) {
-            .sidebar { position: static; margin-left: -280px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); left: auto; }
+            .sidebar { 
+                /* Sticky keeps it pinned to the screen while main content scrolls */
+                position: sticky; 
+                top: 0;
+                
+                /* The Fallback */
+                height: 100vh; 
+                /* The Bulletproof Fix */
+                height: calc(var(--real-vh, 1vh) * 100); 
+                
+                margin-left: -280px; 
+                transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+                left: auto; 
+            }
             .sidebar.open { margin-left: 0; }
             .sidebar-overlay { display: none !important; }
         }
@@ -1291,7 +1320,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v82</div>
+            <div class="footer-version">v83</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -2280,6 +2309,20 @@
                 startGlobalStopwatch(); 
                 startGlobalSamplingTimer(); 
 
+				// Creates a custom CSS variable for the exact real viewport height
+				function updateRealViewportHeight() {
+				    // Multiply by 0.01 to get a 1% value we can use in CSS
+				    let vh = window.innerHeight * 0.01;
+				    document.documentElement.style.setProperty('--real-vh', `${vh}px`);
+				}
+				
+				// Run it immediately, on resize, and on orientation change
+				updateRealViewportHeight();
+				window.addEventListener('resize', updateRealViewportHeight);
+				window.addEventListener('orientationchange', () => {
+				    setTimeout(updateRealViewportHeight, 150); // Small delay for foldables
+				});
+				
 				// ==========================================
 			    // Custom Pull-to-Refresh Engine (Main Content Only)
 			    // ==========================================
