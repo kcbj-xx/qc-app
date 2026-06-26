@@ -5522,28 +5522,54 @@
 			
 			function updateSidebarEditBar() {
 			    const renameBtn = document.getElementById('sidebarRenameBtn');
+			    
 			    if (selectedSidebarItems.size === 1) {
 			        const id = Array.from(selectedSidebarItems)[0];
 			        if (id.startsWith('fold_')) {
+			            renameBtn.innerText = 'Rename';
 			            renameBtn.style.display = 'block';
 			        } else {
 			            renameBtn.style.display = 'none';
 			        }
+			    } else if (selectedSidebarItems.size === 0 && currentFolderId !== 'root') {
+			        // If inside a folder and nothing is selected, allow renaming the active folder
+			        renameBtn.innerText = 'Rename Folder';
+			        renameBtn.style.display = 'block';
 			    } else {
 			        renameBtn.style.display = 'none';
 			    }
 			}
 			
 			function renameSelectedSidebarItem() {
-			    if (selectedSidebarItems.size !== 1) return;
-			    const id = Array.from(selectedSidebarItems)[0];
-			    if (!id.startsWith('fold_')) return;
+			    let idToRename = null;
 			    
-			    const folder = appFolders.find(f => f.id === id);
+			    // Determine which folder we are trying to rename
+			    if (selectedSidebarItems.size === 1) {
+			        const id = Array.from(selectedSidebarItems)[0];
+			        if (id.startsWith('fold_')) idToRename = id;
+			    } else if (selectedSidebarItems.size === 0 && currentFolderId !== 'root') {
+			        idToRename = currentFolderId;
+			    }
+			    
+			    if (!idToRename) return;
+			    
+			    const folder = appFolders.find(f => f.id === idToRename);
+			    if (!folder) return;
+			    
 			    const newName = prompt("Enter new folder name:", folder.name);
 			    if (newName && newName.trim()) {
 			        folder.name = newName.trim();
 			        localStorage.setItem('qc_folders', JSON.stringify(appFolders));
+			        
+			        // Update headers immediately if we just renamed the active folder
+			        if (idToRename === currentFolderId) {
+			            document.getElementById('sidebarHeaderTitle').childNodes[0].nodeValue = folder.name + " ";
+			            const activeGroup = parentGroups.find(g => g.id === activeParentId);
+			            if (activeGroup && !activeGroup.name) {
+			                document.getElementById('activeGroupHeaderTitle').innerText = folder.name;
+			            }
+			        }
+			        
 			        cancelSidebarEditMode();
 			    }
 			}
