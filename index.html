@@ -1765,8 +1765,13 @@
 			    
 			    const activeGroup = parentGroups.find(g => g.id === activeParentId);
 			    if (activeGroup) {
-			        let dispName = activeGroup.name || ((currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File");
-			        document.getElementById('activeGroupHeaderTitle').innerText = dispName;
+			        const folder = appFolders.find(f => f.id === activeGroup.folderId);
+			        // Main UI: File Name (if set) OR Folder Name
+			        let mainTitle = activeGroup.name && activeGroup.name.trim() !== '' 
+			                        ? activeGroup.name 
+			                        : (folder ? folder.name : "Unnamed File");
+			                        
+			        document.getElementById('activeGroupHeaderTitle').innerText = mainTitle;
 			    }
 			
 			    if (currentFolderId !== 'root') {
@@ -1820,12 +1825,18 @@
 			    let activeBtnElement = null;
 			
 			    visibleFiles.forEach(tab => {
-			        const btn = document.createElement('button');
-			        btn.className = `tab-btn parent-tab-btn draggable-file-btn ${tab.id === activeParentId && !isSidebarEditMode ? 'active' : ''} ${selectedSidebarItems.has(tab.id) ? 'sidebar-selected' : ''}`;
-			        btn.dataset.id = tab.id;
-			        if (tab.id === activeParentId) activeBtnElement = btn;
-			
-			        btn.innerText = tab.name || ((currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File");
+				    const btn = document.createElement('button');
+				    btn.className = `tab-btn parent-tab-btn draggable-file-btn ${tab.id === activeParentId && !isSidebarEditMode ? 'active' : ''} ${selectedSidebarItems.has(tab.id) ? 'sidebar-selected' : ''}`;
+				    btn.dataset.id = tab.id;
+				    if (tab.id === activeParentId) activeBtnElement = btn;
+				
+				    // Logic: Sidebar shows Product Code (if exists) or Folder Name
+				    const folder = appFolders.find(f => f.id === tab.folderId);
+				    let displayName = tab.productCode && tab.productCode.trim() !== '' 
+				                      ? tab.productCode 
+				                      : (folder ? folder.name : "Unnamed File");
+				
+				    btn.innerText = displayName;
 			
 			        btn.onclick = (e) => {
 			            const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
