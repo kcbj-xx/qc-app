@@ -1332,7 +1332,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v86</div>
+            <div class="footer-version">v87</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1820,12 +1820,18 @@
 			    let activeBtnElement = null;
 			
 			    visibleFiles.forEach(tab => {
-			        const btn = document.createElement('button');
-			        btn.className = `tab-btn parent-tab-btn draggable-file-btn ${tab.id === activeParentId && !isSidebarEditMode ? 'active' : ''} ${selectedSidebarItems.has(tab.id) ? 'sidebar-selected' : ''}`;
-			        btn.dataset.id = tab.id;
-			        if (tab.id === activeParentId) activeBtnElement = btn;
-			
-			        btn.innerText = tab.name || ((currentFolder && currentFolder.id !== 'root') ? currentFolder.name : "Unnamed File");
+				    const btn = document.createElement('button');
+				    btn.className = `tab-btn parent-tab-btn draggable-file-btn ${tab.id === activeParentId && !isSidebarEditMode ? 'active' : ''} ${selectedSidebarItems.has(tab.id) ? 'sidebar-selected' : ''}`;
+				    btn.dataset.id = tab.id;
+				    if (tab.id === activeParentId) activeBtnElement = btn;
+				
+				    // Logic: Sidebar shows Product Code (if exists) or Folder Name
+				    const folder = appFolders.find(f => f.id === tab.folderId);
+				    let displayName = tab.productCode && tab.productCode.trim() !== '' 
+				                      ? tab.productCode 
+				                      : (folder ? folder.name : "Unnamed File");
+				
+				    btn.innerText = displayName;
 			
 			        btn.onclick = (e) => {
 			            const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
@@ -5565,10 +5571,15 @@
 			        if (idToRename === currentFolderId) {
 			            document.getElementById('sidebarHeaderTitle').childNodes[0].nodeValue = folder.name + " ";
 			            const activeGroup = parentGroups.find(g => g.id === activeParentId);
-			            if (activeGroup && !activeGroup.name) {
-			                document.getElementById('activeGroupHeaderTitle').innerText = folder.name;
-			            }
-			        }
+					    if (activeGroup) {
+					        const folder = appFolders.find(f => f.id === activeGroup.folderId);
+					        // Main UI: File Name (if set) OR Folder Name
+					        let mainTitle = activeGroup.name && activeGroup.name.trim() !== '' 
+					                        ? activeGroup.name 
+					                        : (folder ? folder.name : "Unnamed File");
+					                        
+					        document.getElementById('activeGroupHeaderTitle').innerText = mainTitle;
+					    }
 			        
 			        cancelSidebarEditMode();
 			    }
