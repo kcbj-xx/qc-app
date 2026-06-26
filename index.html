@@ -89,6 +89,12 @@
             /* The Bulletproof Fix */
             height: calc(var(--real-vh, 1vh) * 100); 
             
+            /* Pixel Fold / Safe Area Fixes */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            contain: layout size; 
+            contain-intrinsic-size: 280px 100dvh;
+            
             background-color: var(--card-bg);
             border-right: 1px solid var(--border);
             left: -280px; 
@@ -128,7 +134,11 @@
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* ----------------------------------- */
+        /* Desktop & Tablet specific overrides */
+        /* ----------------------------------- */
         @media (min-width: 768px) {
+            /* 1. Sidebar Desktop Rules */
             .sidebar { 
                 /* Sticky keeps it pinned to the screen while main content scrolls */
                 position: sticky; 
@@ -145,6 +155,17 @@
             }
             .sidebar.open { margin-left: 0; }
             .sidebar-overlay { display: none !important; }
+
+            /* 2. Container Spacing Desktop Rules */
+            #parentTabsContainer { 
+                /* Tweak this to reduce or increase the space specifically on desktop */
+                padding-bottom: 20px; 
+            }
+        
+            body.edit-mode-active #parentTabsContainer {
+                /* Tweak this to account for your desktop edit menu */
+                padding-bottom: 100px; 
+            }
         }
 
         .sidebar-overlay {
@@ -171,19 +192,6 @@
             /* Reduced edit-mode spacing */
             padding-bottom: 160px; 
         }
-
-		/* Desktop-Specific Spacing */
-		@media (min-width: 768px) {
-		    #parentTabsContainer { 
-		        /* Tweak this to reduce or increase the space specifically on desktop*/
-		        padding-bottom: 20px; 
-		    }
-		
-		    body.edit-mode-active #parentTabsContainer {
-		        /* Tweak this to account for your desktop edit menu*/
-		        padding-bottom: 100px; 
-		    }
-		}
 		
         #parentTabsList { display: flex; flex-direction: column; gap: 8px; align-items: stretch; margin: 0; width: 100%; }
 
