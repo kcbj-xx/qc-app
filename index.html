@@ -54,10 +54,15 @@
             background-color: var(--primary-hover) !important;
             color: white !important;
         }
-        
+
+		html, body {
+		    /* Lock the root to prevent native bouncing and pull-to-refresh */
+		    overscroll-behavior-y: none; 
+		}
+		
         body { 
 		    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-		    background-color: var(--bg); 
+    		background-color: var(--bg);
 		    color: var(--text); 
 		    margin: 0; 
 		    padding: 0; 
@@ -68,7 +73,6 @@
 		    
 			/* Lock the body to prevent native bouncing and pull-to-refresh */
             overflow: hidden; 
-            overscroll-behavior-y: none; 
         }
 
         .app-wrapper {
@@ -2339,7 +2343,19 @@
 			            ptrIsAtTop = false;
 			        }
 			    }, { passive: true });
-			
+
+				document.addEventListener('touchmove', (e) => {
+				    // If we aren't at the very top, let the browser handle scrolling normally
+				    if (!ptrIsAtTop) return;
+				
+				    const currentY = e.touches[0].clientY;
+				
+				    // If the user is dragging downwards while at the top, block the native scroll
+				    if (currentY > ptrStartY) {
+				        e.preventDefault(); // This kills the native pull-to-refresh dead
+				    }
+				}, { passive: false }); // passive MUST be false so we can call preventDefault()
+				
 			    document.addEventListener('touchend', (e) => {
 			        if (!ptrIsAtTop) return;
 			        
