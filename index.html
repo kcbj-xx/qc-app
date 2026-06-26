@@ -1332,7 +1332,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v84</div>
+            <div class="footer-version">v85</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -4547,7 +4547,7 @@
         
             function executeListVisualMove() {
                 if (listDraggingIdx === null) return;
-                const container = document.getElementById('numberList');
+                const container = listElements[0].parentElement; // Dynamically gets the right list
                 const totalMove = (listLastClientY - listStartY) + (container.scrollTop - listStartScrollTop);
                 const draggedEl = listElements[listDraggingIdx];
                 draggedEl.style.transform = `translateY(${totalMove}px)`;
@@ -4574,7 +4574,7 @@
                 listLastClientY = e.clientY || (e.touches ? e.touches[0].clientY : listLastClientY);
                 executeListVisualMove();
         
-                const container = document.getElementById('numberList');
+                const container = listElements[0].parentElement; // Dynamically gets the right list
                 const rect = container.getBoundingClientRect();
                 
                 if (listLastClientY < rect.top + 40) {
@@ -4604,41 +4604,29 @@
                     listScrollInterval = null;
                 }
                 
-                const container = document.getElementById('numberList');
+                const container = listElements[0].parentElement;
+                const isTallyList = container.id === 'tallyList';
+                
                 const totalMove = (listLastClientY - listStartY) + (container.scrollTop - listStartScrollTop);
                 let moveSteps = Math.round(totalMove / listRowHeight);
                 let targetIdx = listDraggingIdx + moveSteps;
                 targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
         
                 if (listDraggingIdx !== targetIdx) {
-				    // Detect which list we are dragging in based on the parent container
-				    const isTallyList = listElements[0].closest('#tallyList') !== null;
-				    
-				    if (isTallyList) {
-				        // Tally Reorder Logic
-				        const p = parentGroups.find(g => g.id === activeParentId);
-				        const arr = p.tallies; 
-				        const item = arr.splice(listDraggingIdx, 1)[0];
-				        arr.splice(targetIdx, 0, item);
-				        saveAllGroupData();
-				        renderTallies(); 
-				    } else {
-				        // Sum & Averaging Reorder Logic
-				        const arr = getActiveData();
-				        const item = arr.splice(listDraggingIdx, 1)[0];
-				        arr.splice(targetIdx, 0, item);
-				        saveAllGroupData();
-				        renderList(); 
-				    }
-				}
-				
-				// Ensure we re-enable pointer events for the inputs after dropping!
-				if (listDraggingIdx !== null && listElements[listDraggingIdx]) {
-				    listElements[listDraggingIdx].classList.remove('dragging');
-				    const inputs = listElements[listDraggingIdx].querySelectorAll('input');
-				    if (inputs) inputs.forEach(inp => inp.style.pointerEvents = '');
-				}
-        
+                    if (isTallyList) {
+                        const p = parentGroups.find(g => g.id === activeParentId);
+                        const arr = p.tallies; 
+                        const item = arr.splice(listDraggingIdx, 1)[0];
+                        arr.splice(targetIdx, 0, item);
+                        saveAllGroupData();
+                    } else {
+                        const arr = getActiveData();
+                        const item = arr.splice(listDraggingIdx, 1)[0];
+                        arr.splice(targetIdx, 0, item);
+                        saveAllGroupData();
+                    }
+                }
+                
                 listDraggingIdx = null;
                 document.removeEventListener('pointermove', onListPointerMove);
                 document.removeEventListener('pointerup', onListPointerUp);
@@ -4646,7 +4634,13 @@
                 document.removeEventListener('touchmove', onListPointerMove);
                 document.removeEventListener('touchend', onListPointerUp);
                 document.removeEventListener('touchcancel', onListPointerUp);
-                renderList();
+                
+                // Re-render the correct list to wipe out all temporary inline drag styles
+                if (isTallyList) {
+                    renderTallies();
+                } else {
+                    renderList();
+                }
             }
         
             function renderList() {
@@ -4709,7 +4703,7 @@
                         let holdTimer = setTimeout(() => {
 					        if (navigator.vibrate) navigator.vibrate(50);
 					        
-					        listDraggingIdx = index; // index from your tally loop
+					        listDraggingIdx = i; // index from your tally loop
 					        listStartScrollTop = container.scrollTop;
 					        listElements = Array.from(container.children);
 					        
