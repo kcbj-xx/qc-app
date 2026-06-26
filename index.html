@@ -2362,42 +2362,37 @@
 			        }
 			    }, { passive: true });
 
+				// Update your touchmove listener
 				document.addEventListener('touchmove', (e) => {
-				    // If we aren't at the very top, let the browser handle scrolling normally
-				    if (!ptrIsAtTop) return;
+				    // Check if we are in export mode - if so, do nothing and let the browser handle it
+				    if (isExportMode || !ptrIsAtTop) return;
 				
 				    const currentY = e.touches[0].clientY;
-				
-				    // If the user is dragging downwards while at the top, block the native scroll
 				    if (currentY > ptrStartY) {
-				        e.preventDefault(); // This kills the native pull-to-refresh dead
+				        e.preventDefault(); 
 				    }
-				}, { passive: false }); // passive MUST be false so we can call preventDefault()
+				}, { passive: false });
 				
-			    document.addEventListener('touchend', (e) => {
-			        if (!ptrIsAtTop) return;
-			        
-			        const ptrEndX = e.changedTouches[0].clientX;
-			        const ptrEndY = e.changedTouches[0].clientY;
-			        
-			        const deltaX = Math.abs(ptrEndX - ptrStartX);
-			        const deltaY = ptrEndY - ptrStartY; 
-			
-			        // If swiped strictly down by more than 150px
-			        if (deltaY > 150 && deltaX < 60) {
-			            // Haptic feedback
-			            if (navigator.vibrate) navigator.vibrate(50);
-			            
-			            // Visual fade feedback
-			            document.body.style.transition = 'opacity 0.2s ease';
-			            document.body.style.opacity = '0.5';
-			            
-			            // Reload the app
-			            setTimeout(() => {
-			                window.location.reload();
-			            }, 200);
-			        }
-			    });
+				// Update your touchend listener
+				document.addEventListener('touchend', (e) => {
+				    // Disable the refresh trigger if we are in export mode
+				    if (isExportMode || !ptrIsAtTop) return;
+				    
+				    const ptrEndX = e.changedTouches[0].clientX;
+				    const ptrEndY = e.changedTouches[0].clientY;
+				    
+				    const deltaX = Math.abs(ptrEndX - ptrStartX);
+				    const deltaY = ptrEndY - ptrStartY; 
+				
+				    if (deltaY > 150 && deltaX < 60) {
+				        if (navigator.vibrate) navigator.vibrate(50);
+				        document.body.style.transition = 'opacity 0.2s ease';
+				        document.body.style.opacity = '0.5';
+				        setTimeout(() => {
+				            window.location.reload();
+				        }, 200);
+				    }
+				});
 
 				// Creates a custom CSS variable for the exact real viewport height
 				function updateRealViewportHeight() {
