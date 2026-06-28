@@ -5129,6 +5129,25 @@
 			        renderTallies();
 			    }
 			}
+
+			function toggleTallyLock(id) {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const targetTally = p.tallies.find(t => t.id === id);
+			    
+			    if (targetTally) {
+			        // If it's already locked, just unlock it
+			        if (targetTally.isLocked) {
+			            targetTally.isLocked = false;
+			        } else {
+			            // Otherwise, unlock all other tallies first, then lock the target
+			            p.tallies.forEach(t => t.isLocked = false);
+			            targetTally.isLocked = true;
+			        }
+			        
+			        saveAllGroupData();
+			        renderTallies();
+			    }
+			}
         
             function addTally() {
                 const p = parentGroups.find(g => g.id === activeParentId);
