@@ -1332,7 +1332,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v88</div>
+            <div class="footer-version">v89</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1592,7 +1592,7 @@
                 parentGroups = [{
                     id: 'pg_' + Date.now(),
                     folderId: 'root',
-                    name: 'File 1',
+                    name: '',
                     productCode: '',
                     date: '',
                     startTime: '',
@@ -1766,10 +1766,16 @@
 			    const activeGroup = parentGroups.find(g => g.id === activeParentId);
 			    if (activeGroup) {
 			        const folder = appFolders.find(f => f.id === activeGroup.folderId);
-			        // Main UI: File Name (if set) OR Folder Name
-			        let mainTitle = activeGroup.name && activeGroup.name.trim() !== '' 
-			                        ? activeGroup.name 
-			                        : (folder ? folder.name : "Unnamed File");
+			        
+			        // Main UI Header Logic: Name > Product Code > Folder Name > Unnamed
+			        let mainTitle = "Unnamed File";
+			        if (activeGroup.name && activeGroup.name.trim() !== '') {
+			            mainTitle = activeGroup.name;
+			        } else if (activeGroup.productCode && activeGroup.productCode.trim() !== '') {
+			            mainTitle = activeGroup.productCode;
+			        } else if (folder && folder.id !== 'root') {
+			            mainTitle = folder.name;
+			        }
 			                        
 			        document.getElementById('activeGroupHeaderTitle').innerText = mainTitle;
 			    }
@@ -1830,17 +1836,15 @@
 			        btn.dataset.id = tab.id;
 			        if (tab.id === activeParentId) activeBtnElement = btn;
 			
-			        // Logic: 
-			        // 1. If in 'root', ALWAYS use the file's own name.
-			        // 2. If in a subfolder, prioritize product code, then fallback to folder name.
-			        let displayName;
-			        if (currentFolderId === 'root') {
-			            displayName = tab.name && tab.name.trim() !== '' ? tab.name : "Unnamed File";
-			        } else {
+			        // Sidebar Logic: Name > Product Code > Folder Name > Unnamed
+			        let displayName = "Unnamed File";
+			        if (tab.name && tab.name.trim() !== '') {
+			            displayName = tab.name;
+			        } else if (tab.productCode && tab.productCode.trim() !== '') {
+			            displayName = tab.productCode;
+			        } else if (currentFolderId !== 'root') {
 			            const folder = appFolders.find(f => f.id === tab.folderId);
-			            displayName = tab.productCode && tab.productCode.trim() !== '' 
-			                          ? tab.productCode 
-			                          : (folder ? folder.name : "Unnamed File");
+			            if (folder) displayName = folder.name;
 			        }
 			
 			        btn.innerText = displayName;
@@ -2019,31 +2023,38 @@
             }
         
             function saveParentGroupSettings() {
-                const newName = document.getElementById('renameParentTabInput').value;
-                const newProductCode = document.getElementById('groupProductCodeInput').value.trim();
-                const date = document.getElementById('groupDateInput').value;
-                const startTime = document.getElementById('groupStartTimeInput').value;
-                const endTime = document.getElementById('groupEndTimeInput').value;
-                
-                const p = parentGroups.find(t => t.id === activeParentId);
-                
-                let nameChanged = false;
-                if (p.name !== newName) {
-                    p.name = newName;
-                    nameChanged = true;
-                }
-                
-                p.productCode = newProductCode;
-                p.date = date;
-                p.startTime = startTime;
-                p.endTime = endTime;
-                
-                saveAllGroupData();
-                
-                if (nameChanged) {
-                    renderSidebarList();
-                }
-            }
+			    // Note: Removed .trim() so you can type spaces naturally without the cursor jumping
+			    const newName = document.getElementById('renameParentTabInput').value;
+			    const newProductCode = document.getElementById('groupProductCodeInput').value;
+			    const date = document.getElementById('groupDateInput').value;
+			    const startTime = document.getElementById('groupStartTimeInput').value;
+			    const endTime = document.getElementById('groupEndTimeInput').value;
+			    
+			    const p = parentGroups.find(t => t.id === activeParentId);
+			    
+			    let requiresUIRefresh = false;
+			    
+			    if (p.name !== newName) {
+			        p.name = newName;
+			        requiresUIRefresh = true;
+			    }
+			    
+			    if (p.productCode !== newProductCode) {
+			        p.productCode = newProductCode;
+			        requiresUIRefresh = true;
+			    }
+			    
+			    p.date = date;
+			    p.startTime = startTime;
+			    p.endTime = endTime;
+			    
+			    saveAllGroupData();
+			    
+			    // Instantly update the sidebar and headers as you type
+			    if (requiresUIRefresh) {
+			        renderSidebarList();
+			    }
+			}
         
             function confirmDeleteParentTab() {
                 const p = parentGroups.find(t => t.id === activeParentId);
@@ -2149,12 +2160,12 @@
             
             function addNewParentGroup() {
                 const filesInFolder = parentGroups.filter(f => f.folderId === currentFolderId);
-                const newName = getNextTabName(filesInFolder, "File");
-                const newGroup = {
-                    id: 'pg_' + Date.now(),
-                    folderId: currentFolderId,
-                    name: newName,
-                    productCode: '',
+                const newName = ""; 
+			    const newGroup = {
+			        id: 'pg_' + Date.now(),
+			        folderId: currentFolderId,
+			        name: newName,
+			        productCode: '',
                     date: '',
                     startTime: '',
                     endTime: '',
