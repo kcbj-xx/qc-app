@@ -4939,18 +4939,17 @@
 			    const container = document.getElementById('tallyList');
 			    container.innerHTML = '';
 			    
-			    // 1. Calculate the total count first so we can use it for percentages
+			    // 1. Calculate the total count first (wrapping in parseFloat to prevent string math)
 			    let totalCount = 0;
 			    p.tallies.forEach(tally => {
-			        totalCount += tally.count;
+			        totalCount += parseFloat(tally.count) || 0;
 			    });
 			    
 			    // 2. Render the UI
 			    p.tallies.forEach((tally, index) => {
-			        // Calculate percentage to 2 decimal places with safe rounding
 			        let percentage = 0;
 			        if (totalCount > 0) {
-			            percentage = (tally.count / totalCount) * 100;
+			            percentage = ((parseFloat(tally.count) || 0) / totalCount) * 100;
 			        }
 			        const pctString = totalCount > 0 ? `${safeRound(percentage, 2).toFixed(2)}%` : '0.00%';
 			        
@@ -5059,41 +5058,22 @@
 			    document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
 			}
 			
-			function toggleTallyLock(id) {
-			    const p = parentGroups.find(g => g.id === activeParentId);
-			    p.tallies.forEach(t => {
-			        if (t.id === id) {
-			            t.isLocked = !t.isLocked;
-			        } else {
-			            t.isLocked = false; // Ensures only one tally can be the locked pool at a time
-			        }
-			    });
-			    saveAllGroupData();
-			    renderTallies();
-			}
-			
-			function addTally() {
-			    const p = parentGroups.find(g => g.id === activeParentId);
-			    const newName = getNextTabName(p.tallies, "Counter");
-			    p.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0, isLocked: false });
-			    saveAllGroupData();
-			    renderTallies();
-			}
-			
 			function updateTallyCount(id, val) {
 			    const p = parentGroups.find(g => g.id === activeParentId);
 			    const tally = p.tallies.find(t => t.id === id);
 			    if (tally) { 
 			        const newVal = parseFloat(val) || 0;
-			        const diff = newVal - tally.count;
+			        const currentCount = parseFloat(tally.count) || 0;
+			        const actualDiff = newVal - currentCount;
 			        
 			        const lockedTally = p.tallies.find(t => t.isLocked);
 			        
 			        tally.count = newVal; 
 			        
-			        // Offset the locked tally by the difference to keep the total the same
+			        // Offset the locked tally by the exact difference
 			        if (lockedTally && lockedTally.id !== id) {
-			            lockedTally.count = safeRound(lockedTally.count - diff, 4);
+			            const lockedCount = parseFloat(lockedTally.count) || 0;
+			            lockedTally.count = safeRound(lockedCount - actualDiff, 4);
 			        }
 			        
 			        saveAllGroupData(); 
@@ -5111,13 +5091,40 @@
 			        
 			        const lockedTally = p.tallies.find(t => t.isLocked);
 			        
-			        tally.count = safeRound(tally.count + amount, 4);
+			        // Bulletproof math to prevent string concatenation bugs
+			        const currentCount = parseFloat(tally.count) || 0;
+			        const newCount = safeRound(currentCount + parseFloat(amount), 4);
+			        const actualDiff = newCount - currentCount;
 			        
-			        // Offset the locked tally by the amount to keep the total the same
+			        tally.count = newCount;
+			        
+			        // Offset the locked tally by the exact difference
 			        if (lockedTally && lockedTally.id !== id) {
-			            lockedTally.count = safeRound(lockedTally.count - amount, 4);
+			            const lockedCount = parseFloat(lockedTally.count) || 0;
+			            lockedTally.count = safeRound(lockedCount - actualDiff, 4);
 			        }
 			        
+			        saveAllGroupData();
+			        renderTallies();
+			    }
+			}
+			
+			function removeTally(id) {
+			    if (confirm("Are you sure you want to remove this tally counter?")) {
+			        const p = parentGroups.find(g => g.id === activeParentId);
+			        const tallyToRemove = p.tallies.find(t => t.id === id);
+			        
+			        // Refund the value back to the locked pool so the total sum stays identical
+			        if (tallyToRemove && !tallyToRemove.isLocked) {
+			            const lockedTally = p.tallies.find(t => t.isLocked);
+			            if (lockedTally) {
+			                const removedCount = parseFloat(tallyToRemove.count) || 0;
+			                const lockedCount = parseFloat(lockedTally.count) || 0;
+			                lockedTally.count = safeRound(lockedCount + removedCount, 4);
+			            }
+			        }
+			        
+			        p.tallies = p.tallies.filter(t => t.id !== id);
 			        saveAllGroupData();
 			        renderTallies();
 			    }
