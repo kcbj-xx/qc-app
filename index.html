@@ -1332,7 +1332,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v88</div>
+            <div class="footer-version">v89</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -4933,121 +4933,195 @@
 			// ---- TALLY COUNTER ENGINE ----
 			// ==========================================
 			function renderTallies() {
-			const p = parentGroups.find(g => g.id === activeParentId);
-			if (!p.tallies) p.tallies = [];
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    if (!p.tallies) p.tallies = [];
+			    
+			    const container = document.getElementById('tallyList');
+			    container.innerHTML = '';
+			    
+			    // 1. Calculate the total count first so we can use it for percentages
+			    let totalCount = 0;
+			    p.tallies.forEach(tally => {
+			        totalCount += tally.count;
+			    });
+			    
+			    // 2. Render the UI
+			    p.tallies.forEach((tally, index) => {
+			        // Calculate percentage to 2 decimal places with safe rounding
+			        let percentage = 0;
+			        if (totalCount > 0) {
+			            percentage = (tally.count / totalCount) * 100;
+			        }
+			        const pctString = totalCount > 0 ? `${safeRound(percentage, 2).toFixed(2)}%` : '0.00%';
+			        
+			        const isLocked = tally.isLocked ? true : false;
+			        const lockBg = isLocked ? 'var(--primary)' : 'transparent';
+			        const lockColor = isLocked ? '#ffffff' : '#94a3b8';
+			        const lockIcon = isLocked 
+			            ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
+			            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>`;
 			
-			const container = document.getElementById('tallyList');
-			container.innerHTML = '';
+			        const div = document.createElement('div');
+			        div.className = 'number-item'; 
+			        div.style.cssText = "background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
+			        
+			        div.innerHTML = `
+			            <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+			                <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 0; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
+			                
+			                <div style="font-size: 0.85rem; font-weight: bold; color: var(--primary); background: #e2e8f0; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">
+			                    ${pctString}
+			                </div>
+			                
+			                <button onclick="toggleTallyLock('${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock to keep total sum identical'}" style="margin: 0 0 0 auto; background: ${lockBg}; color: ${lockColor}; border: 1px solid ${isLocked ? 'var(--primary)' : '#cbd5e1'}; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0; transition: 0.2s;">
+			                    ${lockIcon}
+			                </button>
 			
-			// 1. Calculate the total count first so we can use it for percentages
-			let totalCount = 0;
-			p.tallies.forEach(tally => {
-				totalCount += tally.count;
-			});
+			                <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove" style="margin: 0;">&times;</button>
+			            </div>
+			            
+			            <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
+			                <div class="drag-handle" title="Hold to reorder" style="margin: 0; padding: 0 10px 0 0; display: flex; align-items: center; justify-content: flex-start; background: transparent; font-size: 1.5rem; color: #94a3b8; transition: color 0.2s;">&#x2261;</div>
+			                <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
+			                <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
+			                <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+			            </div>
+			        `;
+			        
+			        // --- DRAG EVENT LISTENER LOGIC ---
+			        const handle = div.querySelector('.drag-handle');
+			        const inputFields = div.querySelectorAll('input'); 
 			
-			// 2. Render the UI
-			p.tallies.forEach((tally, index) => {
-				// Calculate percentage (avoid division by zero)
-				let percentage = 0;
-				if (totalCount > 0) {
-					percentage = (tally.count / totalCount) * 100;
-				}
-				const pctString = totalCount > 0 ? `${percentage.toFixed(1)}%` : '0%';
-				
-				const div = document.createElement('div');
-				div.className = 'number-item'; 
-				// Changed back to column flex so the rows stack naturally
-				div.style.cssText = "background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
-				
-				div.innerHTML = `
-		            <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
-		                <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
-		                
-		                <div style="font-size: 0.85rem; font-weight: bold; color: var(--primary); background: #e2e8f0; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">
-		                    ${pctString}
-		                </div>
-		                
-		                <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove" style="margin-left: auto;">&times;</button>
-		            </div>
-		            
-		            <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
-		                <div class="drag-handle" title="Hold to reorder" style="margin: 0; padding: 0 15px; display: flex; align-items: center; justify-content: flex-start; background: transparent; font-size: 1.5rem; color: #94a3b8; transition: color 0.2s;">&#x2261;</div>
-		                <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-		                <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
-		                <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
-		            </div>
-		        `;
-				
-				// --- DRAG EVENT LISTENER LOGIC ---
-				const handle = div.querySelector('.drag-handle');
-				const inputFields = div.querySelectorAll('input'); 
-		
-				handle.addEventListener('pointerdown', (e) => {
-					document.activeElement.blur(); 
-					
-					listStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-					listLastClientY = listStartY;
-					
-					let holdTimer = setTimeout(() => {
-						if (navigator.vibrate) navigator.vibrate(50);
-						
-						listDraggingIdx = index; 
-						listStartScrollTop = container.scrollTop;
-						listElements = Array.from(container.children);
-						
-						const gap = 10; 
-						listRowHeight = listElements[0].offsetHeight + gap;
-						
-						listElements.forEach((el) => {
-							el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
-							el.dataset.offset = 0;
-						});
-						
-						div.style.transition = 'none'; 
-						div.classList.add('dragging');
-						inputFields.forEach(inp => inp.style.pointerEvents = 'none'); 
-						
-						document.addEventListener('pointermove', onListPointerMove, { passive: false });
-						document.addEventListener('pointerup', onListPointerUp);
-						document.addEventListener('pointercancel', onListPointerUp);
-						
-						document.addEventListener('touchmove', onListPointerMove, { passive: false });
-						document.addEventListener('touchend', onListPointerUp);
-						document.addEventListener('touchcancel', onListPointerUp);
-					}, 400); 
-		
-					const cancelHold = (eMove) => {
-						const moveY = eMove.clientY || (eMove.touches ? eMove.touches[0].clientY : 0);
-						if ((eMove.type === 'pointermove' || eMove.type === 'touchmove') && Math.abs(moveY - listStartY) < 10) return;
-						
-						clearTimeout(holdTimer);
-						document.removeEventListener('pointermove', cancelHold);
-						document.removeEventListener('pointerup', cancelHold);
-						document.removeEventListener('pointercancel', cancelHold);
-						document.removeEventListener('touchmove', cancelHold);
-						document.removeEventListener('touchend', cancelHold);
-						document.removeEventListener('touchcancel', cancelHold);
-					};
-		
-					document.addEventListener('pointermove', cancelHold);
-					document.addEventListener('pointerup', cancelHold);
-					document.addEventListener('pointercancel', cancelHold);
-					document.addEventListener('touchmove', cancelHold);
-					document.addEventListener('touchend', cancelHold);
-					document.addEventListener('touchcancel', cancelHold);
-				});
-				// --- END DRAG EVENT LISTENER LOGIC ---
-		
-				container.appendChild(div);
-			});
+			        handle.addEventListener('pointerdown', (e) => {
+			            document.activeElement.blur(); 
+			            
+			            listStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+			            listLastClientY = listStartY;
+			            
+			            let holdTimer = setTimeout(() => {
+			                if (navigator.vibrate) navigator.vibrate(50);
+			                
+			                listDraggingIdx = index; 
+			                listStartScrollTop = container.scrollTop;
+			                listElements = Array.from(container.children);
+			                
+			                const gap = 10; 
+			                listRowHeight = listElements[0].offsetHeight + gap;
+			                
+			                listElements.forEach((el) => {
+			                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+			                    el.dataset.offset = 0;
+			                });
+			                
+			                div.style.transition = 'none'; 
+			                div.classList.add('dragging');
+			                inputFields.forEach(inp => inp.style.pointerEvents = 'none'); 
+			                
+			                document.addEventListener('pointermove', onListPointerMove, { passive: false });
+			                document.addEventListener('pointerup', onListPointerUp);
+			                document.addEventListener('pointercancel', onListPointerUp);
+			                
+			                document.addEventListener('touchmove', onListPointerMove, { passive: false });
+			                document.addEventListener('touchend', onListPointerUp);
+			                document.addEventListener('touchcancel', onListPointerUp);
+			            }, 400); 
 			
-			const totalDisplay = document.getElementById('tallyTotalDisplay');
-			if (totalDisplay) {
-				totalDisplay.innerText = safeRound(totalCount, 4); 
+			            const cancelHold = (eMove) => {
+			                const moveY = eMove.clientY || (eMove.touches ? eMove.touches[0].clientY : 0);
+			                if ((eMove.type === 'pointermove' || eMove.type === 'touchmove') && Math.abs(moveY - listStartY) < 10) return;
+			                
+			                clearTimeout(holdTimer);
+			                document.removeEventListener('pointermove', cancelHold);
+			                document.removeEventListener('pointerup', cancelHold);
+			                document.removeEventListener('pointercancel', cancelHold);
+			                document.removeEventListener('touchmove', cancelHold);
+			                document.removeEventListener('touchend', cancelHold);
+			                document.removeEventListener('touchcancel', cancelHold);
+			            };
+			
+			            document.addEventListener('pointermove', cancelHold);
+			            document.addEventListener('pointerup', cancelHold);
+			            document.addEventListener('pointercancel', cancelHold);
+			            document.addEventListener('touchmove', cancelHold);
+			            document.addEventListener('touchend', cancelHold);
+			            document.addEventListener('touchcancel', cancelHold);
+			        });
+			        // --- END DRAG EVENT LISTENER LOGIC ---
+			
+			        container.appendChild(div);
+			    });
+			    
+			    const totalDisplay = document.getElementById('tallyTotalDisplay');
+			    if (totalDisplay) {
+			        totalDisplay.innerText = safeRound(totalCount, 4); 
+			    }
+			    
+			    document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
 			}
 			
-			document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
-		}
+			function toggleTallyLock(id) {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    p.tallies.forEach(t => {
+			        if (t.id === id) {
+			            t.isLocked = !t.isLocked;
+			        } else {
+			            t.isLocked = false; // Ensures only one tally can be the locked pool at a time
+			        }
+			    });
+			    saveAllGroupData();
+			    renderTallies();
+			}
+			
+			function addTally() {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const newName = getNextTabName(p.tallies, "Counter");
+			    p.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0, isLocked: false });
+			    saveAllGroupData();
+			    renderTallies();
+			}
+			
+			function updateTallyCount(id, val) {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const tally = p.tallies.find(t => t.id === id);
+			    if (tally) { 
+			        const newVal = parseFloat(val) || 0;
+			        const diff = newVal - tally.count;
+			        
+			        const lockedTally = p.tallies.find(t => t.isLocked);
+			        
+			        tally.count = newVal; 
+			        
+			        // Offset the locked tally by the difference to keep the total the same
+			        if (lockedTally && lockedTally.id !== id) {
+			            lockedTally.count = safeRound(lockedTally.count - diff, 4);
+			        }
+			        
+			        saveAllGroupData(); 
+			        renderTallies();
+			    }
+			}
+			
+			function adjustTally(id, amount) {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const tally = p.tallies.find(t => t.id === id);
+			    if (tally) {
+			        if ('vibrate' in navigator) {
+			            try { navigator.vibrate(20); } catch(e){}
+			        }
+			        
+			        const lockedTally = p.tallies.find(t => t.isLocked);
+			        
+			        tally.count = safeRound(tally.count + amount, 4);
+			        
+			        // Offset the locked tally by the amount to keep the total the same
+			        if (lockedTally && lockedTally.id !== id) {
+			            lockedTally.count = safeRound(lockedTally.count - amount, 4);
+			        }
+			        
+			        saveAllGroupData();
+			        renderTallies();
+			    }
+			}
         
             function addTally() {
                 const p = parentGroups.find(g => g.id === activeParentId);
