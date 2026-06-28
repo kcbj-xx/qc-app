@@ -5090,17 +5090,35 @@
 			    const p = parentGroups.find(g => g.id === activeParentId);
 			    const tally = p.tallies.find(t => t.id === id);
 			    if (tally) { 
-			        const newVal = parseFloat(val) || 0;
-			        const diff = newVal - tally.count;
+			        let newVal = parseFloat(val) || 0;
+			        
+			        // 1. Prevent the user from manually typing a negative number
+			        if (newVal < 0) {
+			            newVal = 0; 
+			        }
+			        
+			        const currentCount = parseFloat(tally.count) || 0;
+			        const actualDiff = newVal - currentCount;
 			        
 			        const lockedTally = p.tallies.find(t => t.isLocked);
 			        
-			        tally.count = newVal; 
-			        
-			        // Offset the locked tally by the difference to keep the total the same
+			        // 2. Look-ahead check: Will this steal too much from the locked pool?
 			        if (lockedTally && lockedTally.id !== id) {
-			            lockedTally.count = safeRound(lockedTally.count - diff, 4);
+			            const lockedCount = parseFloat(lockedTally.count) || 0;
+			            const projectedLockedCount = safeRound(lockedCount - actualDiff, 4);
+			            
+			            if (projectedLockedCount < 0) {
+			                alert("Action prevented: The locked tally pool cannot drop below zero.");
+			                renderTallies(); // Reverts the input box back to its previous valid number
+			                return; 
+			            }
+			            
+			            // If it passed the check, apply the offset
+			            lockedTally.count = projectedLockedCount;
 			        }
+			        
+			        // Finally, save the new value for the target tally
+			        tally.count = newVal; 
 			        
 			        saveAllGroupData(); 
 			        renderTallies();
@@ -5115,14 +5133,33 @@
 			            try { navigator.vibrate(20); } catch(e){}
 			        }
 			        
+			        const currentCount = parseFloat(tally.count) || 0;
+			        const newCount = safeRound(currentCount + parseFloat(amount), 4);
+			        
+			        // 1. Prevent the minus button from dropping the target tally below zero
+			        if (newCount < 0) {
+			            return; // Silently block the action, no annoying alert needed for UI buttons
+			        }
+			        
+			        const actualDiff = newCount - currentCount;
 			        const lockedTally = p.tallies.find(t => t.isLocked);
 			        
-			        tally.count = safeRound(tally.count + amount, 4);
-			        
-			        // Offset the locked tally by the amount to keep the total the same
+			        // 2. Look-ahead check: Will this steal too much from the locked pool?
 			        if (lockedTally && lockedTally.id !== id) {
-			            lockedTally.count = safeRound(lockedTally.count - amount, 4);
+			            const lockedCount = parseFloat(lockedTally.count) || 0;
+			            const projectedLockedCount = safeRound(lockedCount - actualDiff, 4);
+			            
+			            if (projectedLockedCount < 0) {
+			                alert("Action prevented: The locked tally pool cannot drop below zero.");
+			                return;
+			            }
+			            
+			            // If it passed the check, apply the offset
+			            lockedTally.count = projectedLockedCount;
 			        }
+			        
+			        // Finally, save the new value for the target tally
+			        tally.count = newCount;
 			        
 			        saveAllGroupData();
 			        renderTallies();
