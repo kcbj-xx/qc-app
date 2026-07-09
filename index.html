@@ -5045,15 +5045,15 @@
 			        div.innerHTML = `
 			            <button class="remove-btn" onclick="removeTally(event, '${tally.id}')" title="Remove" style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; font-size: 1.2rem; line-height: 1; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.15); z-index: 10;">&times;</button>
 			            
-			            <button class="lock-btn" onclick="toggleTallyLock(event, '${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock'}" style="position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; padding: 0; background: ${isLocked ? 'var(--primary)' : 'transparent'}; color: ${isLocked ? '#fff' : '#cbd5e1'}; border: 1px solid ${isLocked ? 'var(--primary)' : 'transparent'}; border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 10;">
+			            <button class="lock-btn" onclick="toggleTallyLock(event, '${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock'}" style="position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 24px; height: 24px; padding: 0; background: ${isLocked ? 'var(--primary)' : 'transparent'}; color: ${isLocked ? '#fff' : '#cbd5e1'}; border: 1px solid ${isLocked ? 'var(--primary)' : 'transparent'}; border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 10;">
 			                ${lockIcon}
 			            </button>
 			
 			            <div class="drag-handle" title="Hold to reorder" style="position: absolute; top: 2px; left: 4px; width: auto; color: #cbd5e1; font-size: 1.4rem; line-height: 1; padding: 0; margin: 0; z-index: 5;">&#x2261;</div>
 			            
-			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin-top: 10px; margin-bottom: 5px;">${tally.count}</div>
+			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none; background: transparent; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 15px 0 2px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
 			            
-			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none; background: transparent; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 0 0 10px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
+			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 2px 0 8px 0;">${tally.count}</div>
 			            
 			            <div style="font-size: 0.9rem; font-weight: bold; color: var(--primary); background: ${isActive ? '#dbeafe' : '#e2e8f0'}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
 			                ${pctString}
