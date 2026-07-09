@@ -1260,9 +1260,7 @@
 						    <div style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; text-align: center;" id="activeTallyLabel">Selected: None</div>
 						    <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
 						        <button onclick="adjustActiveTally(-1)" style="margin: 0; flex: 1; background-color: var(--border); color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-						        
 						        <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" inputmode="decimal" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: 1px solid var(--border); background: transparent; color: var(--text); outline: none;">
-						        
 						        <button onclick="adjustActiveTally(1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
 						    </div>
 						</div>
@@ -1343,7 +1341,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v90</div>
+            <div class="footer-version">v90.3</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -4572,6 +4570,8 @@
             }
         
             let listDraggingIdx = null;
+			let listStartX = 0;       // ADD THIS
+			let listLastClientX = 0;  // ADD THIS
             let listStartY = 0;
             let listStartScrollTop = 0;
             let listRowHeight = 0;
@@ -4581,55 +4581,71 @@
             let listLastClientY = 0;
         
             function executeListVisualMove() {
-                if (listDraggingIdx === null) return;
-                const container = listElements[0].parentElement; // Dynamically gets the right list
-                const totalMove = (listLastClientY - listStartY) + (container.scrollTop - listStartScrollTop);
-                const draggedEl = listElements[listDraggingIdx];
-                draggedEl.style.transform = `translateY(${totalMove}px)`;
-        
-                let moveSteps = Math.round(totalMove / listRowHeight);
-                let targetIdx = listDraggingIdx + moveSteps;
-                targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
-        
-                listElements.forEach((el, idx) => {
-                    if (idx === listDraggingIdx) return;
-                    let offset = 0;
-                    if (idx > listDraggingIdx && idx <= targetIdx) offset = -listRowHeight;
-                    else if (idx < listDraggingIdx && idx >= targetIdx) offset = listRowHeight;
-                    
-                    if (el.dataset.offset != offset) {
-                        el.style.transform = `translateY(${offset}px)`;
-                        el.dataset.offset = offset;
-                    }
-                });
-            }
-        
-            function onListPointerMove(e) {
-                if (listDraggingIdx === null) return;
-                listLastClientY = e.clientY || (e.touches ? e.touches[0].clientY : listLastClientY);
-                executeListVisualMove();
-        
-                const container = listElements[0].parentElement; // Dynamically gets the right list
-                const rect = container.getBoundingClientRect();
-                
-                if (listLastClientY < rect.top + 40) {
-                    listScrollDir = -5;
-                } else if (listLastClientY > rect.bottom - 40) {
-                    listScrollDir = 5;
-                } else {
-                    listScrollDir = 0;
-                }
-        
-                if (listScrollDir !== 0 && !listScrollInterval) {
-                    listScrollInterval = setInterval(() => {
-                        container.scrollTop += listScrollDir;
-                        executeListVisualMove();
-                    }, 16);
-                } else if (listScrollDir === 0 && listScrollInterval) {
-                    clearInterval(listScrollInterval);
-                    listScrollInterval = null;
-                }
-            }
+			    if (listDraggingIdx === null) return;
+			    const container = listElements[0].parentElement; 
+			    
+			    // Calculate both X and Y movement
+			    const moveX = listLastClientX - listStartX;
+			    const moveY = (listLastClientY - listStartY) + (container.scrollTop - listStartScrollTop);
+			    
+			    const draggedEl = listElements[listDraggingIdx];
+			    
+			    if (container.id === 'tallyList') {
+			        // Tally grid gets full 2D movement
+			        draggedEl.style.transform = `translate(${moveX}px, ${moveY}px)`;
+			    } else {
+			        // Standard vertical lists stay 1D
+			        draggedEl.style.transform = `translateY(${moveY}px)`;
+			    }
+			
+			    // Standard 1D sorting logic for the background elements
+			    let moveSteps = Math.round(moveY / listRowHeight);
+			    let targetIdx = listDraggingIdx + moveSteps;
+			    targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
+			
+			    listElements.forEach((el, idx) => {
+			        if (idx === listDraggingIdx) return;
+			        let offset = 0;
+			        if (idx > listDraggingIdx && idx <= targetIdx) offset = -listRowHeight;
+			        else if (idx < listDraggingIdx && idx >= targetIdx) offset = listRowHeight;
+			        
+			        if (el.dataset.offset != offset) {
+			            el.style.transform = `translateY(${offset}px)`;
+			            el.dataset.offset = offset;
+			        }
+			    });
+			}
+			
+			function onListPointerMove(e) {
+			    if (listDraggingIdx === null) return;
+			    
+			    // Capture both X and Y
+			    listLastClientX = e.clientX || (e.touches ? e.touches[0].clientX : listLastClientX);
+			    listLastClientY = e.clientY || (e.touches ? e.touches[0].clientY : listLastClientY);
+			    
+			    executeListVisualMove();
+			
+			    const container = listElements[0].parentElement;
+			    const rect = container.getBoundingClientRect();
+			    
+			    if (listLastClientY < rect.top + 40) {
+			        listScrollDir = -5;
+			    } else if (listLastClientY > rect.bottom - 40) {
+			        listScrollDir = 5;
+			    } else {
+			        listScrollDir = 0;
+			    }
+			
+			    if (listScrollDir !== 0 && !listScrollInterval) {
+			        listScrollInterval = setInterval(() => {
+			            container.scrollTop += listScrollDir;
+			            executeListVisualMove();
+			        }, 16);
+			    } else if (listScrollDir === 0 && listScrollInterval) {
+			        clearInterval(listScrollInterval);
+			        listScrollInterval = null;
+			    }
+			}
         
             function onListPointerUp(e) {
                 if (listDraggingIdx === null) return;
@@ -4971,19 +4987,17 @@
 			    const activeLabel = document.getElementById('activeTallyLabel');
 			    const activeInput = document.getElementById('activeTallyInput');
 			
-			    // Handle Master Controls visibility & Selection
 			    if (p.tallies.length === 0) {
 			        masterControls.style.display = 'none';
 			        p.activeTallyId = null;
 			    } else {
 			        if (!p.activeTallyId || !p.tallies.find(t => t.id === p.activeTallyId)) {
-			            p.activeTallyId = p.tallies[0].id; // Default to first card
+			            p.activeTallyId = p.tallies[0].id; 
 			        }
 			        const activeTally = p.tallies.find(t => t.id === p.activeTallyId);
 			        masterControls.style.display = 'flex';
 			        activeLabel.innerText = `Selected: ${activeTally.name}`;
 			        
-			        // Only override the input if the user isn't actively typing in it
 			        if (document.activeElement !== activeInput) {
 			            activeInput.value = activeTally.count;
 			        }
@@ -5003,7 +5017,7 @@
 			        const div = document.createElement('div');
 			        div.className = 'number-item'; 
 			        
-			        // 1. Updated Card Styling to match .stat-box dimensions
+			        // Match Add Card Dimensions exactly
 			        div.style.cssText = `
 			            background: var(--bg);
 			            border: ${isActive ? '2px' : '1px'} solid ${isActive ? 'var(--primary)' : 'var(--border)'};
@@ -5012,13 +5026,14 @@
 			            display: flex;
 			            flex-direction: column;
 			            align-items: center;
+			            justify-content: center;
 			            position: relative;
+			            min-height: 125px;
 			            box-sizing: border-box;
 			            transition: 0.2s;
 			            cursor: pointer;
 			        `;
 			        
-			        // Tapping the card sets it as the active tally
 			        div.onclick = (e) => {
 			            if (e.target.tagName !== 'TEXTAREA') {
 			                p.activeTallyId = tally.id;
@@ -5030,29 +5045,31 @@
 			        div.innerHTML = `
 			            <button class="remove-btn" onclick="removeTally(event, '${tally.id}')" title="Remove" style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; font-size: 1.2rem; line-height: 1; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.15); z-index: 10;">&times;</button>
 			            
-			            <button class="lock-btn" onclick="toggleTallyLock(event, '${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock'}" style="position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; padding: 0; background: ${isLocked ? 'var(--primary)' : 'transparent'}; color: ${isLocked ? '#fff' : '#cbd5e1'}; border: 1px solid ${isLocked ? 'var(--primary)' : 'transparent'}; border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 10;">
+			            <button class="lock-btn" onclick="toggleTallyLock(event, '${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock'}" style="position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; padding: 0; background: ${isLocked ? 'var(--primary)' : 'transparent'}; color: ${isLocked ? '#fff' : '#cbd5e1'}; border: 1px solid ${isLocked ? 'var(--primary)' : 'transparent'}; border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 10;">
 			                ${lockIcon}
 			            </button>
 			
-			            <div class="drag-handle" title="Hold to reorder" style="display: block; width: 100%; text-align: center; color: #cbd5e1; font-size: 1.4rem; line-height: 1; padding: 0; margin: 0 0 5px 0; z-index: 5;">&#x2261;</div>
+			            <div class="drag-handle" title="Hold to reorder" style="position: absolute; top: 2px; left: 4px; width: auto; color: #cbd5e1; font-size: 1.4rem; line-height: 1; padding: 0; margin: 0; z-index: 5;">&#x2261;</div>
 			            
-			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; height: 24px; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; resize: none; overflow: hidden; padding: 0 4px; margin: 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
+			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin-top: 10px; margin-bottom: 5px;">${tally.count}</div>
 			            
-			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 8px 0;">${tally.count}</div>
+			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; height: 18px; border: none; background: transparent; font-weight: 600; font-size: 0.75rem; resize: none; overflow: hidden; white-space: nowrap; padding: 0 4px; margin: 0 0 10px 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
 			            
-			            <div style="font-size: 0.75rem; font-weight: bold; color: var(--primary); background: ${isActive ? '#dbeafe' : '#e2e8f0'}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
+			            <div style="font-size: 0.9rem; font-weight: bold; color: var(--primary); background: ${isActive ? '#dbeafe' : '#e2e8f0'}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
 			                ${pctString}
 			            </div>
 			        `;
 			        
-			        // --- DRAG EVENT LISTENER LOGIC ---
 			        const handle = div.querySelector('.drag-handle');
 			        const textAreas = div.querySelectorAll('textarea'); 
 			
 			        handle.addEventListener('pointerdown', (e) => {
 			            document.activeElement.blur(); 
 			            
+			            // Capture both X and Y starting positions
+			            listStartX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
 			            listStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+			            listLastClientX = listStartX;
 			            listLastClientY = listStartY;
 			            
 			            let holdTimer = setTimeout(() => {
@@ -5085,7 +5102,8 @@
 			
 			            const cancelHold = (eMove) => {
 			                const moveY = eMove.clientY || (eMove.touches ? eMove.touches[0].clientY : 0);
-			                if ((eMove.type === 'pointermove' || eMove.type === 'touchmove') && Math.abs(moveY - listStartY) < 10) return;
+			                const moveX = eMove.clientX || (eMove.touches ? eMove.touches[0].clientX : 0);
+			                if ((eMove.type === 'pointermove' || eMove.type === 'touchmove') && (Math.abs(moveY - listStartY) < 10 && Math.abs(moveX - listStartX) < 10)) return;
 			                
 			                clearTimeout(holdTimer);
 			                document.removeEventListener('pointermove', cancelHold);
@@ -5103,12 +5121,10 @@
 			            document.addEventListener('touchend', cancelHold);
 			            document.addEventListener('touchcancel', cancelHold);
 			        });
-			        // --- END DRAG EVENT LISTENER LOGIC ---
 			
 			        container.appendChild(div);
 			    });
 			    
-			    // 3. Updated Add Card to match the new compact heights
 			    const addCard = document.createElement('div');
 			    addCard.style.cssText = `
 			        background: transparent;
@@ -5119,7 +5135,7 @@
 			        align-items: center;
 			        justify-content: center;
 			        padding: 10px;
-			        min-height: 100px;
+			        min-height: 125px; /* Matched EXACTLY to tally cards */
 			        box-sizing: border-box;
 			        cursor: pointer;
 			        color: var(--primary);
@@ -5131,8 +5147,6 @@
 			        <div style="font-size: 0.75rem; font-weight: 600; margin-top: 5px;">Add Tally</div>
 			    `;
 			    container.appendChild(addCard);
-			    
-			    // --- END NEW INJECTION ---
 			
 			    const totalDisplay = document.getElementById('tallyTotalDisplay');
 			    if (totalDisplay) {
