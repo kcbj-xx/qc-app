@@ -1251,14 +1251,25 @@
                         <div class="chevron">&#9660;</div>
                     </h2>
                     <div class="card-body">
-                        <div style="background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                            <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: bold;">Total Count</div>
-                            <div id="tallyTotalDisplay" style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">0</div>
-                        </div>
-                        <div id="tallyList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;"></div>
-                        <button class="action-btn" onclick="addTally()" style="margin-top:0;">+ Add New Tally</button>
-                        <button id="clearTalliesBtn" class="secondary" onclick="resetTallies()" style="display: none;">Reset All Counts to Zero</button>
-                    </div>
+					    <div style="background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+					        <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: bold;">Total Count</div>
+					        <div id="tallyTotalDisplay" style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">0</div>
+					    </div>
+					
+					    <div id="tallyMasterControls" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+					        <div style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; text-align: center;" id="activeTallyLabel">Selected: None</div>
+					        <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
+					            <button onclick="adjustActiveTally(-1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
+					            <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" inputmode="decimal" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: 1px solid var(--border); background: #fff; outline: none;">
+					            <button onclick="adjustActiveTally(1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+					        </div>
+					    </div>
+					
+					    <div id="tallyList" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; padding: 4px;"></div>
+					
+					    <button class="action-btn" onclick="addTally()" style="margin-top:0;">+ Add New Tally</button>
+					    <button id="clearTalliesBtn" class="secondary" onclick="resetTallies()" style="display: none;">Reset All Counts to Zero</button>
+					</div>
                 </div>
         
                 <div class="card collapsed" id="card-percentage" data-exportable="false">
@@ -4888,34 +4899,35 @@
                 }
             }
 
-	function calcPercentage(source) {
-                const p = parentGroups.find(g => g.id === activeParentId);
-                const totalEl = document.getElementById('pctTotal');
-                const partEl = document.getElementById('pctPart');
-                const pctEl = document.getElementById('pctValue');
-        
-                let total = parseFloat(totalEl.value);
-                let part = parseFloat(partEl.value);
-                let pct = parseFloat(pctEl.value);
-        
-                if (source === 'part' || source === 'total') {
-                    if (!isNaN(total) && total !== 0 && !isNaN(part)) {
-                        pctEl.value = safeRound((part / total) * 100, 4);
-                    } else if (source === 'total' && !isNaN(total) && !isNaN(pct)) {
-                         partEl.value = safeRound((total * pct) / 100, 4);
-                    }
-                } else if (source === 'pct') {
-                    if (!isNaN(total) && !isNaN(pct)) {
-                        partEl.value = safeRound((total * pct) / 100, 4);
-                    }
-                }
-                
-                p.percentage.total = totalEl.value;
-                p.percentage.part = partEl.value;
-                p.percentage.pct = pctEl.value;
-                saveAllGroupData();
-                updatePctDOM();
-            }
+			function calcPercentage(source) {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const totalEl = document.getElementById('pctTotal');
+			    const partEl = document.getElementById('pctPart');
+			    const pctEl = document.getElementById('pctValue');
+			
+			    let total = parseFloat(totalEl.value);
+			    let part = parseFloat(partEl.value);
+			    let pct = parseFloat(pctEl.value);
+			
+			    if (source === 'part' || source === 'total') {
+			        if (!isNaN(total) && total !== 0 && !isNaN(part)) {
+			            // Caps the percentage result to a maximum of 2 decimal places
+			            pctEl.value = safeRound((part / total) * 100, 2); 
+			        } else if (source === 'total' && !isNaN(total) && !isNaN(pct)) {
+			             partEl.value = safeRound((total * pct) / 100, 4);
+			        }
+			    } else if (source === 'pct') {
+			        if (!isNaN(total) && !isNaN(pct)) {
+			            partEl.value = safeRound((total * pct) / 100, 4);
+			        }
+			    }
+			    
+			    p.percentage.total = totalEl.value;
+			    p.percentage.part = partEl.value;
+			    p.percentage.pct = pctEl.value;
+			    saveAllGroupData();
+			    updatePctDOM();
+			}
         
             function resetPercentage() {
                 const p = parentGroups.find(g => g.id === activeParentId);
@@ -4944,64 +4956,100 @@
 			// ---- TALLY COUNTER ENGINE ----
 			// ==========================================
 			function renderTallies() {
-				const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = parentGroups.find(g => g.id === activeParentId);
 			    if (!p.tallies) p.tallies = [];
 			    
 			    const container = document.getElementById('tallyList');
 			    container.innerHTML = '';
 			    
-			    // 1. Calculate the total count first so we can use it for percentages
 			    let totalCount = 0;
 			    p.tallies.forEach(tally => {
 			        totalCount += tally.count;
 			    });
-			    
-			    // 2. Render the UI
-			    p.tallies.forEach((tally, index) => {
-			        // Calculate percentage to 2 decimal places with safe rounding
-			        let percentage = 0;
-			        if (totalCount > 0) {
-			            percentage = (tally.count / totalCount) * 100;
+			
+			    const masterControls = document.getElementById('tallyMasterControls');
+			    const activeLabel = document.getElementById('activeTallyLabel');
+			    const activeInput = document.getElementById('activeTallyInput');
+			
+			    // Handle Master Controls visibility & Selection
+			    if (p.tallies.length === 0) {
+			        masterControls.style.display = 'none';
+			        p.activeTallyId = null;
+			    } else {
+			        if (!p.activeTallyId || !p.tallies.find(t => t.id === p.activeTallyId)) {
+			            p.activeTallyId = p.tallies[0].id; // Default to first card
 			        }
+			        const activeTally = p.tallies.find(t => t.id === p.activeTallyId);
+			        masterControls.style.display = 'flex';
+			        activeLabel.innerText = `Selected: ${activeTally.name}`;
+			        
+			        // Only override the input if the user isn't actively typing in it
+			        if (document.activeElement !== activeInput) {
+			            activeInput.value = activeTally.count;
+			        }
+			    }
+			    
+			    p.tallies.forEach((tally, index) => {
+			        let percentage = totalCount > 0 ? (tally.count / totalCount) * 100 : 0;
 			        const pctString = totalCount > 0 ? `${safeRound(percentage, 2).toFixed(2)}%` : '0.00%';
 			        
 			        const isLocked = tally.isLocked ? true : false;
-			        const lockBg = isLocked ? 'var(--primary)' : 'transparent';
-			        const lockColor = isLocked ? '#ffffff' : '#94a3b8';
+			        const isActive = tally.id === p.activeTallyId;
+			        
 			        const lockIcon = isLocked 
-			            ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
-			            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>`;
+			            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
+			            : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>`;
 			
 			        const div = document.createElement('div');
 			        div.className = 'number-item'; 
-			        div.style.cssText = "background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px;";
 			        
-			        div.innerHTML = `
-			            <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
-			                <input type="text" value="${tally.name}" onchange="updateTallyName('${tally.id}', this.value)" style="flex: 1; min-height: 36px; padding: 6px 10px; font-weight: bold; border: 1px solid transparent; background: transparent; outline: none;" placeholder="Tally Name">
-			                
-			                <div style="font-size: 0.85rem; font-weight: bold; color: var(--primary); background: #e2e8f0; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">
-			                    ${pctString}
-			                </div>
-			                
-			                <button onclick="toggleTallyLock('${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock to keep total sum identical'}" style="margin: 0 0 0 auto; background: ${lockBg}; color: ${lockColor}; border: 1px solid ${isLocked ? 'var(--primary)' : 'var(--border)'}; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0; transition: 0.2s;">
-			                    ${lockIcon}
-			                </button>
+			        // Dynamic styling based on whether this card is currently selected
+			        div.style.cssText = `
+			            background: ${isActive ? '#eff6ff' : '#f8fafc'};
+			            border: 2px solid ${isActive ? 'var(--primary)' : 'var(--border)'};
+			            border-radius: 8px;
+			            padding: 10px 5px;
+			            display: flex;
+			            flex-direction: column;
+			            align-items: center;
+			            position: relative;
+			            height: 125px;
+			            box-sizing: border-box;
+			            transition: 0.2s;
+			            cursor: pointer;
+			        `;
+			        
+			        // Tapping the card sets it as the active tally
+			        div.onclick = (e) => {
+			            // Ignore if they clicked the textarea so the keyboard doesn't glitch
+			            if (e.target.tagName !== 'TEXTAREA') {
+			                p.activeTallyId = tally.id;
+			                saveAllGroupData();
+			                renderTallies();
+			            }
+			        };
 			
-			                <button class="remove-btn" onclick="removeTally('${tally.id}')" title="Remove" style="margin: 0;">&times;</button>
-			            </div>
+			        div.innerHTML = `
+			            <button class="remove-btn" onclick="removeTally(event, '${tally.id}')" title="Remove" style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; font-size: 1.2rem; line-height: 1; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.15); z-index: 10;">&times;</button>
 			            
-			            <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
-			                <div class="drag-handle" title="Hold to reorder" style="margin: 0; padding: 0 10px 0 0; display: flex; align-items: center; justify-content: flex-start; background: transparent; font-size: 1.5rem; color: #94a3b8; transition: color 0.2s;">&#x2261;</div>
-			                <button onclick="adjustTally('${tally.id}', -1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-			                <input type="number" value="${tally.count}" onchange="updateTallyCount('${tally.id}', this.value)" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: none; background: transparent; outline: none;">
-			                <button onclick="adjustTally('${tally.id}', 1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+			            <button class="lock-btn" onclick="toggleTallyLock(event, '${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock'}" style="position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; padding: 0; background: ${isLocked ? 'var(--primary)' : 'transparent'}; color: ${isLocked ? '#fff' : '#cbd5e1'}; border: 1px solid ${isLocked ? 'var(--primary)' : 'transparent'}; border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 10;">
+			                ${lockIcon}
+			            </button>
+			
+			            <div class="drag-handle" title="Hold to reorder" style="width: 100%; text-align: center; color: #cbd5e1; font-size: 1.2rem; line-height: 0.5; padding: 0 0 5px 0; margin: -5px 0 0 0; z-index: 5;">&#x2261;</div>
+			            
+			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; flex: 1; border: none; background: transparent; font-weight: 600; font-size: 0.75rem; resize: none; overflow: hidden; padding: 0 8px; margin: 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
+			            
+			            <div style="font-size: 1.5rem; font-weight: bold; color: var(--text); line-height: 1; margin: 5px 0;">${tally.count}</div>
+			            
+			            <div style="font-size: 0.7rem; font-weight: bold; color: var(--primary); background: ${isActive ? '#dbeafe' : '#e2e8f0'}; padding: 2px 6px; border-radius: 12px; white-space: nowrap;">
+			                ${pctString}
 			            </div>
 			        `;
 			        
 			        // --- DRAG EVENT LISTENER LOGIC ---
 			        const handle = div.querySelector('.drag-handle');
-			        const inputFields = div.querySelectorAll('input'); 
+			        const textAreas = div.querySelectorAll('textarea'); 
 			
 			        handle.addEventListener('pointerdown', (e) => {
 			            document.activeElement.blur(); 
@@ -5026,7 +5074,7 @@
 			                
 			                div.style.transition = 'none'; 
 			                div.classList.add('dragging');
-			                inputFields.forEach(inp => inp.style.pointerEvents = 'none'); 
+			                textAreas.forEach(inp => inp.style.pointerEvents = 'none'); 
 			                
 			                document.addEventListener('pointermove', onListPointerMove, { passive: false });
 			                document.addEventListener('pointerup', onListPointerUp);
@@ -5070,13 +5118,14 @@
 			    document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
 			}
 
-			function toggleTallyLock(id) {
+			function toggleTallyLock(event, id) {
+			    if (event) event.stopPropagation(); // Prevents the card from being selected when locked
 			    const p = parentGroups.find(g => g.id === activeParentId);
 			    p.tallies.forEach(t => {
 			        if (t.id === id) {
 			            t.isLocked = !t.isLocked;
 			        } else {
-			            t.isLocked = false; // Ensures only one tally can be the locked pool at a time
+			            t.isLocked = false;
 			        }
 			    });
 			    saveAllGroupData();
@@ -5177,14 +5226,30 @@
 			    }
 			}
         
-            function removeTally(id) {
-                if (confirm("Are you sure you want to remove this tally counter?")) {
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    p.tallies = p.tallies.filter(t => t.id !== id);
-                    saveAllGroupData();
-                    renderTallies();
-                }
-            }
+            function removeTally(event, id) {
+			    if (event) event.stopPropagation(); // Prevents the card from being selected when deleted
+			    if (confirm("Are you sure you want to remove this tally counter?")) {
+			        const p = parentGroups.find(g => g.id === activeParentId);
+			        p.tallies = p.tallies.filter(t => t.id !== id);
+			        if (p.activeTallyId === id) p.activeTallyId = null;
+			        saveAllGroupData();
+			        renderTallies();
+			    }
+			}
+
+			function adjustActiveTally(amount) {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    if (p && p.activeTallyId) {
+			        adjustTally(p.activeTallyId, amount);
+			    }
+			}
+			
+			function updateActiveTallyCount(val) {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    if (p && p.activeTallyId) {
+			        updateTallyCount(p.activeTallyId, val);
+			    }
+			}
         
             function resetTallies() {
                 const p = parentGroups.find(g => g.id === activeParentId);
