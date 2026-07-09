@@ -1256,14 +1256,16 @@
 					        <div id="tallyTotalDisplay" style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">0</div>
 					    </div>
 					
-					    <div id="tallyMasterControls" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
-					        <div style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; text-align: center;" id="activeTallyLabel">Selected: None</div>
-					        <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
-					            <button onclick="adjustActiveTally(-1)" style="margin: 0; flex: 1; background-color: #cbd5e1; color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-					            <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" inputmode="decimal" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: 1px solid var(--border); background: #fff; outline: none;">
-					            <button onclick="adjustActiveTally(1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
-					        </div>
-					    </div>
+					    <div id="tallyMasterControls" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+						    <div style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; text-align: center;" id="activeTallyLabel">Selected: None</div>
+						    <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
+						        <button onclick="adjustActiveTally(-1)" style="margin: 0; flex: 1; background-color: var(--border); color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
+						        
+						        <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" inputmode="decimal" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: 1px solid var(--border); background: transparent; color: var(--text); outline: none;">
+						        
+						        <button onclick="adjustActiveTally(1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+						    </div>
+						</div>
 					
 					    <div id="tallyList" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; padding: 4px;"></div>
 					    <button id="clearTalliesBtn" class="secondary" onclick="resetTallies()" style="display: none;">Reset All Counts to Zero</button>
@@ -5001,18 +5003,16 @@
 			        const div = document.createElement('div');
 			        div.className = 'number-item'; 
 			        
-			        // Dynamic styling - changed to use min-height and height: 100% to fill grid
+			        // 1. Updated Card Styling to match .stat-box dimensions
 			        div.style.cssText = `
-			            background: ${isActive ? '#eff6ff' : '#f8fafc'};
-			            border: 2px solid ${isActive ? 'var(--primary)' : 'var(--border)'};
+			            background: var(--bg);
+			            border: ${isActive ? '2px' : '1px'} solid ${isActive ? 'var(--primary)' : 'var(--border)'};
 			            border-radius: 8px;
-			            padding: 15px 10px 10px 10px;
+			            padding: 10px;
 			            display: flex;
 			            flex-direction: column;
 			            align-items: center;
 			            position: relative;
-			            min-height: 130px;
-			            height: 100%;
 			            box-sizing: border-box;
 			            transition: 0.2s;
 			            cursor: pointer;
@@ -5036,7 +5036,7 @@
 			
 			            <div class="drag-handle" title="Hold to reorder" style="display: block; width: 100%; text-align: center; color: #cbd5e1; font-size: 1.4rem; line-height: 1; padding: 0; margin: 0 0 5px 0; z-index: 5;">&#x2261;</div>
 			            
-			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; flex: 1; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; resize: none; overflow: hidden; padding: 0 4px; margin: 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
+			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; height: 24px; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; resize: none; overflow: hidden; padding: 0 4px; margin: 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
 			            
 			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 8px 0;">${tally.count}</div>
 			            
@@ -5108,7 +5108,7 @@
 			        container.appendChild(div);
 			    });
 			    
-			    // --- NEW: INJECT THE ADD CARD ---
+			    // 3. Updated Add Card to match the new compact heights
 			    const addCard = document.createElement('div');
 			    addCard.style.cssText = `
 			        background: transparent;
@@ -5118,8 +5118,8 @@
 			        flex-direction: column;
 			        align-items: center;
 			        justify-content: center;
-			        min-height: 130px;
-			        height: 100%;
+			        padding: 10px;
+			        min-height: 100px;
 			        box-sizing: border-box;
 			        cursor: pointer;
 			        color: var(--primary);
