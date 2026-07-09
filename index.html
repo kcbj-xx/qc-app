@@ -5053,7 +5053,7 @@
 			            
 			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin-top: 10px; margin-bottom: 5px;">${tally.count}</div>
 			            
-			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; height: 18px; border: none; background: transparent; font-weight: 600; font-size: 0.75rem; resize: none; overflow: hidden; white-space: nowrap; padding: 0 4px; margin: 0 0 10px 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
+			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none; background: transparent; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 0 0 10px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
 			            
 			            <div style="font-size: 0.9rem; font-weight: bold; color: var(--primary); background: ${isActive ? '#dbeafe' : '#e2e8f0'}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
 			                ${pctString}
