@@ -1266,8 +1266,6 @@
 					    </div>
 					
 					    <div id="tallyList" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; padding: 4px;"></div>
-					
-					    <button class="action-btn" onclick="addTally()" style="margin-top:0;">+ Add New Tally</button>
 					    <button id="clearTalliesBtn" class="secondary" onclick="resetTallies()" style="display: none;">Reset All Counts to Zero</button>
 					</div>
                 </div>
@@ -5003,17 +5001,18 @@
 			        const div = document.createElement('div');
 			        div.className = 'number-item'; 
 			        
-			        // Dynamic styling based on whether this card is currently selected
+			        // Dynamic styling - changed to use min-height and height: 100% to fill grid
 			        div.style.cssText = `
 			            background: ${isActive ? '#eff6ff' : '#f8fafc'};
 			            border: 2px solid ${isActive ? 'var(--primary)' : 'var(--border)'};
 			            border-radius: 8px;
-			            padding: 10px 5px;
+			            padding: 15px 10px 10px 10px;
 			            display: flex;
 			            flex-direction: column;
 			            align-items: center;
 			            position: relative;
-			            height: 125px;
+			            min-height: 130px;
+			            height: 100%;
 			            box-sizing: border-box;
 			            transition: 0.2s;
 			            cursor: pointer;
@@ -5021,7 +5020,6 @@
 			        
 			        // Tapping the card sets it as the active tally
 			        div.onclick = (e) => {
-			            // Ignore if they clicked the textarea so the keyboard doesn't glitch
 			            if (e.target.tagName !== 'TEXTAREA') {
 			                p.activeTallyId = tally.id;
 			                saveAllGroupData();
@@ -5036,13 +5034,13 @@
 			                ${lockIcon}
 			            </button>
 			
-			            <div class="drag-handle" title="Hold to reorder" style="width: 100%; text-align: center; color: #cbd5e1; font-size: 1.2rem; line-height: 0.5; padding: 0 0 5px 0; margin: -5px 0 0 0; z-index: 5;">&#x2261;</div>
+			            <div class="drag-handle" title="Hold to reorder" style="display: block; width: 100%; text-align: center; color: #cbd5e1; font-size: 1.4rem; line-height: 1; padding: 0; margin: 0 0 5px 0; z-index: 5;">&#x2261;</div>
 			            
-			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; flex: 1; border: none; background: transparent; font-weight: 600; font-size: 0.75rem; resize: none; overflow: hidden; padding: 0 8px; margin: 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
+			            <textarea onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" style="width: 100%; text-align: center; flex: 1; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; resize: none; overflow: hidden; padding: 0 4px; margin: 0; color: var(--text); outline: none;" placeholder="Name">${tally.name}</textarea>
 			            
-			            <div style="font-size: 1.5rem; font-weight: bold; color: var(--text); line-height: 1; margin: 5px 0;">${tally.count}</div>
+			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 8px 0;">${tally.count}</div>
 			            
-			            <div style="font-size: 0.7rem; font-weight: bold; color: var(--primary); background: ${isActive ? '#dbeafe' : '#e2e8f0'}; padding: 2px 6px; border-radius: 12px; white-space: nowrap;">
+			            <div style="font-size: 0.75rem; font-weight: bold; color: var(--primary); background: ${isActive ? '#dbeafe' : '#e2e8f0'}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
 			                ${pctString}
 			            </div>
 			        `;
@@ -5120,7 +5118,8 @@
 			        flex-direction: column;
 			        align-items: center;
 			        justify-content: center;
-			        height: 125px;
+			        min-height: 130px;
+			        height: 100%;
 			        box-sizing: border-box;
 			        cursor: pointer;
 			        color: var(--primary);
