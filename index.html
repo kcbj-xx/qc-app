@@ -1343,7 +1343,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v89</div>
+            <div class="footer-version">v90</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -5110,6 +5110,31 @@
 			        container.appendChild(div);
 			    });
 			    
+			    // --- NEW: INJECT THE ADD CARD ---
+			    const addCard = document.createElement('div');
+			    addCard.style.cssText = `
+			        background: transparent;
+			        border: 2px dashed var(--border);
+			        border-radius: 8px;
+			        display: flex;
+			        flex-direction: column;
+			        align-items: center;
+			        justify-content: center;
+			        height: 125px;
+			        box-sizing: border-box;
+			        cursor: pointer;
+			        color: var(--primary);
+			        transition: 0.2s;
+			    `;
+			    addCard.onclick = addTally;
+			    addCard.innerHTML = `
+			        <div style="font-size: 2rem; font-weight: bold; line-height: 1;">+</div>
+			        <div style="font-size: 0.75rem; font-weight: 600; margin-top: 5px;">Add Tally</div>
+			    `;
+			    container.appendChild(addCard);
+			    
+			    // --- END NEW INJECTION ---
+			
 			    const totalDisplay = document.getElementById('tallyTotalDisplay');
 			    if (totalDisplay) {
 			        totalDisplay.innerText = safeRound(totalCount, 4); 
