@@ -3341,7 +3341,7 @@
                 updatePickupTabMenuState();
             }
         
-            function renderPickupTabs() {
+        	function renderPickupTabs() {
                 const list = document.getElementById('pickupTabsList');
                 list.innerHTML = '';
                 let activeBtnElement = null;
@@ -3368,7 +3368,7 @@
                             activePickupTabId = tab.id;
                             isPickupTabMenuOpen = false;
                             const activePSet = pickupSets.find(s => s.id === activePickupSetId);
-							if (activePSet) {
+                            if (activePSet) {
                                 activePSet.activeTabId = activePickupTabId;
                             }
                             
@@ -3379,7 +3379,6 @@
                         }
                     };
 
-                    // Touch events for drag threshold detection
                     btn.addEventListener('touchstart', (e) => {
                         startX = e.touches[0].clientX;
                         startY = e.touches[0].clientY;
@@ -3393,7 +3392,6 @@
                     list.appendChild(btn);
                 });
 
-                // Add the "+" button for creating new pickup tabs
                 const addBtn = document.createElement('button');
                 addBtn.className = 'add-tab-btn';
                 addBtn.innerText = '+';
@@ -3407,7 +3405,7 @@
                     const newTabId = 'ptab_' + Date.now();
                     const newTab = {
                         id: newTabId,
-                        name: generateNextSampleName(pickupTabs),
+                        name: getNextTabName(pickupTabs, "Sample"),
                         data: [],
                         lastAddedStr: '',
                         minRange: '',
@@ -3439,7 +3437,6 @@
 
                 list.appendChild(addBtn);
 
-                // Smooth scroll to keep the active tab visible
                 if (activeBtnElement) {
                     setTimeout(() => {
                         const container = document.getElementById('pickupTabsContainer');
@@ -3450,32 +3447,36 @@
                     }, 50);
                 }
 
-                // Re-initialize draggable functionality for the newly rendered tabs
-                setupTabDragManager(
-                    'pickupTabsContainer', 
-                    'pickupTabsList', 
-                    () => pickupTabs, 
-                    () => { saveAllGroupData(); }, 
-                    renderPickupTabs, 
-                    'x'
-                );
+                if (typeof setupTabDragManager === 'function') {
+                    setupTabDragManager(
+                        'pickupTabsContainer', 
+                        'pickupTabsList', 
+                        () => pickupTabs, 
+                        () => { saveAllGroupData(); }, 
+                        renderPickupTabs, 
+                        'x'
+                    );
+                }
             }
 
-            function renderEstimatorTabs() {
-                const list = document.getElementById('estimatorTabsList');
+            // ==========================================
+            // SALINITY TABS & LOGIC
+            // ==========================================
+
+            function renderSalinityTabs() {
+                const list = document.getElementById('salinityTabsList');
                 if (!list) return;
                 list.innerHTML = '';
                 
                 let activeBtnElement = null;
-                const activeEstimatorId = estimatorTabs.length > 0 ? estimatorTabs[0].id : null;
 
-                estimatorTabs.forEach((tab) => {
+                salinityTabs.forEach((tab) => {
                     const btn = document.createElement('button');
-                    btn.className = `tab-btn ${tab.id === activeEstimatorId ? 'active' : ''}`;
+                    btn.className = `tab-btn ${tab.id === activeSalinityTabId ? 'active' : ''}`;
                     btn.innerText = tab.name;
                     btn.dataset.id = tab.id;
 
-                    if (tab.id === activeEstimatorId) activeBtnElement = btn;
+                    if (tab.id === activeSalinityTabId) activeBtnElement = btn;
 
                     btn.onclick = (e) => {
                         const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
@@ -3484,12 +3485,11 @@
                         
                         if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
 
-                        // Estimator tab selection logic
-                        if (activeEstimatorId !== tab.id) {
-                            // Update active estimator logic here
+                        if (activeSalinityTabId !== tab.id) {
+                            activeSalinityTabId = tab.id;
                             saveAllGroupData();
-                            renderEstimatorTabs();
-                            loadEstimatorInputs();
+                            renderSalinityTabs();
+                            updateSalinityDOM();
                         }
                     };
 
@@ -3505,51 +3505,88 @@
 
                     list.appendChild(btn);
                 });
+                
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-tab-btn';
+                addBtn.innerText = '+';
+                addBtn.onclick = (e) => {
+                    const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                    const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                    const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                        
+                    if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
 
-                setupTabDragManager(
-                    'estimatorTabsContainer', 
-                    'estimatorTabsList', 
-                    () => estimatorTabs, 
-                    () => { saveAllGroupData(); }, 
-                    renderEstimatorTabs, 
-                    'x'
-                );
+                    const newId = 'stab_' + Date.now();
+                    salinityTabs.push({ 
+                        id: newId, 
+                        name: getNextTabName(salinityTabs, "Sample"), 
+                        brix: '' 
+                    });
+                    activeSalinityTabId = newId;
+                    saveAllGroupData();
+                    renderSalinityTabs();
+                    updateSalinityDOM();
+                };
+                list.appendChild(addBtn);
+                
+                if (activeBtnElement) {
+                    setTimeout(() => {
+                        const container = document.getElementById('salinityTabsContainer');
+                        if (container && activeBtnElement) {
+                            const scrollPos = activeBtnElement.offsetLeft - (container.offsetWidth / 2) + (activeBtnElement.offsetWidth / 2);
+                            container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+                        }
+                    }, 50);
+                }
+
+                if (typeof setupTabDragManager === 'function') {
+                    setupTabDragManager(
+                        'salinityTabsContainer', 
+                        'salinityTabsList', 
+                        () => salinityTabs, 
+                        () => { saveAllGroupData(); }, 
+                        renderSalinityTabs, 
+                        'x'
+                    );
+                }
             }
 
-            function loadEstimatorInputs() {
-                // Implementation for loading estimator data into the active tab
-            }
-
-            function updateEstimatorTabMenuState() {
-                const panel = document.getElementById('estimatorTabOptionsPanel');
-                if (panel) {
-                    panel.style.display = isEstimatorTabMenuOpen ? 'flex' : 'none';
+            function updateSalinityDOM() {
+                const tab = salinityTabs.find(t => t.id === activeSalinityTabId);
+                if (tab) {
+                    const brixInput = document.getElementById('brixVal');
+                    if (brixInput) brixInput.value = tab.brix || '';
                 }
             }
 
             // ==========================================
-            // SALINITY TABS & TALLY RENDERING
+            // TALLY & GLOBAL RENDERING
             // ==========================================
-
-            function renderSalinityTabs() {
-                // Implementation for rendering salinity sample tabs
-            }
-
-            function updateSalinityDOM() {
-                // Implementation for updating salinity values in the DOM
-            }
 
             function renderTallies() {
                 const container = document.getElementById('tallyList');
                 if (!container) return;
                 
+                const p = parentGroups.find(g => g.id === activeParentId);
+                const currentTallies = p.tallies || [];
+
                 container.innerHTML = '';
-                tallies.forEach(tally => {
+                currentTallies.forEach((tally, index) => {
                     const el = document.createElement('div');
                     el.className = 'tally-item';
+                    
+                    el.style.backgroundColor = '#ffffff';
+                    el.style.border = '1px solid var(--border)';
+                    el.style.borderRadius = '8px';
+                    el.style.padding = '12px';
+                    el.style.display = 'flex';
+                    el.style.flexDirection = 'column';
+                    el.style.alignItems = 'center';
+                    el.style.justifyContent = 'center';
+
                     el.innerHTML = `
-                        <div class="tally-title">${tally.name}</div>
-                        <div class="tally-count">${tally.count}</div>
+                        <div class="tally-title" style="font-size: 0.85rem; color: #64748b; font-weight: 600; text-align: center; margin-bottom: 8px;">${tally.name || `Tally ${index + 1}`}</div>
+                        <div class="tally-count" style="font-size: 1.5rem; color: var(--primary); font-weight: bold;">${tally.count || 0}</div>
                     `;
                     container.appendChild(el);
                 });
@@ -3560,19 +3597,17 @@
             // ==========================================
 
             function initApp() {
-                renderPickupTabs();
-                renderEstimatorTabs();
-                renderSalinityTabs();
-                renderTallies();
-                
-                // Add event listeners for global UI interactions
-                document.addEventListener('click', (e) => {
-                    // Handle clicking outside of menus to close them
-                });
+                if (typeof renderPickupTabs === 'function') renderPickupTabs();
+                if (typeof renderEstimatorTabs === 'function') renderEstimatorTabs();
+                if (typeof renderSalinityTabs === 'function') renderSalinityTabs();
+                if (typeof renderTallies === 'function') renderTallies();
             }
 
-            // Boot the application once the DOM is fully loaded
-            document.addEventListener('DOMContentLoaded', initApp);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initApp);
+            } else {
+                initApp();
+            }
 
         </script>
     </body>
