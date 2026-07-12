@@ -5149,7 +5149,7 @@
 			                </span>
 			            </div>
 			            
-			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none !important; background: transparent !important; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 25px 0 2px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
+			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" onfocus="const el = this; setTimeout(() => el.setSelectionRange(el.value.length, el.value.length), 0)" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none !important; background: transparent !important; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 15px 0 2px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
 			            
 			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 2px 0 8px 0;">${tally.count}</div>
 			            
