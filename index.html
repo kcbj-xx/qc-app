@@ -1261,7 +1261,7 @@
 						    <div style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; text-align: center;" id="activeTallyLabel">Selected: None</div>
 						    <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
 						        <button onclick="adjustActiveTally(-1)" style="margin: 0; flex: 1; background-color: var(--border); color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-						        <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" inputmode="decimal" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: 1px solid var(--border); background: transparent; color: var(--text); outline: none;">
+						        <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" onkeydown="if(event.key === 'Enter') this.blur();" inputmode="decimal" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: 1px solid var(--border); background: transparent; color: var(--text); outline: none;">
 						        <button onclick="adjustActiveTally(1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
 						    </div>
 						</div>
@@ -4659,6 +4659,7 @@
 			
 			function onListPointerMove(e) {
 			    if (listDraggingIdx === null) return;
+			    if (e.cancelable) e.preventDefault();
 			    
 			    // Capture both X and Y
 			    listLastClientX = e.clientX || (e.touches ? e.touches[0].clientX : listLastClientX);
@@ -5113,15 +5114,15 @@
 			                style="
 			                    position: absolute; top: 0; right: 0;
 			                    width: 36px; height: 32px;
-			                    background: #ef4444;
+			                    background: transparent;
+			                    border: none;
 			                    cursor: pointer;
 			                    z-index: 10;
-			                    border-bottom-left-radius: 8px;
 			                    display: flex; align-items: center; justify-content: center;
-			                    transition: background 0.2s;
+			                    transition: opacity 0.2s;
 			                ">
 			                <span style="
-			                    color: white;
+			                    color: #ef4444;
 			                    font-size: 1.2rem; font-weight: 700; line-height: 1;
 			                    pointer-events: none; user-select: none;
 			                ">&times;</span>
@@ -5132,12 +5133,12 @@
 			                style="
 			                    position: absolute; top: 0; left: 0;
 			                    width: 36px; height: 32px;
-			                    background: ${isLocked ? (isDark ? 'rgba(29,78,216,0.4)' : 'rgba(219,234,254,0.95)') : (isDark ? 'rgba(71,85,105,0.35)' : 'rgba(203,213,225,0.55)')};
+			                    background: transparent;
+			                    border: none;
 			                    cursor: pointer;
 			                    z-index: 10;
-			                    border-bottom-right-radius: 8px;
 			                    display: flex; align-items: center; justify-content: center;
-			                    transition: background 0.2s;
+			                    transition: opacity 0.2s;
 			                ">
 			                <span style="
 			                    color: ${isLocked ? 'var(--primary)' : (isDark ? '#475569' : '#94a3b8')};
@@ -5148,7 +5149,7 @@
 			                </span>
 			            </div>
 			            
-			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none !important; background: transparent !important; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 8px 0 2px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
+			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none !important; background: transparent !important; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 15px 0 2px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
 			            
 			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 2px 0 8px 0;">${tally.count}</div>
 			            
@@ -5162,7 +5163,6 @@
 			        div.addEventListener('pointerdown', (e) => {
 			            // Don't initiate drag from interactive elements (but allow corner divs for dragging)
 			            if (e.target.closest('input, textarea, button')) return;
-			            document.activeElement.blur(); 
 			            
 			            // Capture both X and Y starting positions
 			            listStartX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
@@ -5171,6 +5171,7 @@
 			            listLastClientY = listStartY;
 			            
 			            let holdTimer = setTimeout(() => {
+			                document.activeElement.blur();
 			                if (navigator.vibrate) navigator.vibrate(50);
 			                
 			                listDraggingIdx = index; 
