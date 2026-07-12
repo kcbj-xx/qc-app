@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5107,36 +5108,38 @@
 			
 			        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 			        div.innerHTML = `
-			            <!-- Top-right folded corner: Remove button -->
+			            <!-- Top-right corner: Remove button -->
 			            <div onclick="removeTally(event, '${tally.id}')" title="Remove"
 			                style="
 			                    position: absolute; top: 0; right: 0;
-			                    width: 44px; height: 44px;
-			                    background: linear-gradient(45deg, transparent 50%, #ef4444 50%);
+			                    width: 36px; height: 32px;
+			                    background: #ef4444;
 			                    cursor: pointer;
 			                    z-index: 10;
+			                    border-bottom-left-radius: 8px;
+			                    display: flex; align-items: center; justify-content: center;
 			                    transition: background 0.2s;
 			                ">
 			                <span style="
-			                    position: absolute; top: 5px; right: 6px;
 			                    color: white;
-			                    font-size: 1rem; font-weight: 700; line-height: 1;
+			                    font-size: 1.2rem; font-weight: 700; line-height: 1;
 			                    pointer-events: none; user-select: none;
 			                ">&times;</span>
 			            </div>
 			
-			            <!-- Top-left folded corner: Lock button -->
+			            <!-- Top-left corner: Lock button -->
 			            <div onclick="toggleTallyLock(event, '${tally.id}')" title="${isLocked ? 'Unlock' : 'Lock'}"
 			                style="
 			                    position: absolute; top: 0; left: 0;
-			                    width: 44px; height: 44px;
-			                    background: linear-gradient(315deg, transparent 50%, ${isLocked ? (isDark ? 'rgba(29,78,216,0.4)' : 'rgba(219,234,254,0.95)') : (isDark ? 'rgba(71,85,105,0.35)' : 'rgba(203,213,225,0.55)')} 50%);
+			                    width: 36px; height: 32px;
+			                    background: ${isLocked ? (isDark ? 'rgba(29,78,216,0.4)' : 'rgba(219,234,254,0.95)') : (isDark ? 'rgba(71,85,105,0.35)' : 'rgba(203,213,225,0.55)')};
 			                    cursor: pointer;
 			                    z-index: 10;
+			                    border-bottom-right-radius: 8px;
+			                    display: flex; align-items: center; justify-content: center;
 			                    transition: background 0.2s;
 			                ">
 			                <span style="
-			                    position: absolute; top: 5px; left: 6px;
 			                    color: ${isLocked ? 'var(--primary)' : (isDark ? '#475569' : '#94a3b8')};
 			                    pointer-events: none;
 			                    display: flex; align-items: center; justify-content: center;
