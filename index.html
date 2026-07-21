@@ -1258,15 +1258,19 @@
 					    </div>
 					
 					    <div id="tallyMasterControls" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
-						    <div style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; text-align: center;" id="activeTallyLabel">Selected: None</div>
-						    <div style="display: flex; gap: 10px; align-items: stretch; width: 100%;">
-						        <button onclick="adjustActiveTally(-1)" style="margin: 0; flex: 1; background-color: var(--border); color: var(--text); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">-</button>
-						        <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" onkeydown="if(event.key === 'Enter') this.blur();" inputmode="decimal" style="flex: 2; text-align: center; font-size: 1.25rem; font-weight: bold; margin: 0; min-height: 46px; border: 1px solid var(--border); background: transparent; color: var(--text); outline: none;">
-						        <button onclick="adjustActiveTally(1)" style="margin: 0; flex: 1; background-color: var(--primary); font-size: 1.5rem; font-weight: bold; line-height: 1; padding: 0;">+</button>
+						    <div style="display: flex; align-items: center; justify-content: center;">
+							    <div style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: bold; text-align: center;" id="activeTallyLabel">Selected: None</div>
+						    </div>
+						    <div style="display: flex; justify-content: center; align-items: center;">
+						        <input type="number" id="activeTallyInput" onchange="updateActiveTallyCount(this.value)" onkeydown="if(event.key === 'Enter') this.blur();" inputmode="decimal" style="width: 100%; text-align: center; font-size: 1.4rem; font-weight: bold; margin: 0; min-height: 52px; border: 2px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); outline: none; transition: box-shadow 0.3s; box-shadow: none;">
+						    </div>
+						    <div style="display: flex; gap: 8px; width: 100%;">
+						        <button onclick="adjustActiveTally(-1)" style="margin: 0; flex: 1; background-color: var(--border); color: var(--text); font-size: 2rem; font-weight: bold; line-height: 1; padding: 14px 0; border-radius: 8px; border: none; cursor: pointer;">&#8722;</button>
+						        <button onclick="adjustActiveTally(1)" style="margin: 0; flex: 1; background-color: var(--primary); color: white; font-size: 2rem; font-weight: bold; line-height: 1; padding: 14px 0; border-radius: 8px; border: none; cursor: pointer;">+</button>
 						    </div>
 						</div>
 					
-					    <div id="tallyList" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; padding: 4px;"></div>
+					    <div id="tallyList" style="display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 10px; row-gap: 0px; grid-auto-rows: 1px; margin-bottom: 15px; padding: 4px; align-items: start;"></div>
 					    <button id="clearTalliesBtn" class="secondary" onclick="resetTallies()" style="display: none;">Reset All Counts to Zero</button>
 					</div>
                 </div>
@@ -1342,7 +1346,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v94</div>
+            <div class="footer-version">v95</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -4615,34 +4619,56 @@
 			    targetIdx = Math.max(0, Math.min(listElements.length - 1, targetIdx));
 			
 			    if (container.id === 'tallyList' && listColWidth > 0) {
-			        // 2D grid: simulate the fully reordered layout so each card
-			        // animates to exactly where it will land after the drop.
 			        const cols = 3;
 			
-			        // Build the order the array would have after the splice
 			        const order = [];
 			        for (let i = 0; i < listElements.length; i++) {
 			            if (i !== listDraggingIdx) order.push(i);
 			        }
 			        order.splice(targetIdx, 0, listDraggingIdx);
 			
-			        // For each non-dragged card, compute where it will sit in the
-			        // new grid layout and offset it from its original position.
-			        listElements.forEach((el, originalIdx) => {
-			            if (originalIdx === listDraggingIdx) return;
-			            const newPos = order.indexOf(originalIdx);  // slot in new layout
-			            const oldRow = Math.floor(originalIdx / cols);
-			            const oldCol = originalIdx % cols;
-			            const newRow = Math.floor(newPos / cols);
-			            const newCol = newPos % cols;
-			            const dx = (newCol - oldCol) * listColWidth;
-			            const dy = (newRow - oldRow) * listRowHeight;
-			            const key = `${dx},${dy}`;
-			            if (el.dataset.offset !== key) {
-			                el.style.transform = `translate(${dx}px, ${dy}px)`;
-			                el.dataset.offset = key;
+			        const colXs = [0, 0, 0];
+			        for (let i = 0; i < 3; i++) {
+			            const elInCol = listElements.find((_, idx) => (idx % 3) === i);
+			            colXs[i] = elInCol ? elInCol._origX : (i > 0 ? colXs[i-1] + listColWidth : 0);
+			        }
+			        
+			        const startY = listElements.length > 0 ? listElements[0]._origY : 0;
+			        let colHeights = [startY, startY, startY];
+			        
+			        order.forEach((originalIdx, newPos) => {
+			            const el = listElements[originalIdx];
+			            const col = newPos % cols;
+			            
+			            const targetX = colXs[col];
+			            const targetY = colHeights[col];
+			            
+			            if (originalIdx !== listDraggingIdx) {
+			                const dx = targetX - el._origX;
+			                const dy = targetY - el._origY;
+			                const key = `${dx},${dy}`;
+			                if (el.dataset.offset !== key) {
+			                    el.style.transform = `translate(${dx}px, ${dy}px)`;
+			                    el.dataset.offset = key;
+			                }
 			            }
+			            
+			            colHeights[col] = targetY + el._h + 10;
 			        });
+			        
+			        const addCard = document.getElementById('addTallyCard');
+			        if (addCard && addCard._origX !== undefined) {
+			            const col = listElements.length % cols;
+			            const targetX = colXs[col];
+			            const targetY = colHeights[col];
+			            const dx = targetX - addCard._origX;
+			            const dy = targetY - addCard._origY;
+			            const key = `${dx},${dy}`;
+			            if (addCard.dataset.offset !== key) {
+			                addCard.style.transform = `translate(${dx}px, ${dy}px)`;
+			                addCard.dataset.offset = key;
+			            }
+			        }
 			    } else {
 			        listElements.forEach((el, idx) => {
 			            if (idx === listDraggingIdx) return;
@@ -5034,6 +5060,102 @@
             // ==========================================
 			// ---- TALLY COUNTER ENGINE ----
 			// ==========================================
+			let _tallyDeleteHoldTimer = null;
+
+			function startTallyDeleteHold(event, id) {
+			    event.stopPropagation();
+			    _tallyDeleteHoldTimer = setTimeout(() => {
+			        if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+			        const p = parentGroups.find(g => g.id === activeParentId);
+			        if (p && p.tallies.length > 1 && confirm(`Delete ALL ${p.tallies.length} counters? This cannot be undone.`)) {
+			            p.tallies = [];
+			            p.activeTallyId = null;
+			            p.tallyMenuCollapsed = false;
+			            saveAllGroupData();
+			            renderTallies();
+			        }
+			    }, 600);
+			}
+
+			function cancelTallyDeleteHold() {
+			    if (_tallyDeleteHoldTimer) { clearTimeout(_tallyDeleteHoldTimer); _tallyDeleteHoldTimer = null; }
+			}
+
+			function collapseTallyMenu() {
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    if (p) {
+			        p.tallyMenuCollapsed = true;
+			        saveAllGroupData();
+			        renderTallies();
+			    }
+			}
+
+			function flashTallyCount(type) {
+			    const input = document.getElementById('activeTallyInput');
+			    if (!input) return;
+			    const shadowMap = { add: '0 0 0 2px #86efac', remove: '0 0 0 2px #fca5a5' };
+			    input.style.transition = 'box-shadow 0.08s ease-out';
+			    input.style.boxShadow = shadowMap[type];
+			    setTimeout(() => {
+			        input.style.transition = 'box-shadow 0.35s ease-in';
+			        input.style.boxShadow = 'none';
+			    }, 130);
+			}
+
+			let _tallyResizeObserver = null;
+			let _isApplyingMasonry = false;
+			
+			function applyTallyMasonry() {
+			    const list = document.getElementById('tallyList');
+			    if (!list) return;
+			    
+			    // Attach observer to naturally re-run masonry when the tab un-hides
+			    if (!_tallyResizeObserver) {
+			        _tallyResizeObserver = new ResizeObserver(() => {
+			            if (list.offsetParent !== null && !_isApplyingMasonry) applyTallyMasonry();
+			        });
+			        _tallyResizeObserver.observe(list);
+			    }
+			    
+			    // Abort if currently hidden (Observer will catch it when it appears)
+			    if (list.offsetParent === null) return;
+			    if (_isApplyingMasonry) return;
+			    
+			    _isApplyingMasonry = true;
+			    
+			    // Ensure Add Card correctly mirrors height once fully visible
+			    const firstCard = list.querySelector('.number-item');
+			    const addCard = document.getElementById('addTallyCard');
+			    if (firstCard && addCard) {
+			        const h = firstCard.offsetHeight + 'px';
+			        addCard.style.minHeight = h;
+			        addCard.style.height = h;
+			    }
+			    
+			    const children = Array.from(list.children);
+			    
+			    // Read all heights first to avoid layout thrashing
+			    const spans = children.map(child => Math.ceil(child.offsetHeight + 10));
+			    
+			    // Explicitly place items left-to-right to override grid auto-placement jumps
+			    let colHeights = [0, 0, 0];
+			    children.forEach((child, i) => {
+			        const col = i % 3;
+			        const startRow = colHeights[col] + 1;
+			        const span = spans[i];
+			        
+			        child.style.gridColumn = col + 1;
+			        child.style.gridRowStart = startRow;
+			        child.style.gridRowEnd = `span ${span}`;
+			        
+			        colHeights[col] = startRow + span - 1;
+			    });
+			    
+			    requestAnimationFrame(() => {
+			        _isApplyingMasonry = false;
+			    });
+			}
+
 			function renderTallies() {
 			    const p = parentGroups.find(g => g.id === activeParentId);
 			    if (!p.tallies) p.tallies = [];
@@ -5053,17 +5175,35 @@
 			    if (p.tallies.length === 0) {
 			        masterControls.style.display = 'none';
 			        p.activeTallyId = null;
+			        p.tallyMenuCollapsed = false;
 			    } else {
 			        if (!p.activeTallyId || !p.tallies.find(t => t.id === p.activeTallyId)) {
-			            p.activeTallyId = p.tallies[0].id; 
+			            p.activeTallyId = p.tallies[0].id;
+			            p.tallyMenuCollapsed = false;
 			        }
 			        const activeTally = p.tallies.find(t => t.id === p.activeTallyId);
-			        masterControls.style.display = 'flex';
-			        activeLabel.innerText = `Selected: ${activeTally.name}`;
-			        
-			        if (document.activeElement !== activeInput) {
-			            activeInput.value = activeTally.count;
+			        if (p.tallyMenuCollapsed) {
+			            masterControls.style.display = 'none';
+			        } else {
+			            masterControls.style.display = 'flex';
+			            activeLabel.innerText = `Selected: ${activeTally.name}`;
+			            if (document.activeElement !== activeInput) {
+			                activeInput.value = activeTally.count;
+			            }
 			        }
+			    }
+			    
+			    // Collapse when clicking empty space (anything that isn't a tally card or interactive control)
+			    const cardBody = document.getElementById('tallyList').closest('.card-body');
+			    if (cardBody && !cardBody._tallyCollapseListenerAdded) {
+			        cardBody._tallyCollapseListenerAdded = true;
+			        cardBody.addEventListener('click', (e) => {
+			            const onInteractive = e.target.closest('.number-item, button, input, [contenteditable], #tallyMasterControls');
+			            if (!onInteractive) {
+			                const pp = parentGroups.find(g => g.id === activeParentId);
+			                if (pp) { pp.tallyMenuCollapsed = true; saveAllGroupData(); renderTallies(); }
+			            }
+			        });
 			    }
 			    
 			    p.tallies.forEach((tally, index) => {
@@ -5072,6 +5212,8 @@
 			        
 			        const isLocked = tally.isLocked ? true : false;
 			        const isActive = tally.id === p.activeTallyId;
+			        // Show active styling only when the selected menu is visible
+			        const isVisuallyActive = isActive && !p.tallyMenuCollapsed;
 			        
 			        const lockIcon = isLocked 
 			            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
@@ -5083,9 +5225,9 @@
 			        // Match Add Card Dimensions exactly
 			        div.style.cssText = `
 			            background: var(--bg);
-			            border: 2px solid ${isActive ? 'var(--primary)' : 'transparent'};
+			            border: 2px solid transparent;
 			            border-radius: 8px;
-			            padding: 10px;
+			            padding: 36px 10px 10px 10px;
 			            display: flex;
 			            flex-direction: column;
 			            align-items: center;
@@ -5093,15 +5235,22 @@
 			            position: relative;
 			            min-height: 125px;
 			            box-sizing: border-box;
-			            transition: border-color 0.2s;
+			            transition: box-shadow 0.2s, border-color 0.2s;
 			            cursor: pointer;
-			            overflow: hidden;
+			            overflow: visible;
+			            box-shadow: ${isVisuallyActive ? '0 0 0 2px var(--primary)' : 'none'};
 			        `;
 			        
 			        div.onclick = (e) => {
 			            if (listDragJustEnded) return;
-			            if (e.target.tagName !== 'TEXTAREA') {
-			                p.activeTallyId = tally.id;
+			            if (!e.target.isContentEditable) {
+			                if (isActive) {
+			                    // Toggle collapse
+			                    p.tallyMenuCollapsed = !p.tallyMenuCollapsed;
+			                } else {
+			                    p.activeTallyId = tally.id;
+			                    p.tallyMenuCollapsed = false;
+			                }
 			                saveAllGroupData();
 			                renderTallies();
 			            }
@@ -5110,17 +5259,7 @@
 			        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 			        div.innerHTML = `
 			            <!-- Top-right corner: Remove button -->
-			            <div onclick="removeTally(event, '${tally.id}')" title="Remove"
-			                style="
-			                    position: absolute; top: 0; right: 0;
-			                    width: 36px; height: 32px;
-			                    background: transparent;
-			                    border: none;
-			                    cursor: pointer;
-			                    z-index: 10;
-			                    display: flex; align-items: center; justify-content: center;
-			                    transition: opacity 0.2s;
-			                ">
+			            <div onpointerdown="startTallyDeleteHold(event, '${tally.id}')" onpointerup="cancelTallyDeleteHold()" onpointerleave="cancelTallyDeleteHold()" onpointercancel="cancelTallyDeleteHold()" onclick="removeTally(event, '${tally.id}')" title="Hold to delete all / Tap to delete" style="position: absolute; top: 0; right: 0; width: 36px; height: 32px; background: transparent; border: none; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; touch-action: none;">
 			                <span style="
 			                    color: #ef4444;
 			                    font-size: 1.2rem; font-weight: 700; line-height: 1;
@@ -5149,20 +5288,20 @@
 			                </span>
 			            </div>
 			            
-			            <input type="text" onchange="updateTallyName('${tally.id}', this.value)" onclick="event.stopPropagation()" onfocus="const el = this; setTimeout(() => el.setSelectionRange(el.value.length, el.value.length), 0)" value="${tally.name}" placeholder="Name" style="width: 100%; text-align: center; height: 20px !important; min-height: 20px !important; border: none !important; background: transparent !important; font-weight: 600; font-size: 0.75rem; padding: 0 4px; margin: 25px 0 2px 0; color: var(--text); outline: none; box-shadow: none; -webkit-appearance: none;">
-			            
+			            <div contenteditable="true" oninput="applyTallyMasonry()" onblur="updateTallyName('${tally.id}', this.innerText.trim())" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" onpaste="event.preventDefault();document.execCommand('insertText',false,event.clipboardData.getData('text'))" onclick="event.stopPropagation()" style="width:100%;text-align:center;border:none;background:transparent;font-weight:600;font-size:0.75rem;padding:0 4px;margin:0 0 2px 0;color:var(--text);outline:none;word-break:break-word;line-height:1.3;font-family:inherit;box-sizing:border-box;cursor:text;">${tally.name}</div>
+            
 			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 2px 0 8px 0;">${tally.count}</div>
 			            
-			            <div style="font-size: 0.9rem; font-weight: bold; color: var(--primary); background: ${isActive ? (isDark ? '#1e3a5f' : '#dbeafe') : (isDark ? '#1e293b' : '#e2e8f0')}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
+			            <div style="font-size: 0.9rem; font-weight: bold; color: var(--primary); background: ${isVisuallyActive ? (isDark ? '#1e3a5f' : '#dbeafe') : (isDark ? '#1e293b' : '#e2e8f0')}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
 			                ${pctString}
 			            </div>
 			        `;
 			        
-			        const inputEls = div.querySelectorAll('input, textarea'); 
+			        const inputEls = div.querySelectorAll('input, [contenteditable]'); 
 			
 			        div.addEventListener('pointerdown', (e) => {
 			            // Don't initiate drag from interactive elements (but allow corner divs for dragging)
-			            if (e.target.closest('input, textarea, button')) return;
+			            if (e.target.closest('input, button, [contenteditable]')) return;
 			            
 			            // Capture both X and Y starting positions
 			            listStartX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
@@ -5184,10 +5323,25 @@
 			                
 			                listElements.forEach((el) => {
 			                    el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+			                    el.style.zIndex = '1';
 			                    el.dataset.offset = 0;
+			                    
+			                    el._origX = el.offsetLeft;
+			                    el._origY = el.offsetTop;
+			                    el._h = el.offsetHeight;
 			                });
 			                
+			                const addCard = document.getElementById('addTallyCard');
+			                if (addCard) {
+			                    addCard.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+			                    addCard.dataset.offset = 0;
+			                    addCard._origX = addCard.offsetLeft;
+			                    addCard._origY = addCard.offsetTop;
+			                    addCard._h = addCard.offsetHeight;
+			                }
+			                
 			                div.style.transition = 'none'; 
+			                div.style.zIndex = '100';
 			                div.classList.add('dragging');
 			                inputEls.forEach(inp => inp.style.pointerEvents = 'none'); 
 			                
@@ -5223,9 +5377,11 @@
 			        });
 			
 			        container.appendChild(div);
+
 			    });
 			    
 			    const addCard = document.createElement('div');
+			    addCard.id = 'addTallyCard';
 			    addCard.style.cssText = `
 			        background: transparent;
 			        border: 2px dashed var(--border);
@@ -5235,7 +5391,7 @@
 			        align-items: center;
 			        justify-content: center;
 			        padding: 10px;
-			        min-height: 125px; /* Matched EXACTLY to tally cards */
+			        min-height: 125px;
 			        box-sizing: border-box;
 			        cursor: pointer;
 			        color: var(--primary);
@@ -5247,6 +5403,13 @@
 			        <div style="font-size: 0.75rem; font-weight: 600; margin-top: 5px;">Add Tally</div>
 			    `;
 			    container.appendChild(addCard);
+			    // Match add card height exactly to the actual rendered counter card height
+			    const firstCard = container.querySelector('.number-item');
+			    if (firstCard) {
+			        const h = firstCard.offsetHeight + 'px';
+			        addCard.style.minHeight = h;
+			        addCard.style.height = h;
+			    }
 			
 			    const totalDisplay = document.getElementById('tallyTotalDisplay');
 			    if (totalDisplay) {
@@ -5254,6 +5417,8 @@
 			    }
 			    
 			    document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
+			    
+			    applyTallyMasonry();
 			}
 
 			function toggleTallyLock(event, id) {
@@ -5378,6 +5543,9 @@
 			function adjustActiveTally(amount) {
 			    const p = parentGroups.find(g => g.id === activeParentId);
 			    if (p && p.activeTallyId) {
+			        const currentCount = parseFloat((p.tallies.find(t => t.id === p.activeTallyId) || {}).count) || 0;
+			        const wouldBeNeg = currentCount + parseFloat(amount) < 0;
+			        if (!wouldBeNeg) flashTallyCount(amount > 0 ? 'add' : 'remove');
 			        adjustTally(p.activeTallyId, amount);
 			    }
 			}
