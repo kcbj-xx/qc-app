@@ -640,6 +640,7 @@
         
         @media (prefers-color-scheme: dark) {
             :root {
+                color-scheme: dark;
                 --primary: #3b82f6;       
                 --primary-hover: #60a5fa;
                 --bg: #0f172a;            
@@ -647,6 +648,22 @@
                 --text: #f8fafc;          
                 --border: #334155;        
                 --accent: #fbbf24;        
+            }
+            
+            ::-webkit-scrollbar {
+                width: 12px;
+                height: 12px;
+            }
+            ::-webkit-scrollbar-track {
+                background: var(--bg); 
+            }
+            ::-webkit-scrollbar-thumb {
+                background: var(--border); 
+                border-radius: 6px;
+                border: 3px solid var(--bg);
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #475569; 
             }
 
             .ts-time-input {
@@ -1200,7 +1217,7 @@
                         <div class="row">
                             <div class="input-group">
                                 <label>What are we counting?</label>
-                                <input type="text" id="estimatorUnitInput" placeholder="e.g. Pallets" oninput="updateEstimatorUnit()">
+                                <input type="text" id="estimatorUnitInput" placeholder="e.g. Pallets, Racks, Cases, etc." oninput="updateEstimatorUnit()">
                             </div>
                             <div class="input-group">
                                 <label>Shift Start Time</label>
@@ -4507,10 +4524,11 @@
                     }
                 }
         
-                activeTab.lastAddedStr = `<span>Last added: ${val}${statusText}</span>`;
+                const valStr = inp.value.trim();
+                activeTab.lastAddedStr = `<span>Last added: ${valStr}${statusText}</span>`;
                 activeTab.lastAddedColor = color;
                 
-                getActiveData().push(val); 
+                getActiveData().push(valStr); 
                 saveAllGroupData();
                 inp.value=''; 
                 renderList();
@@ -4524,8 +4542,9 @@
                 if (isNaN(newVal)) { inputEl.value = arr[index]; return; }
                 
                 const oldVal = arr[index];
-                if (newVal !== oldVal) {
-                    arr[index] = newVal;
+                const strVal = inputEl.value.trim();
+                if (strVal !== String(oldVal)) {
+                    arr[index] = strVal;
                     
                     const activeTab = appTabs.find(t => t.id === activeTabId);
                     
@@ -4549,7 +4568,7 @@
                         }
                     }
         
-                    activeTab.lastAddedStr = `<span>Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${newVal}${statusText}</span>`;
+                    activeTab.lastAddedStr = `<span>Edited: ${oldVal} <span style="margin: 0 5px;">&#10142;</span> ${strVal}${statusText}</span>`;
                     activeTab.lastAddedColor = color;
                     
                     saveAllGroupData();
@@ -4808,21 +4827,24 @@
                     maxVal = temp;
                 }
                 
+                const precision = getDynamicPrecision(arr);
+                
                 arr.forEach((n, i) => {
                     const div = document.createElement('div');
                     div.className = 'number-item';
                     
                     let rangeClass = "";
                     if (hasRange) {
-                        if (n < minVal) rangeClass = "out-of-range-low";
-                        else if (n > maxVal) rangeClass = "out-of-range-high";
+                        if (Number(n) < minVal) rangeClass = "out-of-range-low";
+                        else if (Number(n) > maxVal) rangeClass = "out-of-range-high";
                     }
                 
                     const unitDisplay = activeSet && activeSet.unit ? `<span style="color: #64748b; font-size: 0.9rem; font-weight: 600; padding-right: 10px;">${activeSet.unit}</span>` : '';
+                    const formattedN = Number(n).toFixed(precision);
 
                     div.innerHTML = `
                         <div class="drag-handle" title="Hold to reorder">&#x2261;</div>
-                        <input type="number" class="edit-input ${rangeClass}" value="${n}" onchange="updateNumber(${i}, this); this.blur();" inputmode="decimal">
+                        <input type="number" class="edit-input ${rangeClass}" value="${formattedN}" onchange="updateNumber(${i}, this); this.blur();" inputmode="decimal" step="any">
                         ${unitDisplay}
                         <button class="remove-btn" onclick="removeNumber(${i})" title="Remove">&times;</button>
                     `;
@@ -4910,7 +4932,7 @@
                         if (len > maxDec) maxDec = len;
                     }
                 });
-                return maxDec === 0 ? 2 : maxDec; 
+                return maxDec; 
             }
         
             function updateStats() {
@@ -4920,12 +4942,12 @@
                 
                 const unitStr = activeSet && activeSet.unit ? ` <span style="font-size: 0.8rem; color: #64748b;">${activeSet.unit}</span>` : '';
                 
-                const sum = arr.reduce((a, b) => a + b, 0);
+                const sum = arr.reduce((a, b) => a + Number(b), 0);
                 const precision = getDynamicPrecision(arr);
             
                 document.getElementById('statCount').innerText = arr.length;
-                document.getElementById('statSum').innerHTML = (arr.length ? safeRound(sum, precision) : 0) + unitStr;
-                document.getElementById('statAvg').innerHTML = (arr.length ? safeRound(sum / arr.length, precision) : 0) + unitStr;
+                document.getElementById('statSum').innerHTML = (arr.length ? safeRound(sum, precision).toFixed(precision) : 0) + unitStr;
+                document.getElementById('statAvg').innerHTML = (arr.length ? safeRound(sum / arr.length, precision).toFixed(precision) : 0) + unitStr;
                 
                 let minVal = parseFloat(activeTab.minRange);
                 let maxVal = parseFloat(activeTab.maxRange);
@@ -4940,8 +4962,8 @@
                     
                     let under = 0, over = 0;
                     arr.forEach(n => {
-                        if (n < minVal) under++;
-                        else if (n > maxVal) over++;
+                        if (Number(n) < minVal) under++;
+                        else if (Number(n) > maxVal) over++;
                     });
                     
                     document.getElementById('statUnderOver').innerHTML = `<span style="color:var(--error)">${under}</span> / <span style="color:var(--success)">${over}</span>`;
@@ -5802,18 +5824,18 @@
                             let hasRange = !isNaN(min) && !isNaN(max);
                             if (hasRange && min > max) { let temp = min; min = max; max = temp; }
         
-                            let sum = tab.data.reduce((a,b)=>a+b, 0);
+                            let sum = tab.data.reduce((a,b)=>a+Number(b), 0);
                             let precision = getDynamicPrecision(tab.data);
                             
-                            let displaySum = tab.data.length ? safeRound(sum, precision) : 0;
-                            let avg = tab.data.length ? safeRound(sum/tab.data.length, precision) : 0;
+                            let displaySum = tab.data.length ? safeRound(sum, precision).toFixed(precision) : 0;
+                            let avg = tab.data.length ? safeRound(sum/tab.data.length, precision).toFixed(precision) : 0;
                             let count = tab.data.length;
         
                             let under = 0, over = 0, within = 0;
                             if (hasRange) {
                                 tab.data.forEach(n => { 
-                                    if (n < min) under++; 
-                                    else if (n > max) over++; 
+                                    if (Number(n) < min) under++; 
+                                    else if (Number(n) > max) over++; 
                                     else within++;
                                 });
                             }
