@@ -1363,7 +1363,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v98</div>
+            <div class="footer-version">v99</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -5175,8 +5175,12 @@
 			    // Match Add Card's span to the first counter card's span if it exists
 			    const addCardIdx = children.findIndex(c => c.id === 'addTallyCard');
 			    const firstCardIdx = children.findIndex(c => c.classList.contains('number-item'));
-			    if (addCardIdx !== -1 && firstCardIdx !== -1) {
-			        spans[addCardIdx] = spans[firstCardIdx];
+			    if (addCardIdx !== -1) {
+			        if (firstCardIdx !== -1) {
+			            spans[addCardIdx] = spans[firstCardIdx];
+			        } else {
+			            spans[addCardIdx] = 135; // Default span (125px min-height + 10px gap)
+			        }
 			    }
 			    
 			    // Explicitly place items left-to-right to override grid auto-placement jumps
