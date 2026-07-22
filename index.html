@@ -1363,7 +1363,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v97</div>
+            <div class="footer-version">v98</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -5167,19 +5167,17 @@
 			    
 			    _isApplyingMasonry = true;
 			    
-			    // Ensure Add Card correctly mirrors height once fully visible
-			    const firstCard = list.querySelector('.number-item');
-			    const addCard = document.getElementById('addTallyCard');
-			    if (firstCard && addCard) {
-			        const h = firstCard.offsetHeight + 'px';
-			        addCard.style.minHeight = h;
-			        addCard.style.height = h;
-			    }
-			    
 			    const children = Array.from(list.children);
 			    
 			    // Read all heights first to avoid layout thrashing
 			    const spans = children.map(child => Math.ceil(child.offsetHeight + 10));
+			    
+			    // Match Add Card's span to the first counter card's span if it exists
+			    const addCardIdx = children.findIndex(c => c.id === 'addTallyCard');
+			    const firstCardIdx = children.findIndex(c => c.classList.contains('number-item'));
+			    if (addCardIdx !== -1 && firstCardIdx !== -1) {
+			        spans[addCardIdx] = spans[firstCardIdx];
+			    }
 			    
 			    // Explicitly place items left-to-right to override grid auto-placement jumps
 			    let colHeights = [0, 0, 0];
@@ -5436,6 +5434,7 @@
 			        justify-content: center;
 			        padding: 10px;
 			        min-height: 125px;
+			        height: 100%;
 			        box-sizing: border-box;
 			        cursor: pointer;
 			        color: var(--primary);
@@ -5447,13 +5446,6 @@
 			        <div style="font-size: 0.75rem; font-weight: 600; margin-top: 5px;">Add Tally</div>
 			    `;
 			    container.appendChild(addCard);
-			    // Match add card height exactly to the actual rendered counter card height
-			    const firstCard = container.querySelector('.number-item');
-			    if (firstCard) {
-			        const h = firstCard.offsetHeight + 'px';
-			        addCard.style.minHeight = h;
-			        addCard.style.height = h;
-			    }
 			
 			    const totalDisplay = document.getElementById('tallyTotalDisplay');
 			    if (totalDisplay) {
