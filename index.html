@@ -5720,10 +5720,20 @@
                 const p = parentGroups.find(g => g.id === activeParentId);
                 const hasLocked = (p.tallies || []).some(t => t.isLocked);
                 const promptMsg = hasLocked
-                    ? 'Reset all unlocked tally counts to 0? (locked tally will not be cleared)'
+                    ? 'Reset all unlocked tally counts to 0? (locked tally will be set to total count)'
                     : 'Reset all tally counts to 0?';
                 if (confirm(promptMsg)) {
-                    p.tallies.forEach(t => { if (!t.isLocked) t.count = 0; });
+                    let total = 0;
+                    if (hasLocked) {
+                        total = p.tallies.reduce((sum, t) => sum + t.count, 0);
+                    }
+                    p.tallies.forEach(t => { 
+                        if (t.isLocked) {
+                            t.count = total;
+                        } else {
+                            t.count = 0;
+                        }
+                    });
                     saveAllGroupData();
                     renderTallies();
                 }
