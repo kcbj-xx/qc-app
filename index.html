@@ -1060,7 +1060,7 @@
                         </div>
                         
                         <div class="stats-grid" id="rangeStatsGrid" style="display: none; margin-top: -5px; margin-bottom: 15px;">
-                            <div class="stat-box"><div class="stat-label">Range</div><div class="stat-value" id="statRange">0-0</div></div>
+                            <div class="stat-box"><div class="stat-label">Range</div><div class="stat-value" id="statRange" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: clamp(0.65rem, 3vw, 1.1rem);">0-0</div></div>
                             <div class="stat-box"><div class="stat-label">Under/Over</div><div class="stat-value" id="statUnderOver"><span style="color:var(--error)">0</span> / <span style="color:var(--success)">0</span></div></div>
                             <div class="stat-box"><div class="stat-label">Out of Range</div><div class="stat-value" id="statOutOfRangePct">0.00%</div></div>
                         </div>
@@ -1259,9 +1259,15 @@
                             <label style="font-weight:bold; color:var(--primary); margin-bottom:10px; display:block;">Pace Forecasting</label>
                             <div class="row">
                                 <div class="input-group">
-                                    <label style="font-size: 0.75rem;">Target Amount</label>
-                                    <input type="number" id="estRemainingInput" placeholder="Total Amount" step="any" oninput="calculateEstimatorPace('amount')">
+                                    <label style="font-size: 0.75rem;">Actual Amount</label>
+                                    <input type="number" id="estRemainingInput" placeholder="Remaining" step="any" oninput="calculateEstimatorPace('amount')">
                                 </div>
+                                <div class="input-group">
+                                    <label style="font-size: 0.75rem;">Total Amount</label>
+                                    <input type="number" id="estTotalInput" placeholder="Total" step="any" oninput="calculateEstimatorPace('total')">
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: -5px;">
                                 <div class="input-group">
                                     <label style="font-size: 0.75rem;">Target Time</label>
                                     <input type="time" id="estTargetTimeInput" oninput="calculateEstimatorPace('time')">
@@ -1375,7 +1381,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v100</div>
+            <div class="footer-version">v101</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -3119,6 +3125,7 @@
                 
                 document.getElementById('estStartTimeInput').value = tab.startTime || '';
                 document.getElementById('estRemainingInput').value = tab.remaining || '';
+                document.getElementById('estTotalInput').value = tab.totalAmount || '';
                 document.getElementById('estTargetTimeInput').value = tab.targetTime || '';
                 
                 document.getElementById('estTimeInput').value = '';
@@ -3233,6 +3240,7 @@
                 const forecastRes = document.getElementById('estimatorForecastResult');
                 
                 const remInputEl = document.getElementById('estRemainingInput');
+                const totalInputEl = document.getElementById('estTotalInput');
                 const targetTimeEl = document.getElementById('estTargetTimeInput');
         
                 if (checked.length === 0) {
@@ -3257,8 +3265,8 @@
                 if (timeDiffMins === 0) timeDiffMins = 1;
                 
                 let totalHours = timeDiffMins / 60; 
-                const totalAmount = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-                const pacePerHour = totalAmount / totalHours;
+                const loggedTotal = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+                const pacePerHour = loggedTotal / totalHours;
                 const displayUnit = tab.unit || 'Units';
         
                 paceRes.style.display = 'block';
@@ -3266,8 +3274,18 @@
                 forecastBox.style.display = 'block';
                 
                 if (source === 'amount') {
+                    // Actual Amount entered → compute Total Amount and forecast time
                     const remaining = parseFloat(remInputEl.value);
                     tab.remaining = remInputEl.value;
+                    
+                    if (!isNaN(remaining) && remaining >= 0) {
+                        const derivedTotal = safeRound(loggedTotal + remaining, 4);
+                        totalInputEl.value = derivedTotal;
+                        tab.totalAmount = String(derivedTotal);
+                    } else {
+                        totalInputEl.value = '';
+                        tab.totalAmount = '';
+                    }
                     
                     if (!isNaN(remaining) && remaining > 0 && pacePerHour > 0) {
                         const hoursNeeded = remaining / pacePerHour;
@@ -3284,7 +3302,40 @@
                         tab.targetTime = '';
                         forecastRes.style.display = 'none';
                     }
+                } else if (source === 'total') {
+                    // Total Amount entered → compute Actual Amount (remaining) and forecast time
+                    const enteredTotal = parseFloat(totalInputEl.value);
+                    tab.totalAmount = totalInputEl.value;
+                    
+                    if (!isNaN(enteredTotal) && enteredTotal >= 0) {
+                        const derivedRemaining = Math.max(0, safeRound(enteredTotal - loggedTotal, 4));
+                        remInputEl.value = derivedRemaining;
+                        tab.remaining = String(derivedRemaining);
+                        
+                        if (derivedRemaining > 0 && pacePerHour > 0) {
+                            const hoursNeeded = derivedRemaining / pacePerHour;
+                            const finishTimeMins = lastTimeMins + (hoursNeeded * 60);
+                            
+                            targetTimeEl.value = formatMinutesToTime(finishTimeMins);
+                            tab.targetTime = targetTimeEl.value;
+                            
+                            const time12 = formatMinutesTo12Hour(finishTimeMins);
+                            forecastRes.style.display = 'block';
+                            forecastRes.innerHTML = `Projected Finish: <strong style="font-size:1.2rem; color:var(--primary);">${time12}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(${safeRound(hoursNeeded, 2).toFixed(2)} hrs away)</span>`;
+                        } else {
+                            targetTimeEl.value = '';
+                            tab.targetTime = '';
+                            forecastRes.style.display = 'none';
+                        }
+                    } else {
+                        remInputEl.value = '';
+                        tab.remaining = '';
+                        targetTimeEl.value = '';
+                        tab.targetTime = '';
+                        forecastRes.style.display = 'none';
+                    }
                 } else if (source === 'time') {
+                    // Target Time entered → compute Actual Amount and Total Amount
                     const targetTimeVal = targetTimeEl.value;
                     tab.targetTime = targetTimeVal;
                     
@@ -3294,17 +3345,23 @@
                         if (diffMins < 0) diffMins += 24 * 60; 
                         
                         const hoursNeeded = diffMins / 60;
-                        const calculatedAmount = hoursNeeded * pacePerHour;
+                        const calculatedRemaining = safeRound(hoursNeeded * pacePerHour, 4);
                         
-                        remInputEl.value = safeRound(calculatedAmount, 4);
-                        tab.remaining = remInputEl.value;
+                        remInputEl.value = calculatedRemaining;
+                        tab.remaining = String(calculatedRemaining);
+                        
+                        const derivedTotal = safeRound(loggedTotal + calculatedRemaining, 4);
+                        totalInputEl.value = derivedTotal;
+                        tab.totalAmount = String(derivedTotal);
                         
                         const time12 = formatTimeStringTo12Hour(targetTimeVal);
                         forecastRes.style.display = 'block';
-                        forecastRes.innerHTML = `Projected Output: <strong style="font-size:1.2rem; color:var(--primary);">${safeRound(calculatedAmount, 2)} ${displayUnit}</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(by ${time12})</span>`;
+                        forecastRes.innerHTML = `Projected Output: <strong style="font-size:1.2rem; color:var(--primary);">${safeRound(calculatedRemaining, 2)} ${displayUnit} remaining</strong><br><span style="font-size:0.9rem; color:var(--accent); font-weight:bold;">(${safeRound(derivedTotal, 2)} total by ${time12})</span>`;
                     } else {
                         remInputEl.value = '';
                         tab.remaining = '';
+                        totalInputEl.value = '';
+                        tab.totalAmount = '';
                         forecastRes.style.display = 'none';
                     }
                 }
@@ -5725,7 +5782,7 @@
                 if (confirm(promptMsg)) {
                     let total = 0;
                     if (hasLocked) {
-                        total = p.tallies.reduce((sum, t) => sum + t.count, 0);
+                        total = p.tallies.reduce((sum, t) => sum + (parseFloat(t.count) || 0), 0);
                     }
                     p.tallies.forEach(t => { 
                         if (t.isLocked) {
