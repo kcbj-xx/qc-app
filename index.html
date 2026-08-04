@@ -11,6 +11,8 @@
     <meta name="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png">
 	
     <link rel="manifest" href='data:application/manifest+json,%7B%22name%22%3A%22QC%20Toolset%20Pro%22%2C%22short_name%22%3A%22QC%20Tool%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f4f6%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1162%2F1162456.png%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D'>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
 		/* Prevent scroll chaining for the sidebar ONLY */
@@ -673,8 +675,13 @@
             }
 
             .ts-time-input {
-                background-color: #0f172a !important; 
-                border: 0px solid var(--border) !important;
+                background-color: #1e3a5f !important;
+                border: 1px solid #3b82f6 !important;
+                color: #e2e8f0 !important;
+            }
+            .ts-time-input::-webkit-calendar-picker-indicator {
+                filter: invert(1) !important;
+                opacity: 1 !important;
             }
             
             .tab-btn { background: #0f172a; color: #94a3b8; border-color: var(--border); }
@@ -691,8 +698,9 @@
             }
 
             input[type="date"], input[type="time"] {
-                color-scheme: dark;
+                color-scheme: light;
             }
+
 
             div[style*="background: #f8fafc"], div[style*="background: #e2e8f0"] { 
                 background-color: #0f172a !important; 
@@ -788,8 +796,8 @@
             }
             
             input::-webkit-calendar-picker-indicator {
-                filter: invert(1) brightness(200%) !important; 
-                opacity: 0.8;
+                filter: invert(1) !important;
+                opacity: 1 !important;
             }
 
             @media (hover: hover) {
@@ -932,6 +940,72 @@
             <div id="pinned-divider" class="divider" style="display: none;">Tools</div>
             <div id="unpinned-section" class="section-container">
         
+            <div class="card collapsed" id="card-graphs" data-exportable="false">
+                    <h2 onclick="toggleCard('card-graphs')">
+                        <button class="pin-btn" onclick="togglePin(event, 'card-graphs')" title="Pin Tool">
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
+                        </button>
+                        <div class="card-title-text">Graphs</div>
+                        <div class="chevron">&#9660;</div>
+                    </h2>
+                    <div class="card-body">
+                        <div class="graph-section" style="margin-bottom: 20px;">
+                            <h3 style="font-size: 14px; margin-bottom: 5px; color: var(--text);">Tally Counters</h3>
+                            <div id="graph-no-data-tally" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div style="overflow-x: auto; overflow-y: hidden;">
+                                <div id="graph-wrapper-tally" style="position: relative; height: 250px; min-width: 100%; display: none;">
+                                    <canvas id="canvas-tally"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="graph-section" style="margin-bottom: 20px;">
+                            <h3 style="font-size: 14px; margin-bottom: 5px; color: var(--text);">Salinity Calculator</h3>
+                            <div id="graph-no-data-salinity" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div style="overflow-x: auto; overflow-y: hidden;">
+                                <div id="graph-wrapper-salinity" style="position: relative; height: 250px; min-width: 100%; display: none;">
+                                    <canvas id="canvas-salinity"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="graph-section" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <h3 style="font-size: 14px; margin: 0; color: var(--text);">Sum & Averaging</h3>
+                                <select id="graph-select-averaging" style="display: none; font-size: 12px; padding: 2px 5px; border-radius: 4px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border);" onchange="changeGraphSet('sum', this.value)"></select>
+                            </div>
+                            <div id="graph-no-data-averaging" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div style="overflow-x: auto; overflow-y: hidden;">
+                                <div id="graph-wrapper-averaging" style="position: relative; height: 250px; min-width: 100%; display: none;">
+                                    <canvas id="canvas-averaging"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="graph-section" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <h3 style="font-size: 14px; margin: 0; color: var(--text);">Pickup Calculator</h3>
+                                <select id="graph-select-pickup" style="display: none; font-size: 12px; padding: 2px 5px; border-radius: 4px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border);" onchange="changeGraphSet('pickup', this.value)"></select>
+                            </div>
+                            <div id="graph-no-data-pickup" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div style="overflow-x: auto; overflow-y: hidden;">
+                                <div id="graph-wrapper-pickup" style="position: relative; height: 250px; min-width: 100%; display: none;">
+                                    <canvas id="canvas-pickup"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="graph-section" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <h3 style="font-size: 14px; margin: 0; color: var(--text);">Production Pace</h3>
+                                <select id="graph-select-pace" style="display: none; font-size: 12px; padding: 2px 5px; border-radius: 4px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border);" onchange="changeGraphSet('pace', this.value)"></select>
+                            </div>
+                            <div id="graph-no-data-pace" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div style="overflow-x: auto; overflow-y: hidden;">
+                                <div id="graph-wrapper-pace" style="position: relative; height: 250px; min-width: 100%; display: none;">
+                                    <canvas id="canvas-pace"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+
             <div class="card collapsed" id="card-pickup" data-exportable="true">
                     <h2 onclick="toggleCard('card-pickup')">
                         <button class="pin-btn" onclick="togglePin(event, 'card-pickup')" title="Pin Tool">
@@ -1294,6 +1368,23 @@
                         <div class="chevron">&#9660;</div>
                     </h2>
                     <div class="card-body">
+                        <div class="tabs-container" id="tallyTabsContainer">
+                            <div id="tallyTabsList" class="tabs-list"></div>
+                        </div>
+                        
+                        <div id="tallyTabOptionsPanel" class="tab-options-panel" style="display: none;">
+                            <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
+                            
+                            <div class="panel-row">
+                                <input type="text" id="renameTallyTabInput" placeholder="Sample Name" class="panel-input">
+                                <button onclick="saveTallyTabName()" class="panel-btn">Save</button>
+                            </div>
+                            <div class="panel-row">
+                                <button onclick="duplicateTallyTab()" class="panel-btn" style="flex: 1; margin-right: 5px; background: #64748b;">Duplicate</button>
+                                <button onclick="deleteTallyTab()" class="panel-btn" style="flex: 1; background: #ef4444; border-color: #ef4444; color: white;">Delete</button>
+                            </div>
+                        </div>
+
 					    <div style="background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
 					        <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: bold;">Total Count</div>
 					        <div id="tallyTotalDisplay" style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">0</div>
@@ -1388,12 +1479,19 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v101</div>
+            <div class="footer-version">v102</div>
         </div>
         
-        <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: row; gap: 15px; justify-content: center; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px;">
-            <button onclick="executeExport()" ontouchstart="executeExport(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem;">Export CSV</button>
-            <button onclick="cancelExportMode()" ontouchstart="cancelExportMode(); event.preventDefault();" class="action-btn" style="margin: 0; flex: 1; min-height: 46px; font-size: 1.1rem;">Cancel</button>
+        <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
+            <div style="display: flex; gap: 8px;">
+                <button onclick="selectAllExport()" ontouchstart="selectAllExport(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 38px; font-size: 0.9rem; background: #334155;">Select All</button>
+                <button onclick="deselectAllExport()" ontouchstart="deselectAllExport(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 38px; font-size: 0.9rem; background: #334155;">Deselect All</button>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="executeExport()" ontouchstart="executeExport(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem;">Export CSV</button>
+                <button onclick="executeExportXLSX()" ontouchstart="executeExportXLSX(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem; background: #10b981; border-color: #059669;">Export Excel</button>
+                <button onclick="cancelExportMode()" ontouchstart="cancelExportMode(); event.preventDefault();" class="action-btn" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem;">Cancel</button>
+            </div>
         </div>
         
         <audio id="alarmSound" loop preload="auto">
@@ -1442,7 +1540,7 @@
             let currentToolFilter = 'all';
 
             const alarm = document.getElementById('alarmSound');
-            const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-timestamps', 'card-notes'];
+            const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-timestamps', 'card-notes', 'card-graphs'];
             
             function safeRound(value, decimals) {
                 return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
@@ -1518,6 +1616,39 @@
 			    reorderCards();
 			}
 
+            function changeGraphSet(type, setId) {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p) return;
+                
+                if (type === 'sum') {
+                    activeSumSetId = setId;
+                    p.activeSumSetId = setId;
+                    refreshGroupDataReferences();
+                    renderSumSets();
+                    updateSumSetMenuState();
+                    renderTabs();
+                    renderList();
+                    updateTabMenuState();
+                } else if (type === 'pickup') {
+                    activePickupSetId = setId;
+                    p.activePickupSetId = setId;
+                    refreshGroupDataReferences();
+                    renderPickupSets();
+                    updatePickupSetMenuState();
+                    renderPickupTabs();
+                    loadPickupInputs();
+                    updatePickupTabMenuState();
+                } else if (type === 'pace') {
+                    activeEstimatorTabId = setId;
+                    p.activeEstimatorTabId = setId;
+                    refreshGroupDataReferences();
+                    renderEstimatorTabs();
+                    loadEstimatorInputs();
+                    updateEstimatorTabMenuState();
+                }
+                saveAllGroupData();
+            }
+
             function toggleCard(cardId) {
                 const card = document.getElementById(cardId);
                 card.classList.toggle('collapsed');
@@ -1586,7 +1717,8 @@
 				    'card-tally': 'tools',
 				    'card-stopwatch': 'time',      // Moved to time
 				    'card-sampling': 'time',
-				    'card-timestamps': 'time'
+				    'card-timestamps': 'time',
+				    'card-graphs': 'tools'
 				};
 
                 allCardIds.forEach(id => {
@@ -1681,7 +1813,27 @@
                 if (g.startTime === undefined) g.startTime = '';
                 if (g.endTime === undefined) g.endTime = '';
         
-                if (!g.tallies) g.tallies = [];
+                if (g.tallies && (!g.tallyTabs || g.tallyTabs.length === 0)) {
+                    g.tallyTabs = [{
+                        id: 'ttab_' + Date.now() + Math.random(),
+                        name: 'Sample 1',
+                        tallies: g.tallies
+                    }];
+                    g.activeTallyTabId = g.tallyTabs[0].id;
+                    delete g.tallies;
+                } else if (!g.tallyTabs) {
+                    g.tallyTabs = [{
+                        id: 'ttab_' + Date.now() + Math.random(),
+                        name: 'Sample 1',
+                        tallies: []
+                    }];
+                    g.activeTallyTabId = g.tallyTabs[0].id;
+                }
+
+                if (!g.activeTallyTabId || !g.tallyTabs.find(t => t.id === g.activeTallyTabId)) {
+                    if (g.tallyTabs && g.tallyTabs.length > 0) g.activeTallyTabId = g.tallyTabs[0].id;
+                }
+
                 if (!g.percentage) g.percentage = { total: '', part: '', pct: '' };
                 
                 if (g.pickupTabs && !g.pickupSets) {
@@ -1792,6 +1944,7 @@
                 activeSalinityTabId = p.activeSalinityTabId;
             }
         
+            let _graphsDebounce = null;
             function saveAllGroupData() {
                 const p = parentGroups.find(g => g.id === activeParentId);
                 
@@ -1812,6 +1965,11 @@
                 localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
                 localStorage.setItem('qc_active_parent_id', activeParentId);
                 localStorage.setItem('qc_current_folder', currentFolderId);
+                
+                clearTimeout(_graphsDebounce);
+                _graphsDebounce = setTimeout(() => {
+                    if (typeof renderGraphs === 'function') renderGraphs();
+                }, 300);
             }
         
             function renderSidebarList() {
@@ -2020,7 +2178,7 @@
                 saveAllGroupData();
                 applyCardStatesToDOM(); 
                 updateTempDOM(); updateSamplingDOM(); updateStopwatchDOMToggle(); loadNotes(); renderTimestamps();
-                updatePctDOM(); renderTallies();
+                updatePctDOM(); renderTallyTabs();
                 
                 renderSidebarList(); updateParentTabMenuState();
                 renderPickupSets(); updatePickupSetMenuState();
@@ -2220,7 +2378,7 @@
                     loadNotes();
                     renderTimestamps();
                     updatePctDOM();
-                    renderTallies();
+                    renderTallyTabs();
                     
                     renderPickupSets(); updatePickupSetMenuState();
                     renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
@@ -2255,7 +2413,8 @@
                     sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
                     notes: { text: '' },
                     timestamps: [],
-                    tallies: [],
+                    tallyTabs: [{ id: 'ttab_' + Date.now(), name: 'Sample 1', tallies: [] }],
+                    activeTallyTabId: 'ttab_' + Date.now(),
                     percentage: { total: '', part: '', pct: '' }
                 };
                 newGroup.pickupSets[0].activeTabId = newGroup.pickupSets[0].tabs[0].id;
@@ -2355,12 +2514,20 @@
                     sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
                     notes: { text: '' },
                     timestamps: [],
-                    tallies: (p.tallies || []).map((t, ti) => ({
-                        id: 'tally_' + Date.now() + '_' + ti,
-                        name: t.name,
-                        count: 0,
-                        isLocked: false
-                    })),
+                    tallyTabs: (p.tallyTabs || []).map((tab, tabIdx) => {
+                        const newTabId = 'ttab_' + Date.now() + '_' + tabIdx;
+                        return {
+                            id: newTabId,
+                            name: tab.name,
+                            tallies: (tab.tallies || []).map((t, ti) => ({
+                                id: 'tally_' + Date.now() + '_' + tabIdx + '_' + ti,
+                                name: t.name,
+                                count: t.isLocked ? t.count : 0,
+                                isLocked: t.isLocked
+                            }))
+                        };
+                    }),
+                    activeTallyTabId: p.tallyTabs && p.tallyTabs.length > 0 ? 'ttab_' + Date.now() + '_0' : null,
                     percentage: { total: '', part: '', pct: '' }
                 };
                 
@@ -2382,7 +2549,7 @@
                 loadNotes();
                 renderTimestamps();
                 updatePctDOM();
-                renderTallies();
+                renderTallyTabs();
                 
                 renderSidebarList(); updateParentTabMenuState();
                 renderPickupSets(); updatePickupSetMenuState();
@@ -2399,6 +2566,15 @@
                 refreshGroupDataReferences();
                 
                 applyCardStatesToDOM(); 
+                
+                document.querySelectorAll('.tabs-container').forEach(container => {
+                    container.addEventListener('wheel', (e) => {
+                        if (e.deltaY !== 0 && container.scrollWidth > container.clientWidth && e.target !== container) {
+                            e.preventDefault();
+                            container.scrollBy({ left: e.deltaY * 2, behavior: 'smooth' });
+                        }
+                    }, { passive: false });
+                });
                 
                 isParentTabMenuOpen = false;
                 isPickupSetMenuOpen = false;
@@ -2425,10 +2601,11 @@
                 renderTimestamps();
         
                 updatePctDOM();
-                renderTallies();
+                renderTallyTabs();
                 
                 startGlobalStopwatch(); 
                 startGlobalSamplingTimer(); 
+                if (typeof renderGraphs === 'function') renderGraphs(); 
 
 				document.body.style.overscrollBehaviorY = 'none';
 				
@@ -2501,7 +2678,7 @@
 
 				// Re-render tallies when OS color scheme changes so badge colors update immediately
 				window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-				    renderTallies();
+				    renderTallyTabs();
 				});
 				
                 // 1. Setup Drag for Files
@@ -2534,6 +2711,7 @@
                 
                 setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
                 setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveAllGroupData, renderTabs);
+                setupTabDragManager('tallyTabsContainer', 'tallyTabsList', () => parentGroups.find(g => g.id === activeParentId)?.tallyTabs || [], saveAllGroupData, renderTallyTabs);
                 
                 // Prompt deletes for safety
                 setupAddButtonHold('estimatorTabsList', addNewEstimatorTab, () => {
@@ -2614,8 +2792,18 @@
                     renderTabs(); renderList(); updateTabMenuState();
                 }, "Delete ALL Samples from this Set? This cannot be undone.");
         
+                setupAddButtonHold('tallyTabsList', addNewTallyTab, () => {
+                    const p = parentGroups.find(g => g.id === activeParentId);
+                    if (!p) return;
+                    p.tallyTabs.splice(0, p.tallyTabs.length, { id: 'ttab_' + Date.now(), name: 'Sample 1', tallies: [] });
+                    p.activeTallyTabId = p.tallyTabs[0].id;
+                    p.tallyTabsMenuOpen = false;
+                    saveAllGroupData();
+                    renderTallyTabs();
+                }, "Delete ALL samples from Tally Counters? This cannot be undone.");
+        
                 setTimeout(() => {
-                    ['tabsList', 'estimatorTabsList', 'salinityTabsList', 'pickupTabsList', 'pickupSetsList', 'sumSetsList'].forEach(id => {
+                    ['tabsList', 'estimatorTabsList', 'salinityTabsList', 'pickupTabsList', 'pickupSetsList', 'sumSetsList', 'tallyTabsList'].forEach(id => {
                         const list = document.getElementById(id);
                         if (list) { list.style.display = 'none'; list.offsetHeight; list.style.display = 'flex'; }
                     });
@@ -3238,7 +3426,19 @@
         
                 const sortedData = [...tab.data].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
         
+                let prevTimeMins = tab.startTime ? parseTimeToMinutes(tab.startTime) : null;
+
                 sortedData.forEach((entry) => {
+                    let paceStr = '';
+                    let currTimeMins = parseTimeToMinutes(entry.time);
+                    if (prevTimeMins !== null) {
+                        let diffMins = currTimeMins - prevTimeMins;
+                        if (diffMins < 0) diffMins += 24 * 60;
+                        if (diffMins === 0) diffMins = 1;
+                        let pacePerHour = parseFloat(entry.amount) / (diffMins / 60);
+                        paceStr = `<span style="font-size:0.8rem; color:var(--primary); background:rgba(59, 130, 246, 0.1); padding:2px 6px; border-radius:12px; white-space:nowrap;">${safeRound(pacePerHour, 2)} /hr</span>`;
+                    }
+
                     const div = document.createElement('div');
                     div.className = 'number-item';
                     div.style.padding = '8px 12px'; 
@@ -3246,8 +3446,11 @@
                     div.innerHTML = `
                         <input type="checkbox" class="tick-box" ${entry.checked ? 'checked' : ''} onchange="toggleEstimatorCheck(${entry.id})">
                         <div style="flex:1; display:flex; justify-content:space-between; align-items:center; font-size: 1.1rem;">
-                            <span><strong>${entry.amount}</strong> <span style="font-size:0.85rem; color:#64748b;">${displayUnit}</span></span>
-                            <div style="text-align: right; line-height: 1.2;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <span><strong>${entry.amount}</strong> <span style="font-size:0.85rem; color:#64748b;">${displayUnit}</span></span>
+                                ${paceStr}
+                            </div>
+                            <div style="text-align: right; line-height: 1.2; flex-shrink: 0; margin-left: 10px;">
                                 <div style="color:var(--primary); font-family:monospace; font-weight:bold;">${entry.time}</div>
                                 <div style="font-size:0.75rem; color:var(--accent); font-weight:bold;">${formatTimeStringTo12Hour(entry.time)}</div>
                             </div>
@@ -3256,6 +3459,7 @@
                     `;
                     
                     container.appendChild(div);
+                    prevTimeMins = currTimeMins;
                 });
                 
                 calculateEstimatorPace();
@@ -3703,7 +3907,8 @@
                     return;
                 }
                 
-                const dec = (pre - post) / pre;
+                let dec = (pre - post) / pre;
+                if (dec < 0) dec = 0;
                 decEl.innerText = safeRound(dec, 4).toFixed(4);
                 pctEl.innerText = safeRound(dec * 100, 2).toFixed(2) + "%";
                 pctEl.style.color = "var(--accent)";
@@ -4952,7 +5157,7 @@
                 if (isTallyList) {
                     listDragJustEnded = true;
                     setTimeout(() => { listDragJustEnded = false; }, 200);
-                    renderTallies();
+                    renderTallyTabs();
                 } else {
                     renderList();
                 }
@@ -5278,7 +5483,7 @@
 			            p.activeTallyId = null;
 			            p.tallyMenuCollapsed = false;
 			            saveAllGroupData();
-			            renderTallies();
+			            renderTallyTabs();
 			        }
 			    }, 600);
 			}
@@ -5292,7 +5497,7 @@
 			    if (p) {
 			        p.tallyMenuCollapsed = true;
 			        saveAllGroupData();
-			        renderTallies();
+			        renderTallyTabs();
 			    }
 			}
 
@@ -5382,15 +5587,136 @@
 			    });
 			}
 
+            // ---- TALLY TABS ----
+            function renderTallyTabs() {
+                const list = document.getElementById('tallyTabsList');
+                list.innerHTML = '';
+                
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p || !p.tallyTabs) return;
+                
+                p.tallyTabs.forEach((tab, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `tab-btn ${p.activeTallyTabId === tab.id ? 'active' : ''}`;
+                    btn.innerText = tab.name;
+                    btn.dataset.id = tab.id;
+                    btn.onclick = (e) => {
+                        const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                        const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                        const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                        
+                        if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
+        
+                        if (p.activeTallyTabId === tab.id) {
+                            p.tallyTabsMenuOpen = !p.tallyTabsMenuOpen;
+                            updateTallyTabMenuState();
+                        } else {
+                            p.activeTallyTabId = tab.id;
+                            p.tallyTabsMenuOpen = false;
+                            saveAllGroupData();
+                            renderTallyTabs();
+                            updateTallyTabMenuState();
+                        }
+                    };
+                    list.appendChild(btn);
+                });
+                
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-tab-btn';
+                addBtn.innerText = '+';
+                addBtn.onclick = addNewTallyTab;
+                list.appendChild(addBtn);
+
+                updateTallyTabMenuState();
+                renderTallies();
+            }
+
+
+            function addNewTallyTab() {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (p && p.tallyTabs) {
+                    const newId = 'ttab_' + Date.now();
+                    p.tallyTabs.push({ id: newId, name: `Sample ${p.tallyTabs.length + 1}`, tallies: [] });
+                    p.activeTallyTabId = newId;
+                    saveAllGroupData();
+                    renderTallyTabs();
+                }
+            }
+
+            function duplicateTallyTab() {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p || !p.tallyTabs) return;
+                
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                if (!activeTab) return;
+                
+                const newId = 'ttab_' + Date.now();
+                const newTallies = (activeTab.tallies || []).map((t, ti) => ({
+                    id: 'tally_' + Date.now() + '_' + ti,
+                    name: t.name,
+                    count: t.isLocked ? t.count : 0,
+                    isLocked: t.isLocked
+                }));
+                
+                p.tallyTabs.push({ id: newId, name: activeTab.name + ' (Copy)', tallies: newTallies });
+                p.activeTallyTabId = newId;
+                saveAllGroupData();
+                renderTallyTabs();
+            }
+
+            function deleteTallyTab() {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p || !p.tallyTabs || p.tallyTabs.length <= 1) {
+                    alert("Cannot delete the last sample.");
+                    return;
+                }
+                if (confirm("Are you sure you want to delete this sample?")) {
+                    p.tallyTabs = p.tallyTabs.filter(t => t.id !== p.activeTallyTabId);
+                    p.activeTallyTabId = p.tallyTabs[0].id;
+                    saveAllGroupData();
+                    renderTallyTabs();
+                }
+            }
+
+            function updateTallyTabMenuState() {
+                const panel = document.getElementById('tallyTabOptionsPanel');
+                if (!panel) return;
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p) return;
+                
+                if (p.tallyTabsMenuOpen) {
+                    panel.style.display = 'block';
+                    const tab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                    document.getElementById('renameTallyTabInput').value = tab ? tab.name : '';
+                } else {
+                    panel.style.display = 'none';
+                }
+            }
+
+            function saveTallyTabName() {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p || !p.tallyTabs) return;
+                const tab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                if (tab) {
+                    tab.name = document.getElementById('renameTallyTabInput').value || 'Unnamed';
+                    saveAllGroupData();
+                    renderTallyTabs();
+                }
+            }
+
 			function renderTallies() {
 			    const p = parentGroups.find(g => g.id === activeParentId);
-			    if (!p.tallies) p.tallies = [];
+			    if (!p) return;
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                if (!activeTab) return;
+                if (!activeTab.tallies) activeTab.tallies = [];
+                const tallies = activeTab.tallies;
 			    
 			    const container = document.getElementById('tallyList');
 			    container.innerHTML = '';
 			    
 			    let totalCount = 0;
-			    p.tallies.forEach(tally => {
+			    tallies.forEach(tally => {
 			        totalCount += tally.count;
 			    });
 			
@@ -5398,17 +5724,17 @@
 			    const activeLabel = document.getElementById('activeTallyLabel');
 			    const activeInput = document.getElementById('activeTallyInput');
 			
-			    if (p.tallies.length === 0) {
+			    if (tallies.length === 0) {
 			        masterControls.style.display = 'none';
-			        p.activeTallyId = null;
-			        p.tallyMenuCollapsed = false;
+			        activeTab.activeTallyId = null;
+			        activeTab.tallyMenuCollapsed = false;
 			    } else {
-			        if (!p.activeTallyId || !p.tallies.find(t => t.id === p.activeTallyId)) {
-			            p.activeTallyId = p.tallies[0].id;
-			            p.tallyMenuCollapsed = false;
+			        if (!activeTab.activeTallyId || !tallies.find(t => t.id === activeTab.activeTallyId)) {
+			            activeTab.activeTallyId = tallies[0].id;
+			            activeTab.tallyMenuCollapsed = false;
 			        }
-			        const activeTally = p.tallies.find(t => t.id === p.activeTallyId);
-			        if (p.tallyMenuCollapsed) {
+			        const activeTally = tallies.find(t => t.id === activeTab.activeTallyId);
+			        if (activeTab.tallyMenuCollapsed) {
 			            masterControls.style.display = 'none';
 			        } else {
 			            masterControls.style.display = 'flex';
@@ -5426,22 +5752,27 @@
 			    if (cardBody && !cardBody._tallyCollapseListenerAdded) {
 			        cardBody._tallyCollapseListenerAdded = true;
 			        cardBody.addEventListener('click', (e) => {
-			            const onInteractive = e.target.closest('.number-item, button, input, [contenteditable], #tallyMasterControls');
+			            const onInteractive = e.target.closest('.number-item, button, input, [contenteditable], #tallyMasterControls, .tab-btn');
 			            if (!onInteractive) {
 			                const pp = parentGroups.find(g => g.id === activeParentId);
-			                if (pp) { pp.tallyMenuCollapsed = true; saveAllGroupData(); renderTallies(); }
+			                if (pp) { 
+                                const actTab = pp.tallyTabs.find(t => t.id === pp.activeTallyTabId);
+                                if (actTab) actTab.tallyMenuCollapsed = true; 
+                                saveAllGroupData(); 
+                                renderTallies(); 
+                            }
 			            }
 			        });
 			    }
 			    
-			    p.tallies.forEach((tally, index) => {
+			    tallies.forEach((tally, index) => {
 			        let percentage = totalCount > 0 ? (tally.count / totalCount) * 100 : 0;
 			        const pctString = totalCount > 0 ? `${safeRound(percentage, 2).toFixed(2)}%` : '0.00%';
 			        
 			        const isLocked = tally.isLocked ? true : false;
-			        const isActive = tally.id === p.activeTallyId;
+			        const isActive = tally.id === activeTab.activeTallyId;
 			        // Show active styling only when the selected menu is visible
-			        const isVisuallyActive = isActive && !p.tallyMenuCollapsed;
+			        const isVisuallyActive = isActive && !activeTab.tallyMenuCollapsed;
 			        
 			        const lockIcon = isLocked 
 			            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
@@ -5474,10 +5805,10 @@
 			            if (!e.target.isContentEditable) {
 			                if (isActive) {
 			                    // Toggle collapse
-			                    p.tallyMenuCollapsed = !p.tallyMenuCollapsed;
+			                    activeTab.tallyMenuCollapsed = !activeTab.tallyMenuCollapsed;
 			                } else {
-			                    p.activeTallyId = tally.id;
-			                    p.tallyMenuCollapsed = false;
+			                    activeTab.activeTallyId = tally.id;
+			                    activeTab.tallyMenuCollapsed = false;
 			                }
 			                saveAllGroupData();
 			                renderTallies();
@@ -5637,7 +5968,7 @@
 			        totalDisplay.innerText = safeRound(totalCount, 4); 
 			    }
 			    
-			    document.getElementById('clearTalliesBtn').style.display = p.tallies.length ? 'block' : 'none';
+			    document.getElementById('clearTalliesBtn').style.display = tallies.length ? 'block' : 'none';
 			    
 			    applyTallyMasonry();
 			}
@@ -5645,7 +5976,8 @@
 			function toggleTallyLock(event, id) {
 			    if (event) event.stopPropagation(); // Prevents the card from being selected when locked
 			    const p = parentGroups.find(g => g.id === activeParentId);
-			    p.tallies.forEach(t => {
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+			    activeTab.tallies.forEach(t => {
 			        if (t.id === id) {
 			            t.isLocked = !t.isLocked;
 			        } else {
@@ -5658,21 +5990,25 @@
 			
             function addTally() {
 			    const p = parentGroups.find(g => g.id === activeParentId);
-			    const newName = getNextTabName(p.tallies, "Counter");
-			    p.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0, isLocked: false });
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+			    const newName = getNextTabName(activeTab.tallies, "Counter");
+			    activeTab.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0, isLocked: false });
 			    saveAllGroupData();
 			    renderTallies();
 			}
         
             function updateTallyName(id, val) {
                 const p = parentGroups.find(g => g.id === activeParentId);
-                const tally = p.tallies.find(t => t.id === id);
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                const tally = activeTab.tallies.find(t => t.id === id);
                 if (tally) { tally.name = val; saveAllGroupData(); }
             }
 
             function saveActiveTallyName() {
                 const p = parentGroups.find(g => g.id === activeParentId);
-                const activeTally = p && p.tallies.find(t => t.id === p.activeTallyId);
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                if (!activeTab) return;
+                const activeTally = activeTab.tallies.find(t => t.id === activeTab.activeTallyId);
                 const labelEl = document.getElementById('activeTallyLabel');
                 if (activeTally && labelEl) {
                     const newName = labelEl.innerText.trim();
@@ -5684,7 +6020,7 @@
                         if (container) {
                             container.querySelectorAll('.number-item').forEach((div, i) => {
                                 const nameDiv = div.querySelector('div[style*="word-break"]');
-                                if (nameDiv && p.tallies[i]) nameDiv.innerText = p.tallies[i].name;
+                                if (nameDiv && activeTab.tallies[i]) nameDiv.innerText = activeTab.tallies[i].name;
                             });
                         }
                     } else if (!newName) {
@@ -5696,7 +6032,8 @@
         
             function updateTallyCount(id, val) {
 			    const p = parentGroups.find(g => g.id === activeParentId);
-			    const tally = p.tallies.find(t => t.id === id);
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+			    const tally = activeTab.tallies.find(t => t.id === id);
 			    if (tally) { 
 			        let newVal = parseFloat(val) || 0;
 			        
@@ -5708,7 +6045,7 @@
 			        const currentCount = parseFloat(tally.count) || 0;
 			        const actualDiff = newVal - currentCount;
 			        
-			        const lockedTally = p.tallies.find(t => t.isLocked);
+			        const lockedTally = activeTab.tallies.find(t => t.isLocked);
 			        
 			        // 2. Look-ahead check: Will this steal too much from the locked pool?
 			        if (lockedTally && lockedTally.id !== id) {
@@ -5735,7 +6072,8 @@
         
             function adjustTally(id, amount) {
 			    const p = parentGroups.find(g => g.id === activeParentId);
-			    const tally = p.tallies.find(t => t.id === id);
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+			    const tally = activeTab.tallies.find(t => t.id === id);
 			    if (tally) {
 			        if ('vibrate' in navigator) {
 			            try { navigator.vibrate(20); } catch(e){}
@@ -5750,7 +6088,7 @@
 			        }
 			        
 			        const actualDiff = newCount - currentCount;
-			        const lockedTally = p.tallies.find(t => t.isLocked);
+			        const lockedTally = activeTab.tallies.find(t => t.isLocked);
 			        
 			        // 2. Look-ahead check: Will this steal too much from the locked pool?
 			        if (lockedTally && lockedTally.id !== id) {
@@ -5778,8 +6116,9 @@
 			    if (event) event.stopPropagation(); // Prevents the card from being selected when deleted
 			    if (confirm("Are you sure you want to remove this tally counter?")) {
 			        const p = parentGroups.find(g => g.id === activeParentId);
-			        p.tallies = p.tallies.filter(t => t.id !== id);
-			        if (p.activeTallyId === id) p.activeTallyId = null;
+                    const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+			        activeTab.tallies = activeTab.tallies.filter(t => t.id !== id);
+			        if (activeTab.activeTallyId === id) activeTab.activeTallyId = null;
 			        saveAllGroupData();
 			        renderTallies();
 			    }
@@ -5787,33 +6126,36 @@
 
 			function adjustActiveTally(amount) {
 			    const p = parentGroups.find(g => g.id === activeParentId);
-			    if (p && p.activeTallyId) {
-			        const currentCount = parseFloat((p.tallies.find(t => t.id === p.activeTallyId) || {}).count) || 0;
+                const activeTab = p && p.tallyTabs ? p.tallyTabs.find(t => t.id === p.activeTallyTabId) : null;
+			    if (activeTab && activeTab.activeTallyId) {
+			        const currentCount = parseFloat((activeTab.tallies.find(t => t.id === activeTab.activeTallyId) || {}).count) || 0;
 			        const wouldBeNeg = currentCount + parseFloat(amount) < 0;
 			        if (!wouldBeNeg) flashTallyCount(amount > 0 ? 'add' : 'remove');
-			        adjustTally(p.activeTallyId, amount);
+			        adjustTally(activeTab.activeTallyId, amount);
 			    }
 			}
 			
 			function updateActiveTallyCount(val) {
 			    const p = parentGroups.find(g => g.id === activeParentId);
-			    if (p && p.activeTallyId) {
-			        updateTallyCount(p.activeTallyId, val);
+                const activeTab = p && p.tallyTabs ? p.tallyTabs.find(t => t.id === p.activeTallyTabId) : null;
+			    if (activeTab && activeTab.activeTallyId) {
+			        updateTallyCount(activeTab.activeTallyId, val);
 			    }
 			}
         
             function resetTallies() {
                 const p = parentGroups.find(g => g.id === activeParentId);
-                const hasLocked = (p.tallies || []).some(t => t.isLocked);
+                const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                const hasLocked = (activeTab.tallies || []).some(t => t.isLocked);
                 const promptMsg = hasLocked
                     ? 'Reset all unlocked tally counts to 0? (locked tally will be set to total count)'
                     : 'Reset all tally counts to 0?';
                 if (confirm(promptMsg)) {
                     let total = 0;
                     if (hasLocked) {
-                        total = p.tallies.reduce((sum, t) => sum + (parseFloat(t.count) || 0), 0);
+                        total = activeTab.tallies.reduce((sum, t) => sum + (parseFloat(t.count) || 0), 0);
                     }
-                    p.tallies.forEach(t => { 
+                    activeTab.tallies.forEach(t => { 
                         if (t.isLocked) {
                             t.count = total;
                         } else {
@@ -5964,6 +6306,18 @@
                     card.classList.add('export-selected');
                 }
             }
+
+            function selectAllExport() {
+                document.querySelectorAll('.card[data-exportable="true"]').forEach(card => {
+                    selectedExportCards.add(card.id);
+                    card.classList.add('export-selected');
+                });
+            }
+
+            function deselectAllExport() {
+                selectedExportCards.clear();
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('export-selected'));
+            }
         
             function enterExportMode(startCardId) {
                 isExportMode = true;
@@ -5982,6 +6336,422 @@
                 document.getElementById('exportModeBar').style.display = 'none';
                 selectedExportCards.clear();
                 document.querySelectorAll('.card').forEach(c => c.classList.remove('export-selected'));
+            }
+
+            let chartInstances = {};
+
+            // Re-render graphs on system theme change
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (typeof renderGraphs === 'function') renderGraphs();
+            });
+
+            function createOrUpdateChart(canvasId, type, data, options) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (chartInstances[canvasId]) {
+                    chartInstances[canvasId].destroy();
+                }
+                const isDark = (window.isGeneratingExcel) ? false : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                Chart.defaults.color = isDark ? '#e2e8f0' : '#4b5563';
+                Chart.defaults.borderColor = isDark ? '#374151' : '#e5e7eb';
+                
+                const isPercentage = data.datasets && data.datasets.some(d => d.label && d.label.includes('%'));
+                let passedOptions = options || {};
+                
+                let mergedOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    interaction: { mode: 'nearest', intersect: true }
+                };
+                
+                mergedOptions.scales = passedOptions.scales || {};
+                mergedOptions.scales.y = mergedOptions.scales.y || {};
+                if (isPercentage && !mergedOptions.scales.y.ticks) {
+                    mergedOptions.scales.y.ticks = { callback: function(value) { return value + '%'; } };
+                }
+                
+                mergedOptions.plugins = passedOptions.plugins || {};
+                mergedOptions.plugins.legend = { 
+                    display: true, 
+                    onClick: function(e, legendItem, legend) {
+                        if (legendItem.text.includes('Overall Average')) {
+                            const index = legendItem.datasetIndex;
+                            const ci = legend.chart;
+                            if (ci.isDatasetVisible(index)) {
+                                ci.hide(index);
+                                legendItem.hidden = true;
+                            } else {
+                                ci.show(index);
+                                legendItem.hidden = false;
+                            }
+                        }
+                    }
+                };
+                mergedOptions.plugins.tooltip = {
+                    filter: function(tooltipItem) {
+                        return !tooltipItem.dataset.label.includes('Overall Average');
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label.endsWith(' %')) label = label.slice(0, -2);
+                            else if (label.endsWith('%')) label = label.slice(0, -1);
+                            
+                            if (label) label += ': ';
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y;
+                                if (isPercentage && !label.includes('%')) label += '%';
+                            }
+                            return label;
+                        }
+                    }
+                };
+                
+                chartInstances[canvasId] = new Chart(ctx, {
+                    type: type,
+                    data: data,
+                    options: mergedOptions
+                });
+            }
+
+            function renderGraphs() {
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p || !document.getElementById('canvas-tally')) return;
+                
+                // --- Tally Counters ---
+                const tallyWrapper = document.getElementById('graph-wrapper-tally');
+                const tallyNoData = document.getElementById('graph-no-data-tally');
+                let hasTallyData = false;
+                
+                if (p.tallyTabs && p.tallyTabs.length > 0) {
+                    let labels = [];
+                    let data = [];
+                    
+                    p.tallyTabs.forEach(tab => {
+                        let totalCount = 0;
+                        let unlockedCount = 0;
+                        
+                        (tab.tallies || []).forEach(t => {
+                            totalCount += t.count;
+                            if (!t.isLocked) {
+                                unlockedCount += t.count;
+                            }
+                        });
+                        
+                        if (totalCount > 0) {
+                            labels.push(tab.name);
+                            data.push(safeRound((unlockedCount / totalCount) * 100, 2));
+                        }
+                    });
+                    
+                    if (labels.length > 0) {
+                        hasTallyData = true;
+                        tallyNoData.style.display = 'none';
+                        tallyWrapper.style.display = 'block';
+                        tallyWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
+                        const overallAvg = data.reduce((a, b) => a + b, 0) / data.length;
+                        let datasets = [
+                            {
+                                type: 'bar',
+                                label: 'Tallies %',
+                                data: data,
+                                backgroundColor: 'rgba(139, 92, 246, 0.7)'
+                            }
+                        ];
+                        if (labels.length > 1) {
+                            datasets.push({
+                                type: 'line',
+                                label: `Overall Average (${safeRound(overallAvg, 2)}%)`,
+                                data: Array(labels.length).fill(overallAvg),
+                                borderColor: 'rgba(156, 163, 175, 1)',
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0
+                            });
+                        }
+                        createOrUpdateChart('canvas-tally', 'bar', { 
+                            labels, 
+                            datasets: datasets
+                        }, { scales: { y: { beginAtZero: true, max: 100 } } });
+                    }
+                }
+                if (!hasTallyData) {
+                    tallyNoData.style.display = 'block';
+                    tallyWrapper.style.display = 'none';
+                }
+
+                // --- Salinity Calculator ---
+                const salWrapper = document.getElementById('graph-wrapper-salinity');
+                const salNoData = document.getElementById('graph-no-data-salinity');
+                let hasSalData = false;
+                if (p.salinityTabs && p.salinityTabs.length > 0) {
+                    const validTabs = p.salinityTabs.filter(t => !isNaN(parseFloat(t.brix)));
+                    if (validTabs.length > 0) {
+                        hasSalData = true;
+                        salNoData.style.display = 'none';
+                        salWrapper.style.display = 'block';
+                        
+                        const labels = validTabs.map(t => t.name);
+                        salWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
+                        
+                        const data = validTabs.map(t => {
+                            let brix = parseFloat(t.brix);
+                            return safeRound((brix / 26.4) * 100, 2);
+                        });
+                        
+                        const overallAvg = data.reduce((a, b) => a + b, 0) / data.length;
+                        let datasets = [
+                            {
+                                type: 'bar',
+                                label: 'Salinity %',
+                                data: data,
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                            }
+                        ];
+                        if (labels.length > 1) {
+                            datasets.push({
+                                type: 'line',
+                                label: `Overall Average (${safeRound(overallAvg, 2)}%)`,
+                                data: Array(labels.length).fill(overallAvg),
+                                borderColor: 'rgba(156, 163, 175, 1)',
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0
+                            });
+                        }
+                        createOrUpdateChart('canvas-salinity', 'bar', {
+                            labels,
+                            datasets: datasets
+                        }, { scales: { y: { beginAtZero: true, max: 100 } } });
+                    }
+                }
+                if (!hasSalData) {
+                    salNoData.style.display = 'block';
+                    salWrapper.style.display = 'none';
+                }
+                
+                // --- Sum & Averaging ---
+                const avgWrapper = document.getElementById('graph-wrapper-averaging');
+                const avgNoData = document.getElementById('graph-no-data-averaging');
+                const avgSelect = document.getElementById('graph-select-averaging');
+                let hasAvgData = false;
+                
+                if (p.sumSets && p.sumSets.length > 0) {
+                    avgSelect.style.display = 'block';
+                    avgSelect.innerHTML = p.sumSets.map(s => `<option value="${s.id}" ${s.id === p.activeSumSetId ? 'selected' : ''}>${s.name}</option>`).join('');
+                } else {
+                    avgSelect.style.display = 'none';
+                }
+
+                if (p.activeSumSetId) {
+                    const set = p.sumSets.find(s => s.id === p.activeSumSetId);
+                    if (set && set.tabs && set.tabs.length > 0) {
+                        const validTabs = set.tabs.filter(t => t.data && t.data.length > 0);
+                        if (validTabs.length > 0) {
+                            hasAvgData = true;
+                            avgNoData.style.display = 'none';
+                            avgWrapper.style.display = 'block';
+                            
+                            const labels = validTabs.map(t => t.name);
+                            avgWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
+                            
+                            const data = validTabs.map(t => {
+                                const parsedData = t.data.map(d => parseFloat(d));
+                                const avg = parsedData.reduce((a, b) => a + b, 0) / parsedData.length;
+                                return safeRound(avg, 2);
+                            });
+                            
+                            const overallAvg = data.reduce((a, b) => a + b, 0) / data.length;
+                            
+                            let datasets = [
+                                {
+                                    type: 'bar',
+                                    label: 'Sample Average',
+                                    data: data,
+                                    backgroundColor: 'rgba(16, 185, 129, 0.7)'
+                                }
+                            ];
+                            if (labels.length > 1) {
+                                datasets.push({
+                                    type: 'line',
+                                    label: `Overall Average (${safeRound(overallAvg, 2)})`,
+                                    data: Array(labels.length).fill(overallAvg),
+                                    borderColor: 'rgba(156, 163, 175, 1)',
+                                    borderDash: [5, 5],
+                                    pointRadius: 0,
+                                    pointHoverRadius: 0,
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0
+                                });
+                            }
+                            createOrUpdateChart('canvas-averaging', 'bar', {
+                                labels,
+                                datasets: datasets
+                            });
+                        }
+                    }
+                }
+                if (!hasAvgData) {
+                    avgNoData.style.display = 'block';
+                    avgWrapper.style.display = 'none';
+                }
+
+                // --- Pickup Calculator ---
+                const pickupWrapper = document.getElementById('graph-wrapper-pickup');
+                const pickupNoData = document.getElementById('graph-no-data-pickup');
+                const pickupSelect = document.getElementById('graph-select-pickup');
+                let hasPickupData = false;
+                
+                if (p.pickupSets && p.pickupSets.length > 0) {
+                    pickupSelect.style.display = 'block';
+                    pickupSelect.innerHTML = p.pickupSets.map(s => `<option value="${s.id}" ${s.id === p.activePickupSetId ? 'selected' : ''}>${s.name}</option>`).join('');
+                } else {
+                    pickupSelect.style.display = 'none';
+                }
+
+                if (p.activePickupSetId) {
+                    const set = p.pickupSets.find(s => s.id === p.activePickupSetId);
+                    if (set && set.tabs && set.tabs.length > 0) {
+                        const validTabs = set.tabs.filter(t => !isNaN(parseFloat(t.pre)) && !isNaN(parseFloat(t.post)) && parseFloat(t.pre) > 0);
+                        if (validTabs.length > 0) {
+                            hasPickupData = true;
+                            pickupNoData.style.display = 'none';
+                            pickupWrapper.style.display = 'block';
+                            
+                            const labels = validTabs.map(t => t.name);
+                            pickupWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
+                            
+                            const data = validTabs.map(t => {
+                                let pre = parseFloat(t.pre);
+                                let post = parseFloat(t.post);
+                                let dec = (pre - post) / pre;
+                                if (dec < 0) dec = 0;
+                                return safeRound(dec * 100, 2);
+                            });
+                            
+                            const avgValue = data.reduce((a, b) => a + b, 0) / data.length;
+                            
+                            let datasets = [
+                                {
+                                    type: 'bar',
+                                    label: 'Pickup %',
+                                    data: data,
+                                    backgroundColor: 'rgba(245, 158, 11, 0.7)'
+                                }
+                            ];
+                            if (labels.length > 1) {
+                                datasets.push({
+                                    type: 'line',
+                                    label: `Overall Average (${safeRound(avgValue, 2)}%)`,
+                                    data: Array(labels.length).fill(avgValue),
+                                    borderColor: 'rgba(156, 163, 175, 1)',
+                                    borderDash: [5, 5],
+                                    pointRadius: 0,
+                                    pointHoverRadius: 0,
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0
+                                });
+                            }
+                            createOrUpdateChart('canvas-pickup', 'bar', {
+                                labels,
+                                datasets: datasets
+                            });
+                        }
+                    }
+                }
+                if (!hasPickupData) {
+                    pickupNoData.style.display = 'block';
+                    pickupWrapper.style.display = 'none';
+                }
+
+                // --- Production Pace ---
+                const paceWrapper = document.getElementById('graph-wrapper-pace');
+                const paceNoData = document.getElementById('graph-no-data-pace');
+                const paceSelect = document.getElementById('graph-select-pace');
+                let hasPaceData = false;
+                
+                if (p.estimatorTabs && p.estimatorTabs.length > 0) {
+                    paceSelect.style.display = 'block';
+                    paceSelect.innerHTML = p.estimatorTabs.map(t => `<option value="${t.id}" ${t.id === p.activeEstimatorTabId ? 'selected' : ''}>${t.name}</option>`).join('');
+                } else {
+                    paceSelect.style.display = 'none';
+                }
+
+                if (p.activeEstimatorTabId) {
+                    const tab = p.estimatorTabs.find(t => t.id === p.activeEstimatorTabId);
+                    if (tab && tab.data) {
+                        const checked = tab.data.filter(e => e.checked).sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                        if (checked.length > 0 && (checked.length > 1 || tab.startTime)) {
+                            let labels = [];
+                            let paceData = [];
+                            
+                            let prevTimeMins = tab.startTime ? parseTimeToMinutes(tab.startTime) : parseTimeToMinutes(checked[0].time);
+                            let startIndex = tab.startTime ? 0 : 1;
+                            
+                            for (let i = startIndex; i < checked.length; i++) {
+                                let currTimeMins = parseTimeToMinutes(checked[i].time);
+                                let diffMins = currTimeMins - prevTimeMins;
+                                if (diffMins < 0) diffMins += 24 * 60;
+                                if (diffMins === 0) diffMins = 1; 
+                                
+                                let pacePerHour = (parseFloat(checked[i].amount) / (diffMins / 60));
+                                labels.push(formatTimeStringTo12Hour(checked[i].time));
+                                paceData.push(safeRound(pacePerHour, 2));
+                                
+                                prevTimeMins = currTimeMins;
+                            }
+                            
+                            if (labels.length > 0) {
+                                hasPaceData = true;
+                                paceNoData.style.display = 'none';
+                                paceWrapper.style.display = 'block';
+                                paceWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
+                                
+                                const overallAvg = paceData.reduce((a, b) => a + b, 0) / paceData.length;
+                                let datasets = [
+                                    {
+                                        label: `Interval Pace (${tab.unit || 'Units'}/hr)`,
+                                        data: paceData,
+                                        borderColor: 'rgba(239, 68, 68, 1)',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        fill: true,
+                                        tension: 0.1
+                                    }
+                                ];
+                                if (labels.length > 1) {
+                                    datasets.push({
+                                        type: 'line',
+                                        label: `Overall Average (${safeRound(overallAvg, 2)})`,
+                                        data: Array(labels.length).fill(overallAvg),
+                                        borderColor: 'rgba(156, 163, 175, 1)',
+                                        borderDash: [5, 5],
+                                        pointRadius: 0,
+                                        pointHoverRadius: 0,
+                                        borderWidth: 2,
+                                        fill: false,
+                                        tension: 0
+                                    });
+                                }
+                                createOrUpdateChart('canvas-pace', 'line', {
+                                    labels,
+                                    datasets: datasets
+                                });
+                            }
+                        }
+                    }
+                }
+                if (!hasPaceData) {
+                    paceNoData.style.display = 'block';
+                    paceWrapper.style.display = 'none';
+                }
             }
         
             function executeExport() {
@@ -6030,8 +6800,10 @@
                             let pre = parseFloat(tab.pre); let post = parseFloat(tab.post);
                             let dec = "", pct = "";
                             if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
-                                dec = safeRound((pre - post) / pre, 4).toFixed(4);
-                                pct = safeRound(((pre - post) / pre) * 100, 2).toFixed(2) + "%";
+                                let decVal = (pre - post) / pre;
+                                if (decVal < 0) decVal = 0;
+                                dec = safeRound(decVal, 4).toFixed(4);
+                                pct = safeRound(decVal * 100, 2).toFixed(2) + "%";
                             }
                             decVals.push(`"${dec}"`);
                             pctVals.push(`"${pct}"`);
@@ -6166,10 +6938,13 @@
         
                 if (selectedExportCards.has('card-tally')) {
                     csv += "--- TALLY COUNTERS ---\n";
-                    (p.tallies || []).forEach(t => {
-                        csv += `"${t.name}","${t.count}"\n`;
+                    (p.tallyTabs || []).forEach(tab => {
+                        csv += `Sample: ${tab.name}\n`;
+                        (tab.tallies || []).forEach(t => {
+                            csv += `"${t.name}","${t.count}"\n`;
+                        });
+                        csv += "\n";
                     });
-                    csv += "\n";
                 }
         
                 if (selectedExportCards.has('card-timestamps')) {
@@ -6208,6 +6983,528 @@
                 link.click();
                 document.body.removeChild(link);
         
+                cancelExportMode();
+            }
+
+            // ==========================================
+            // ---- EXPORT TO XLSX (EXCEL) ENGINE -------
+            // ==========================================
+            async function executeExportXLSX() {
+                if (selectedExportCards.size === 0) {
+                    alert("Please tap to select at least one tool to export.");
+                    return;
+                }
+
+                if (typeof ExcelJS === 'undefined') {
+                    alert("Excel library is still loading. Please try again in a moment.");
+                    return;
+                }
+
+                const p = parentGroups.find(g => g.id === activeParentId);
+                let fileExportName = p.name ? p.name : (appFolders.find(f => f.id === p.folderId)?.name || "Unnamed File");
+                const safeExportDate = new Date().toLocaleString().replace(/,/g, ' at');
+
+                const workbook = new ExcelJS.Workbook();
+                workbook.creator = 'QC Toolset Pro';
+                workbook.created = new Date();
+
+                // ---- Shared style helpers ----
+                const PRIMARY   = 'FF2563EB'; // app blue
+                const SUCCESS   = 'FF059669'; // green
+                const WARNING   = 'FFEF4444'; // red / error
+                const ACCENT    = 'FFD97706'; // amber
+                const LIGHT_BG  = 'FFE0EAFF'; // light blue tint
+                const SECTION_BG= 'FF1E3A5F'; // dark navy for section headers
+                const WHITE     = 'FFFFFFFF';
+                const DARK_TEXT = 'FF1F2937';
+
+                function hdr(text, color) {
+                    return {
+                        value: text,
+                        style: {
+                            font: { bold: true, color: { argb: WHITE }, size: 11 },
+                            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: color || PRIMARY } },
+                            alignment: { horizontal: 'center', vertical: 'middle', wrapText: true },
+                            border: {
+                                top:    { style: 'thin', color: { argb: 'FFB0C4DE' } },
+                                bottom: { style: 'thin', color: { argb: 'FFB0C4DE' } },
+                                left:   { style: 'thin', color: { argb: 'FFB0C4DE' } },
+                                right:  { style: 'thin', color: { argb: 'FFB0C4DE' } }
+                            }
+                        }
+                    };
+                }
+
+                function cell(text, bold, bgColor) {
+                    return {
+                        value: text,
+                        style: {
+                            font: { bold: !!bold, color: { argb: DARK_TEXT }, size: 10 },
+                            fill: bgColor ? { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } } : undefined,
+                            alignment: { horizontal: 'left', vertical: 'middle', wrapText: true },
+                            border: {
+                                top:    { style: 'hair', color: { argb: 'FFD1D5DB' } },
+                                bottom: { style: 'hair', color: { argb: 'FFD1D5DB' } },
+                                left:   { style: 'hair', color: { argb: 'FFD1D5DB' } },
+                                right:  { style: 'hair', color: { argb: 'FFD1D5DB' } }
+                            }
+                        }
+                    };
+                }
+
+                function sectionRow(sheet, title, color) {
+                    const row = sheet.addRow([title]);
+                    row.height = 22;
+                    const c = row.getCell(1);
+                    c.font = { bold: true, color: { argb: WHITE }, size: 11 };
+                    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color || SECTION_BG } };
+                    c.alignment = { horizontal: 'left', vertical: 'middle' };
+                    sheet.mergeCells(row.number, 1, row.number, 20);
+                }
+
+                function applyRowData(sheet, rowData) {
+                    const row = sheet.addRow(rowData.map(d => (d && typeof d === 'object' ? d.value : d)));
+                    row.height = 18;
+                    rowData.forEach((d, i) => {
+                        if (d && typeof d === 'object' && d.style) {
+                            const c = row.getCell(i + 1);
+                            if (d.style.font)      c.font      = d.style.font;
+                            if (d.style.fill)      c.fill      = d.style.fill;
+                            if (d.style.alignment) c.alignment = d.style.alignment;
+                            if (d.style.border)    c.border    = d.style.border;
+                        }
+                    });
+                    return row;
+                }
+
+                // ---- SUMMARY SHEET ----
+                const sheet = workbook.addWorksheet('Summary', { views: [{ showGridLines: false }] });
+                sheet.properties.defaultRowHeight = 18;
+
+                // Title block
+                const titleRow = sheet.addRow(['QC Toolset Pro — Export Report']);
+                titleRow.height = 30;
+                titleRow.getCell(1).font = { bold: true, color: { argb: WHITE }, size: 14 };
+                titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PRIMARY } };
+                titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                sheet.mergeCells(1, 1, 1, 10);
+
+                sheet.addRow([]);
+
+                // Metadata block
+                const metaRows = [
+                    ['File Name',    fileExportName],
+                    ['Product Code', p.productCode || ''],
+                    ['Date',         p.date || ''],
+                    ['Start Time',   formatTimeStringTo12Hour(p.startTime) || ''],
+                    ['End Time',     formatTimeStringTo12Hour(p.endTime) || ''],
+                    ['Exported On',  safeExportDate],
+                ];
+                metaRows.forEach(([label, value]) => {
+                    const r = sheet.addRow([label, value]);
+                    r.height = 18;
+                    const labelCell = r.getCell(1);
+                    const valueCell = r.getCell(2);
+                    labelCell.font = { bold: true, color: { argb: WHITE }, size: 10 };
+                    labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PRIMARY } };
+                    labelCell.alignment = { horizontal: 'left', vertical: 'middle' };
+                    valueCell.font = { color: { argb: DARK_TEXT }, size: 10 };
+                    valueCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BG } };
+                    valueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+                });
+
+                sheet.addRow([]);
+
+                // ---- PICKUP CALCULATOR ----
+                if (selectedExportCards.has('card-pickup')) {
+                    sectionRow(sheet, '📦  PICKUP CALCULATOR');
+                    sheet.addRow([]);
+
+                    p.pickupSets.forEach(set => {
+                        let sumPct = 0, validCount = 0;
+                        set.tabs.forEach(tab => {
+                            let pre = parseFloat(tab.pre), post = parseFloat(tab.post);
+                            if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
+                                sumPct += safeRound(((pre - post) / pre) * 100, 2);
+                                validCount++;
+                            }
+                        });
+                        const setAvgStr = validCount === 0 ? 'N/A' : safeRound(sumPct / validCount, 2).toFixed(2) + '%';
+
+                        // Set info rows
+                        applyRowData(sheet, [hdr('Set', ACCENT), cell(set.name, true)]);
+
+                        if (set.unit) applyRowData(sheet, [hdr('Unit', ACCENT), cell(set.unit)]);
+
+                        // Column headers
+                        const colHeaders = [hdr(''), ...set.tabs.map(t => hdr(t.name))];
+                        applyRowData(sheet, colHeaders);
+
+                        const preRow   = [hdr('Pre-Sample')];
+                        const postRow  = [hdr('Post-Sample')];
+                        const decRow   = [hdr('Decimal')];
+                        const pctRow   = [hdr('Percentage')];
+
+                        set.tabs.forEach(tab => {
+                            const pre = parseFloat(tab.pre), post = parseFloat(tab.post);
+                            let dec = '', pct = '';
+                            if (!isNaN(pre) && !isNaN(post) && pre !== 0) {
+                                let decVal = (pre - post) / pre;
+                                if (decVal < 0) decVal = 0;
+                                dec = safeRound(decVal, 4).toFixed(4);
+                                pct = safeRound(decVal * 100, 2).toFixed(2) + '%';
+                            }
+                            preRow.push(cell(tab.pre || ''));
+                            postRow.push(cell(tab.post || ''));
+                            decRow.push(cell(dec));
+                            pctRow.push(cell(pct, false, pct ? LIGHT_BG : undefined));
+                        });
+
+                        applyRowData(sheet, preRow);
+                        applyRowData(sheet, postRow);
+                        applyRowData(sheet, decRow);
+                        applyRowData(sheet, pctRow);
+                        
+                        applyRowData(sheet, [hdr('Set Average', ACCENT), cell(setAvgStr, true, 'FFFEF3C7')]);
+                        sheet.addRow([]);
+                    });
+                }
+
+                // ---- SUM & AVERAGING ----
+                if (selectedExportCards.has('card-averaging')) {
+                    sectionRow(sheet, '📊  SUM & AVERAGING');
+                    sheet.addRow([]);
+
+                    p.sumSets.forEach(set => {
+                        let sNames = [], rLimits = [], counts = [], sums = [], avgs = [];
+                        let underR = [], overR = [], withinR = [], outOfRangePctVals = [];
+                        let maxDataLength = 0, allData = [];
+
+                        set.tabs.forEach(tab => {
+                            let min = parseFloat(tab.minRange), max = parseFloat(tab.maxRange);
+                            let hasRange = !isNaN(min) && !isNaN(max);
+                            if (hasRange && min > max) { let tmp = min; min = max; max = tmp; }
+                            let sum = tab.data.reduce((a,b) => a + Number(b), 0);
+                            let precision = getDynamicPrecision(tab.data);
+                            let displaySum = tab.data.length ? safeRound(sum, precision).toFixed(precision) : 0;
+                            let avg = tab.data.length ? safeRound(sum/tab.data.length, precision).toFixed(precision) : 0;
+                            let count = tab.data.length;
+                            let under = 0, over = 0, within = 0;
+                            if (hasRange) tab.data.forEach(n => { if (Number(n) < min) under++; else if (Number(n) > max) over++; else within++; });
+                            let outPct = 'N/A';
+                            if (hasRange && count > 0) outPct = safeRound(((under+over)/count)*100,2).toFixed(2)+'%';
+                            else if (hasRange) outPct = '0.00%';
+
+                            sNames.push(tab.name);
+                            rLimits.push(hasRange ? `${min} - ${max}` : 'N/A');
+                            counts.push(String(count));
+                            sums.push(String(displaySum));
+                            avgs.push(String(avg));
+                            underR.push(hasRange ? String(under) : 'N/A');
+                            overR.push(hasRange ? String(over) : 'N/A');
+                            withinR.push(hasRange ? String(within) : 'N/A');
+                            outOfRangePctVals.push(outPct);
+                            if (tab.data.length > maxDataLength) maxDataLength = tab.data.length;
+                            allData.push(tab.data);
+                        });
+
+                        applyRowData(sheet, [hdr('Set', ACCENT), cell(set.name, true)]);
+                        if (set.unit) applyRowData(sheet, [hdr('Unit', ACCENT), cell(set.unit)]);
+
+                        // Stats header row
+                        applyRowData(sheet, [hdr(''), ...sNames.map(n => hdr(n))]);
+                        const statRows = [
+                            ['Range Limit',     rLimits],
+                            ['Count',           counts],
+                            ['Sum',             sums],
+                            ['Average',         avgs],
+                            ['Below Range',     underR],
+                            ['Above Range',     overR],
+                            ['Within Range',    withinR],
+                            ['Out of Range %',  outOfRangePctVals],
+                        ];
+                        statRows.forEach(([label, vals]) => {
+                            const isOOR = label === 'Out of Range %';
+                            const isSumAvg = label === 'Sum' || label === 'Average';
+                            applyRowData(sheet, [hdr(label), ...vals.map(v => {
+                                const isHigh = isOOR && v !== 'N/A' && parseFloat(v) > 0;
+                                let bg = undefined;
+                                if (isHigh) bg = 'FFFEE2E2';
+                                else if (isSumAvg && v !== 'N/A') bg = 'FFFEF3C7';
+                                return cell(v, false, bg);
+                            })]);
+                        });
+
+                        // Data points
+                        if (maxDataLength > 0) {
+                            applyRowData(sheet, [hdr('Data Points', 'FF374151'), ...sNames.map(n => hdr(n, 'FF374151'))]);
+                            for (let i = 0; i < maxDataLength; i++) {
+                                const rowData = [cell('')];
+                                for (let t = 0; t < allData.length; t++) {
+                                    rowData.push(cell(i < allData[t].length ? String(allData[t][i]) : ''));
+                                }
+                                applyRowData(sheet, rowData);
+                            }
+                        }
+                        sheet.addRow([]);
+                    });
+                }
+
+                // ---- PRODUCTION PACE ----
+                if (selectedExportCards.has('card-estimator')) {
+                    sectionRow(sheet, '⏱️  PRODUCTION PACE');
+                    sheet.addRow([]);
+
+                    p.estimatorTabs.forEach(tab => {
+                        let sortedData = [...tab.data].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                        applyRowData(sheet, [hdr('Line', ACCENT), cell(tab.name, true)]);
+                        applyRowData(sheet, [hdr('Unit', ACCENT), cell(tab.unit || 'Units')]);
+                        applyRowData(sheet, [hdr('Shift Start', ACCENT), cell(formatTimeStringTo12Hour(tab.startTime) || '')]);
+
+                        let checked = sortedData.filter(e => e.checked);
+                        let avgPaceStr = 'N/A';
+                        if (checked.length > 0 && (checked.length > 1 || tab.startTime)) {
+                            const firstTimeMins = tab.startTime ? parseTimeToMinutes(tab.startTime) : parseTimeToMinutes(checked[0].time);
+                            const lastEntry = checked[checked.length - 1];
+                            const lastTimeMins = parseTimeToMinutes(lastEntry.time);
+                            
+                            let timeDiffMins = lastTimeMins - firstTimeMins;
+                            if (timeDiffMins < 0) timeDiffMins += 24 * 60; 
+                            if (timeDiffMins === 0) timeDiffMins = 1;
+                            
+                            let totalHours = timeDiffMins / 60; 
+                            const loggedTotal = checked.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+                            const pacePerHour = loggedTotal / totalHours;
+                            avgPaceStr = safeRound(pacePerHour, 2).toFixed(2) + ' /hr';
+                        }
+                        applyRowData(sheet, [hdr('Average Pace', ACCENT), cell(avgPaceStr, true)]);
+
+                        if (sortedData.length === 0) {
+                            applyRowData(sheet, [hdr('Status'), cell('No logs recorded.')]);
+                        } else {
+                            applyRowData(sheet, [hdr(''), hdr('Amount'), hdr('Clock Time'), hdr('Interval Pace'), hdr('Status')]);
+                            let prevTimeMins = tab.startTime ? parseTimeToMinutes(tab.startTime) : null;
+                            
+                            sortedData.forEach(e => {
+                                let paceStr = '';
+                                let currTimeMins = parseTimeToMinutes(e.time);
+                                if (prevTimeMins !== null) {
+                                    let diffMins = currTimeMins - prevTimeMins;
+                                    if (diffMins < 0) diffMins += 24 * 60;
+                                    if (diffMins === 0) diffMins = 1;
+                                    let pacePerHour = parseFloat(e.amount) / (diffMins / 60);
+                                    paceStr = safeRound(pacePerHour, 2) + ' /hr';
+                                }
+
+                                const statusBg = e.checked ? 'FFD1FAE5' : 'FFFEF3C7';
+                                applyRowData(sheet, [
+                                    cell(''),
+                                    cell(String(e.amount)),
+                                    cell(formatTimeStringTo12Hour(e.time)),
+                                    cell(paceStr),
+                                    cell(e.checked ? 'Logged' : 'Ignored', false, statusBg)
+                                ]);
+
+                                prevTimeMins = currTimeMins;
+                            });
+                        }
+                        sheet.addRow([]);
+                    });
+                }
+
+                // ---- SALINITY CALCULATOR ----
+                if (selectedExportCards.has('card-salinity')) {
+                    sectionRow(sheet, '🧪  SALINITY CALCULATOR');
+                    sheet.addRow([]);
+
+                    const salHdr = [hdr(''), ...(p.salinityTabs || []).map(t => hdr(t.name))];
+                    const brixRow = [hdr('Brix')];
+                    const pctRow  = [hdr('Salinity %')];
+
+                    (p.salinityTabs || []).forEach(tab => {
+                        brixRow.push(cell(tab.brix || ''));
+                        let pct = '';
+                        let brix = parseFloat(tab.brix);
+                        if (!isNaN(brix)) pct = safeRound((brix / 26.4) * 100, 2).toFixed(2) + '%';
+                        pctRow.push(cell(pct, false, pct ? LIGHT_BG : undefined));
+                    });
+
+                    applyRowData(sheet, salHdr);
+                    applyRowData(sheet, brixRow);
+                    applyRowData(sheet, pctRow);
+                    sheet.addRow([]);
+                }
+
+                // ---- TALLY COUNTERS ----
+                if (selectedExportCards.has('card-tally')) {
+                    sectionRow(sheet, '🔢  TALLY COUNTERS');
+                    sheet.addRow([]);
+                    
+                    (p.tallyTabs || []).forEach((tab) => {
+                        applyRowData(sheet, [hdr(`Sample: ${tab.name}`)]);
+                        applyRowData(sheet, [hdr('Counter Name'), hdr('Count')]);
+                        (tab.tallies || []).forEach((t, i) => {
+                            const bg = i % 2 === 0 ? LIGHT_BG : WHITE;
+                            applyRowData(sheet, [cell(t.name, false, bg), cell(String(t.count), false, bg)]);
+                        });
+                        sheet.addRow([]);
+                    });
+                }
+
+                // ---- TIMESTAMPS ----
+                if (selectedExportCards.has('card-timestamps')) {
+                    sectionRow(sheet, '🕐  TIME LOGS');
+                    sheet.addRow([]);
+
+                    if (!p.timestamps || p.timestamps.length === 0) {
+                        applyRowData(sheet, [cell('No logs recorded.')]);
+                    } else {
+                        applyRowData(sheet, [hdr('Time'), hdr('Event')]);
+                        let sortedTs = [...p.timestamps].sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+                        sortedTs.forEach((ts, i) => {
+                            const bg = i % 2 === 0 ? LIGHT_BG : WHITE;
+                            applyRowData(sheet, [
+                                cell(formatTimeStringTo12Hour(ts.time), false, bg),
+                                cell(ts.event, false, bg)
+                            ]);
+                        });
+                    }
+                    sheet.addRow([]);
+                }
+
+                // ---- QUICK NOTES ----
+                if (selectedExportCards.has('card-notes')) {
+                    sectionRow(sheet, '📝  QUICK NOTES');
+                    sheet.addRow([]);
+                    const notesRow = sheet.addRow([p.notes?.text || '']);
+                    notesRow.getCell(1).alignment = { wrapText: true, vertical: 'top' };
+                    notesRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBEB' } };
+                    notesRow.height = 60;
+                    sheet.mergeCells(notesRow.number, 1, notesRow.number, 8);
+                    sheet.addRow([]);
+                }
+
+                // ---- Column widths (auto-fit heuristic) ----
+                sheet.columns.forEach((col, i) => {
+                    let maxLen = 10;
+                    col.eachCell({ includeEmpty: false }, c => {
+                        const val = c.value ? String(c.value) : '';
+                        if (val.length > maxLen) maxLen = val.length;
+                    });
+                    col.width = Math.min(maxLen + 4, 40);
+                });
+
+                // ---- GRAPHS EXPORT ----
+                const graphConfigs = [];
+                if (selectedExportCards.has('card-tally')) graphConfigs.push({ id: 'canvas-tally', name: 'Tally Counters' });
+                if (selectedExportCards.has('card-salinity')) graphConfigs.push({ id: 'canvas-salinity', name: 'Salinity Calculator' });
+                if (selectedExportCards.has('card-averaging')) graphConfigs.push({ id: 'canvas-averaging', name: 'Sum & Averaging' });
+                if (selectedExportCards.has('card-pickup')) graphConfigs.push({ id: 'canvas-pickup', name: 'Pickup Calculator' });
+                if (selectedExportCards.has('card-estimator')) graphConfigs.push({ id: 'canvas-pace', name: 'Production Pace' });
+
+                if (graphConfigs.length > 0) {
+                    sectionRow(sheet, '📊  DATA GRAPHS');
+                    sheet.addRow([]);
+
+                    const graphsCard = document.getElementById('card-graphs');
+                    const wasCollapsed = graphsCard.classList.contains('collapsed');
+                    if (wasCollapsed) {
+                        graphsCard.classList.remove('collapsed');
+                    }
+
+                    window.isGeneratingExcel = true;
+                    
+                    async function snapshotGraph(canvasId, title) {
+                        const canvas = document.getElementById(canvasId);
+                        if (canvas && canvas.style.display !== 'none' && chartInstances[canvasId]) {
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = canvas.width;
+                            tempCanvas.height = canvas.height;
+                            const ctx = tempCanvas.getContext('2d');
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                            ctx.drawImage(canvas, 0, 0);
+                            
+                            const base64Image = tempCanvas.toDataURL('image/png');
+                            const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
+
+                            applyRowData(sheet, [hdr(title)]);
+                            const currentRow = sheet.rowCount;
+                            
+                            sheet.addImage(imageId, {
+                                tl: { col: 0, row: currentRow },
+                                ext: { width: Math.min(canvas.width, 600), height: Math.min(canvas.height, 300) }
+                            });
+                            
+                            for (let i = 0; i < 16; i++) {
+                                sheet.addRow([]);
+                            }
+                        }
+                    }
+
+                    for (const conf of graphConfigs) {
+                        if (conf.id === 'canvas-averaging' && p.sumSets && p.sumSets.length > 0) {
+                            const originalId = p.activeSumSetId;
+                            for (const set of p.sumSets) {
+                                p.activeSumSetId = set.id;
+                                if (typeof renderGraphs === 'function') renderGraphs();
+                                await new Promise(r => setTimeout(r, 200));
+                                await snapshotGraph(conf.id, `${conf.name} - ${set.name}`);
+                            }
+                            p.activeSumSetId = originalId;
+                        } 
+                        else if (conf.id === 'canvas-pickup' && p.pickupSets && p.pickupSets.length > 0) {
+                            const originalId = p.activePickupSetId;
+                            for (const set of p.pickupSets) {
+                                p.activePickupSetId = set.id;
+                                if (typeof renderGraphs === 'function') renderGraphs();
+                                await new Promise(r => setTimeout(r, 200));
+                                await snapshotGraph(conf.id, `${conf.name} - ${set.name}`);
+                            }
+                            p.activePickupSetId = originalId;
+                        }
+                        else if (conf.id === 'canvas-pace' && p.estimatorTabs && p.estimatorTabs.length > 0) {
+                            const originalId = p.activeEstimatorTabId;
+                            for (const tab of p.estimatorTabs) {
+                                p.activeEstimatorTabId = tab.id;
+                                if (typeof renderGraphs === 'function') renderGraphs();
+                                await new Promise(r => setTimeout(r, 200));
+                                await snapshotGraph(conf.id, `${conf.name} - ${tab.name}`);
+                            }
+                            p.activeEstimatorTabId = originalId;
+                        }
+                        else {
+                            if (typeof renderGraphs === 'function') renderGraphs();
+                            await new Promise(r => setTimeout(r, 200));
+                            await snapshotGraph(conf.id, conf.name);
+                        }
+                    }
+
+                    window.isGeneratingExcel = false;
+
+                    if (wasCollapsed) {
+                        graphsCard.classList.add('collapsed');
+                    }
+                    
+                    // Re-render graphs one last time to restore their original light/dark theme
+                    if (typeof renderGraphs === 'function') renderGraphs();
+                }
+
+                // ---- Generate & download ----
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                let baseName = p.productCode ? `${p.productCode} - ${fileExportName}` : fileExportName;
+                let safeName = baseName.replace(/[^a-z0-9 \-]/gi, '_');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `${safeName}.xlsx`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
                 cancelExportMode();
             }
 			
@@ -6332,7 +7629,7 @@
 			                pinnedCards: [], collapsedCards: {},
 			                temp: { c: '', f: '' }, stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
 			                sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
-			                notes: { text: '' }, timestamps: [], tallies: [], percentage: { total: '', part: '', pct: '' }
+			                notes: { text: '' }, timestamps: [], tallyTabs: [{ id: 'ttab_'+Date.now(), name: 'Sample 1', tallies: [] }], percentage: { total: '', part: '', pct: '' }
 			            });
 			            parentGroups[0].pickupSets[0].activeTabId = parentGroups[0].pickupSets[0].tabs[0].id;
 			            parentGroups[0].sumSets[0].activeTabId = parentGroups[0].sumSets[0].tabs[0].id;
