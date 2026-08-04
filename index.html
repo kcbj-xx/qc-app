@@ -2498,6 +2498,11 @@
 				window.addEventListener('orientationchange', () => {
 				    setTimeout(updateRealViewportHeight, 150); // Small delay for foldables
 				});
+
+				// Re-render tallies when OS color scheme changes so badge colors update immediately
+				window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				    renderTallies();
+				});
 				
                 // 1. Setup Drag for Files
 		        setupTabDragManager('parentTabsContainer', 'parentTabsList', 
