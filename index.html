@@ -1557,7 +1557,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v102</div>
+            <div class="footer-version">v103</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -2689,6 +2689,25 @@
                 refreshGroupDataReferences();
                 
                 applyCardStatesToDOM(); 
+                
+                // Hide graph tooltips when touching/clicking elsewhere
+                const dismissTooltips = (e) => {
+                    const isCanvas = e.target.tagName === 'CANVAS';
+                    if (typeof chartInstances !== 'undefined') {
+                        Object.values(chartInstances).forEach(chart => {
+                            if (!chart || !chart.tooltip) return;
+                            if (!isCanvas || chart.canvas !== e.target) {
+                                const active = chart.tooltip.getActiveElements();
+                                if (active && active.length > 0) {
+                                    chart.tooltip.setActiveElements([], {x: 0, y: 0});
+                                    chart.update();
+                                }
+                            }
+                        });
+                    }
+                };
+                document.addEventListener('touchstart', dismissTooltips, {passive: true});
+                document.addEventListener('mousedown', dismissTooltips, {passive: true});
                 
                 document.querySelectorAll('.tabs-container').forEach(container => {
                     container.addEventListener('wheel', (e) => {
@@ -5761,7 +5780,21 @@
                 const p = parentGroups.find(g => g.id === activeParentId);
                 if (p && p.tallyTabs) {
                     const newId = 'ttab_' + Date.now();
-                    p.tallyTabs.push({ id: newId, name: `Sample ${p.tallyTabs.length + 1}`, tallies: [] });
+                    let newTallies = [];
+                    
+                    if (p.tallyTabs.length > 0) {
+                        const lastTab = p.tallyTabs[p.tallyTabs.length - 1];
+                        newTallies = (lastTab.tallies || []).map((t, ti) => ({
+                            id: 'tally_' + Date.now() + '_' + ti,
+                            name: t.name,
+                            count: t.isLocked ? t.count : 0,
+                            isLocked: t.isLocked
+                        }));
+                    }
+                    
+                    const newName = getNextTabName(p.tallyTabs, "Sample");
+                    
+                    p.tallyTabs.push({ id: newId, name: newName, tallies: newTallies });
                     p.activeTallyTabId = newId;
                     saveAllGroupData();
                     renderTallyTabs();
@@ -6503,7 +6536,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'nearest', intersect: true }
+                    interaction: { mode: 'nearest', intersect: false }
                 };
                 
                 mergedOptions.layout = passedOptions.layout || {};
