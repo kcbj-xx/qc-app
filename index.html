@@ -869,11 +869,11 @@
             align-items: center;
         }
         .graph-zoom-controls button {
-            padding: 2px 8px;
-            font-size: 14px;
+            padding: 4px 12px;
+            font-size: 18px;
             line-height: 1;
             min-height: 0;
-            height: 26px;
+            height: 34px;
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 6px;
@@ -883,6 +883,11 @@
         }
         .graph-zoom-controls button:active {
             background: var(--border);
+        }
+        .graph-zoom-controls button.pan-active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-hover);
         }
     </style>
 </head>
@@ -986,6 +991,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px 0 5px 0;">
                                 <h3 style="font-size: 14px; margin: 0; color: var(--text);">Tally Counters</h3>
                                 <div class="graph-zoom-controls" id="zoom-controls-tally" style="display:none;">
+                                    <button onclick="togglePanTool('canvas-tally', this)" title="Pan Tool" style="display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg></button>
                                     <button onclick="graphZoom('canvas-tally', true)" title="Zoom In">+</button>
                                     <button onclick="graphZoom('canvas-tally', false)" title="Zoom Out">&minus;</button>
                                     <button onclick="graphResetZoom('canvas-tally')" title="Reset">&#8634;</button>
@@ -1002,6 +1008,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px 0 5px 0;">
                                 <h3 style="font-size: 14px; margin: 0; color: var(--text);">Salinity Calculator</h3>
                                 <div class="graph-zoom-controls" id="zoom-controls-salinity" style="display:none;">
+                                    <button onclick="togglePanTool('canvas-salinity', this)" title="Pan Tool" style="display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg></button>
                                     <button onclick="graphZoom('canvas-salinity', true)" title="Zoom In">+</button>
                                     <button onclick="graphZoom('canvas-salinity', false)" title="Zoom Out">&minus;</button>
                                     <button onclick="graphResetZoom('canvas-salinity')" title="Reset">&#8634;</button>
@@ -1020,6 +1027,7 @@
                                 <div style="display: flex; gap: 6px; align-items: center;">
                                     <select id="graph-select-averaging" style="display: none; font-size: 12px; padding: 2px 5px; border-radius: 4px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border);" onchange="changeGraphSet('sum', this.value)"></select>
                                     <div class="graph-zoom-controls" id="zoom-controls-averaging" style="display:none;">
+                                        <button onclick="togglePanTool('canvas-averaging', this)" title="Pan Tool" style="display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg></button>
                                         <button onclick="graphZoom('canvas-averaging', true)" title="Zoom In">+</button>
                                         <button onclick="graphZoom('canvas-averaging', false)" title="Zoom Out">&minus;</button>
                                         <button onclick="graphResetZoom('canvas-averaging')" title="Reset">&#8634;</button>
@@ -1039,6 +1047,7 @@
                                 <div style="display: flex; gap: 6px; align-items: center;">
                                     <select id="graph-select-pickup" style="display: none; font-size: 12px; padding: 2px 5px; border-radius: 4px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border);" onchange="changeGraphSet('pickup', this.value)"></select>
                                     <div class="graph-zoom-controls" id="zoom-controls-pickup" style="display:none;">
+                                        <button onclick="togglePanTool('canvas-pickup', this)" title="Pan Tool" style="display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg></button>
                                         <button onclick="graphZoom('canvas-pickup', true)" title="Zoom In">+</button>
                                         <button onclick="graphZoom('canvas-pickup', false)" title="Zoom Out">&minus;</button>
                                         <button onclick="graphResetZoom('canvas-pickup')" title="Reset">&#8634;</button>
@@ -1058,6 +1067,7 @@
                                 <div style="display: flex; gap: 6px; align-items: center;">
                                     <select id="graph-select-pace" style="display: none; font-size: 12px; padding: 2px 5px; border-radius: 4px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border);" onchange="changeGraphSet('pace', this.value)"></select>
                                     <div class="graph-zoom-controls" id="zoom-controls-pace" style="display:none;">
+                                        <button onclick="togglePanTool('canvas-pace', this)" title="Pan Tool" style="display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg></button>
                                         <button onclick="graphZoom('canvas-pace', true)" title="Zoom In">+</button>
                                         <button onclick="graphZoom('canvas-pace', false)" title="Zoom Out">&minus;</button>
                                         <button onclick="graphResetZoom('canvas-pace')" title="Reset">&#8634;</button>
@@ -1571,6 +1581,27 @@
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('sw.js').catch((err) => console.error("SW Failed:", err));
                 });
+            }
+            
+            function generateDuplicateTabName(oldName, existingItems) {
+                if (/^Sample(?:\s+\d+)?$/i.test(oldName)) {
+                    return `Sample ${existingItems.length + 1}`;
+                }
+                const baseName = oldName.replace(/\s*\(\d+\)$/, '').trim();
+                let maxNum = 0;
+                const regex = new RegExp("^" + baseName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + "\\s*\\((\\d+)\\)$", "i");
+                existingItems.forEach(t => {
+                    if (t.name.toLowerCase() === baseName.toLowerCase()) {
+                        if (maxNum < 1) maxNum = 1;
+                    } else {
+                        const match = t.name.match(regex);
+                        if (match) {
+                            const n = parseInt(match[1]);
+                            if (n > maxNum) maxNum = n;
+                        }
+                    }
+                });
+                return `${baseName} (${maxNum + 1})`;
             }
         
             ['mousedown', 'touchstart'].forEach(eventType => {
@@ -4131,7 +4162,7 @@
                 const newSetId = 'sset_' + Date.now();
                 const newSet = {
                     id: newSetId,
-                    name: activeSet.name + " (Copy)",
+                    name: generateDuplicateTabName(activeSet.name, sumSets),
                     unit: activeSet.unit || '',
                     minRange: activeSet.minRange || '',
                     maxRange: activeSet.maxRange || '',
@@ -4362,7 +4393,7 @@
                 const activeTab = appTabs.find(t => t.id === activeTabId);
                 const newTab = { 
                     id: 'tab_' + Date.now(), 
-                    name: activeTab.name + " (Copy)", 
+                    name: generateDuplicateTabName(activeTab.name, appTabs), 
                     data: [], 
                     lastAddedStr: '', 
                     minRange: activeTab.minRange || '', 
@@ -5200,10 +5231,13 @@
                 if (listDraggingIdx !== targetIdx) {
                     if (isTallyList) {
                         const p = parentGroups.find(g => g.id === activeParentId);
-                        const arr = p.tallies; 
-                        const item = arr.splice(listDraggingIdx, 1)[0];
-                        arr.splice(targetIdx, 0, item);
-                        saveAllGroupData();
+                        const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
+                        const arr = activeTab ? activeTab.tallies : [];
+                        if (arr.length > 0) {
+                            const item = arr.splice(listDraggingIdx, 1)[0];
+                            arr.splice(targetIdx, 0, item);
+                            saveAllGroupData();
+                        }
                     } else {
                         const arr = getActiveData();
                         const item = arr.splice(listDraggingIdx, 1)[0];
@@ -5725,7 +5759,7 @@
                     isLocked: t.isLocked
                 }));
                 
-                p.tallyTabs.push({ id: newId, name: activeTab.name + ' (Copy)', tallies: newTallies });
+                p.tallyTabs.push({ id: newId, name: generateDuplicateTabName(activeTab.name, p.tallyTabs), tallies: newTallies });
                 p.activeTallyTabId = newId;
                 saveAllGroupData();
                 renderTallyTabs();
@@ -5918,7 +5952,7 @@
             
 			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 2px 0 8px 0;">${tally.count}</div>
 			            
-			            <div style="font-size: 0.9rem; font-weight: bold; color: var(--primary); background: ${isVisuallyActive ? (isDark ? '#1d4ed8' : '#bfdbfe') : (isDark ? '#1e3a5f' : '#dbeafe')}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
+			            <div style="font-size: 0.9rem; font-weight: bold; color: ${isVisuallyActive ? (isDark ? '#ffffff' : 'var(--primary)') : 'var(--primary)'}; background: ${isVisuallyActive ? (isDark ? '#1d4ed8' : '#ffffff') : (isDark ? '#1e3a5f' : '#dbeafe')}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
 			                ${pctString}
 			            </div>
 			        `;
@@ -6406,8 +6440,10 @@
             }
 
             let chartInstances = {};
+            const chartContexts = {};
 
-            function createOrUpdateChart(canvasId, type, data, options) {
+            function createOrUpdateChart(canvasId, type, data, options = {}, contextId = '') {
+                chartContexts[canvasId] = contextId;
                 const ctx = document.getElementById(canvasId).getContext('2d');
                 if (chartInstances[canvasId]) {
                     chartInstances[canvasId].destroy();
@@ -6419,8 +6455,8 @@
                 
                 const isPercentage = data.datasets && data.datasets.some(d => d.label && d.label.includes('%'));
                 
-                // Ensure bars are under the average line but over grid lines
-                if (data && data.datasets) {
+                // Ensure bars are under the average line but over grid lines (for bar charts only)
+                if (data && data.datasets && type === 'bar') {
                     data.datasets.forEach(ds => {
                         if (ds.type === 'line' || (ds.label && ds.label.includes('Average'))) {
                             ds.order = 0; // Drawn on top
@@ -6525,6 +6561,12 @@
                     }
                 };
                 
+                // Check if the pan tool is currently active for this chart
+                const controlsContainer = document.getElementById('zoom-controls-' + canvasId.replace('canvas-', ''));
+                const panBtn = controlsContainer ? controlsContainer.querySelector('button[title="Pan Tool"]') : null;
+                const initialPanMode = (panBtn && panBtn.classList.contains('pan-active')) ? 'xy' : '';
+
+                const extraPlugins = passedOptions.extraPlugins || [];
                 chartInstances[canvasId] = new Chart(ctx, {
                     type: type,
                     data: data,
@@ -6536,38 +6578,66 @@
                             zoom: {
                                 pan: { 
                                     enabled: true, 
-                                    mode: 'y',
+                                    mode: initialPanMode,
+                                    threshold: 2,
                                     onPanComplete: function({chart}) {
                                         const yAxis = chart.scales.y;
-                                        if (yAxis) {
-                                            localStorage.setItem('qc_zoom_' + activeParentId + '_' + canvasId, JSON.stringify({
+                                        const xAxis = chart.scales.x;
+                                        if (yAxis && xAxis) {
+                                            const zoomKey = 'qc_zoom_' + activeParentId + '_' + canvasId + (chartContexts[canvasId] ? '_' + chartContexts[canvasId] : '');
+                                            localStorage.setItem(zoomKey, JSON.stringify({
                                                 min: yAxis.min,
-                                                max: yAxis.max
+                                                max: yAxis.max,
+                                                xMin: xAxis.min,
+                                                xMax: xAxis.max
                                             }));
                                         }
                                     }
                                 },
-                                limits: {
-                                    y: { min: 0, max: 'original' }
-                                },
+                                limits: (canvasId === 'canvas-tally' || canvasId === 'canvas-salinity' || canvasId === 'canvas-pickup') 
+                                    ? { x: { min: 'original', max: 'original' }, y: { min: 0, max: 'original' } }
+                                    : { y: { min: 0 } },
                                 zoom: {
                                     wheel: { enabled: false },
                                     pinch: { enabled: false },
-                                    mode: 'y'
+                                    mode: 'xy'
                                 }
                             }
                         })
-                    })
+                    }),
+                    plugins: extraPlugins
                 });
+                
+                if (chartInstances[canvasId].scales && chartInstances[canvasId].scales.y) {
+                    chartInstances[canvasId].$originalMax = chartInstances[canvasId].scales.y.max;
+                }
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
                 try {
-                    const savedZoom = localStorage.getItem('qc_zoom_' + activeParentId + '_' + canvasId);
+                    const zoomKey = 'qc_zoom_' + activeParentId + '_' + canvasId + (chartContexts[canvasId] ? '_' + chartContexts[canvasId] : '');
+                    const savedZoom = localStorage.getItem(zoomKey);
                     if (savedZoom) {
-                        const { min, max } = JSON.parse(savedZoom);
-                        chartInstances[canvasId].zoomScale('y', { min, max }, 'none');
+                        const { min, max, xMin, xMax } = JSON.parse(savedZoom);
+                        if (min !== undefined && max !== undefined) chartInstances[canvasId].zoomScale('y', { min, max }, 'none');
+                        if (xMin !== undefined && xMax !== undefined) chartInstances[canvasId].zoomScale('x', { min: xMin, max: xMax }, 'none');
                     }
                 } catch(e) {}
+            }
+            
+            function togglePanTool(canvasId, btn) {
+                const chart = chartInstances[canvasId];
+                if (!chart) return;
+                
+                const isPanActive = btn.classList.contains('pan-active');
+                if (isPanActive) {
+                    btn.classList.remove('pan-active');
+                    chart.options.plugins.zoom.pan.mode = ''; // Disable pan
+                    chart.update('none');
+                } else {
+                    btn.classList.add('pan-active');
+                    chart.options.plugins.zoom.pan.mode = 'xy'; // Enable free pan
+                    chart.update('none');
+                }
             }
 
             // Per-chart zoom state: tracks step size and original bounds
@@ -6586,20 +6656,64 @@
                 const curMin = yAxis.min;
                 const curMax = yAxis.max;
                 
-                // Zoom symmetrically by exactly one step (step/2 on top, step/2 on bottom)
-                // This means exactly one grid line disappears/appears overall.
                 const diff = step / 2; 
+                
+                let avgValue = null;
+                chart.data.datasets.forEach(ds => {
+                    if (ds.label && ds.label.includes('Average')) {
+                        if (ds.data && ds.data.length > 0) avgValue = ds.data[0];
+                    }
+                });
+                
+                if (avgValue === null) {
+                    let sum = 0;
+                    let count = 0;
+                    chart.data.datasets.forEach(ds => {
+                        if (ds.data && Array.isArray(ds.data)) {
+                            ds.data.forEach(val => {
+                                if (typeof val === 'number' && !isNaN(val)) {
+                                    sum += val;
+                                    count++;
+                                }
+                            });
+                        }
+                    });
+                    if (count > 0) {
+                        avgValue = sum / count;
+                    }
+                }
                 
                 let newMin, newMax;
 
                 if (zoomIn) {
-                    newMin = curMin + diff;
-                    newMax = curMax - diff;
-                    // Prevent zooming in too far (must have at least 1 step visible)
+                    let shiftBottom = step / 2;
+                    let shiftTop = step / 2;
+                    
+                    if (avgValue !== null && curMax > curMin) {
+                        let p = (avgValue - curMin) / (curMax - curMin);
+                        if (p > 0.66) {
+                            shiftBottom = step;
+                            shiftTop = 0;
+                        } else if (p < 0.33) {
+                            shiftBottom = 0;
+                            shiftTop = step;
+                        }
+                    }
+                    
+                    newMin = curMin + shiftBottom;
+                    newMax = curMax - shiftTop;
+                    
                     if (newMax - newMin < step) return;
                 } else {
                     newMin = Math.max(0, curMin - diff);
                     newMax = curMax + diff;
+                    
+                    if (canvasId === 'canvas-tally' || canvasId === 'canvas-salinity' || canvasId === 'canvas-pickup') {
+                        if (chart.$originalMax !== undefined && newMax >= chart.$originalMax) {
+                            graphResetZoom(canvasId);
+                            return;
+                        }
+                    }
                 }
                 
                 chart.zoomScale('y', { min: newMin, max: newMax }, 'none');
@@ -6609,17 +6723,19 @@
                 const finalMax = chart.scales.y.max;
                 
                 // If the zoom out didn't change anything (because it's fully zoomed out), we clear the state
+                const zoomKey = 'qc_zoom_' + activeParentId + '_' + canvasId + (chartContexts[canvasId] ? '_' + chartContexts[canvasId] : '');
                 if (!zoomIn && finalMin === curMin && finalMax === curMax) {
-                    localStorage.removeItem('qc_zoom_' + activeParentId + '_' + canvasId);
+                    localStorage.removeItem(zoomKey);
                 } else {
-                    localStorage.setItem('qc_zoom_' + activeParentId + '_' + canvasId, JSON.stringify({ min: finalMin, max: finalMax }));
+                    localStorage.setItem(zoomKey, JSON.stringify({ min: finalMin, max: finalMax }));
                 }
             }
 
             function graphResetZoom(canvasId) {
                 const chart = chartInstances[canvasId];
                 if (!chart) return;
-                localStorage.removeItem('qc_zoom_' + activeParentId + '_' + canvasId);
+                const zoomKey = 'qc_zoom_' + activeParentId + '_' + canvasId + (chartContexts[canvasId] ? '_' + chartContexts[canvasId] : '');
+                localStorage.removeItem(zoomKey);
                 chart.resetZoom('none');
             }
 
@@ -6690,7 +6806,7 @@
                         createOrUpdateChart('canvas-tally', 'bar', { 
                             labels, 
                             datasets: datasets
-                        }, { scales: { y: { beginAtZero: true, max: 100 } } });
+                        }, { scales: { y: { beginAtZero: true, max: 100 } } }, p.activeTallyTabId);
                     }
                 }
                 if (!hasTallyData) {
@@ -6815,7 +6931,7 @@
                             createOrUpdateChart('canvas-averaging', 'bar', {
                                 labels,
                                 datasets: datasets
-                            });
+                            }, {}, activeSumSetId);
                         }
                     }
                 }
@@ -6887,7 +7003,7 @@
                             createOrUpdateChart('canvas-pickup', 'bar', {
                                 labels,
                                 datasets: datasets
-                            });
+                            }, {}, activePickupSetId);
                         }
                     }
                 }
@@ -6942,18 +7058,17 @@
                                 paceWrapper.style.display = 'block';
                                 paceWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
                                 
-                                const overallAvg = paceData.reduce((a, b) => a + b, 0) / paceData.length;
-                                let datasets = [
-                                    {
-                                        label: `Interval Pace (${tab.unit || 'Units'}/hr)`,
-                                        data: paceData,
-                                        borderColor: 'rgba(239, 68, 68, 1)',
-                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                        fill: true,
-                                        tension: 0.1
-                                    }
-                                ];
-                                if (labels.length > 1) {
+                                const overallAvg = labels.length > 1 ? paceData.reduce((a, b) => a + b, 0) / paceData.length : null;
+                                let datasets = [{
+                                    label: `Interval Pace (${tab.unit || 'Units'}/hr)`,
+                                    data: paceData,
+                                    borderColor: 'rgba(239, 68, 68, 1)',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                                    fill: true,
+                                    tension: 0.1
+                                }];
+                                if (overallAvg !== null) {
                                     datasets.push({
                                         type: 'line',
                                         label: `Overall Average (${safeRound(overallAvg, 2)})`,
@@ -6967,13 +7082,36 @@
                                         tension: 0
                                     });
                                 }
+                                const avgLinePlugin = {
+                                    id: 'avgLineBackground',
+                                    beforeDatasetsDraw(chart) {
+                                        if (overallAvg === null) return;
+                                        const avgDs = chart.data.datasets.find(ds => ds.label && ds.label.includes('Average'));
+                                        if (!avgDs) return;
+                                        const yScale = chart.scales.y;
+                                        const xScale = chart.scales.x;
+                                        if (!yScale || !xScale) return;
+                                        const y = yScale.getPixelForValue(overallAvg);
+                                        const { ctx } = chart;
+                                        ctx.save();
+                                        ctx.beginPath();
+                                        ctx.setLineDash([5, 5]);
+                                        ctx.strokeStyle = 'rgba(156, 163, 175, 1)';
+                                        ctx.lineWidth = 2;
+                                        ctx.moveTo(xScale.left, y);
+                                        ctx.lineTo(xScale.right, y);
+                                        ctx.stroke();
+                                        ctx.restore();
+                                    }
+                                };
                                 createOrUpdateChart('canvas-pace', 'line', {
                                     labels,
                                     datasets: datasets
                                 }, { 
                                     reduceGridOpacity: true,
-                                    layout: { padding: { top: 15 } },
-                                    scales: { y: { grace: '10%', min: 0 } }
+                                    layout: { padding: { top: 15, left: 8, right: 8 } },
+                                    scales: { y: { grace: '10%', min: 0 } },
+                                    extraPlugins: [avgLinePlugin]
                                 });
                             }
                         }
