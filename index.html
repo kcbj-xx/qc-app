@@ -1750,15 +1750,39 @@
 
             function toggleCard(cardId) {
                 const card = document.getElementById(cardId);
+                const isExpanding = card.classList.contains('collapsed');
+                const cardBody = card.querySelector('.card-body');
+                
+                // If expanding a card, hide content BEFORE it becomes visible
+                if (isExpanding && cardBody) {
+                    cardBody.style.visibility = 'hidden';
+                }
+                
                 card.classList.toggle('collapsed');
                 const p = parentGroups.find(g => g.id === activeParentId);
                 if (!p.collapsedCards) p.collapsedCards = {};
                 p.collapsedCards[cardId] = card.classList.contains('collapsed');
                 saveAllGroupData();
                 
-                if (!card.classList.contains('collapsed')) {
+                if (isExpanding) {
                     const textareas = card.querySelectorAll('textarea');
                     textareas.forEach(ta => autoResizeTextarea(ta));
+                    
+                    if (cardId === 'card-graphs') {
+                        // Force fresh re-render at correct size while hidden
+                        requestAnimationFrame(() => {
+                            _doRenderGraphs(parentGroups.find(g => g.id === activeParentId));
+                            requestAnimationFrame(() => {
+                                if (cardBody) cardBody.style.visibility = '';
+                            });
+                        });
+                    } else {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                if (cardBody) cardBody.style.visibility = '';
+                            });
+                        });
+                    }
                 }
             }
             
@@ -5952,7 +5976,7 @@
             
 			            <div style="font-size: 1.6rem; font-weight: bold; color: var(--text); line-height: 1; margin: 2px 0 8px 0;">${tally.count}</div>
 			            
-			            <div style="font-size: 0.9rem; font-weight: bold; color: ${isVisuallyActive ? (isDark ? '#ffffff' : 'var(--primary)') : 'var(--primary)'}; background: ${isVisuallyActive ? (isDark ? '#1d4ed8' : '#ffffff') : (isDark ? '#1e3a5f' : '#dbeafe')}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
+			            <div style="font-size: 0.9rem; font-weight: bold; color: ${isVisuallyActive ? (isDark ? '#ffffff' : 'var(--primary)') : (isDark ? '#e0f0ff' : '#1e3a8a')}; background: ${isVisuallyActive ? (isDark ? '#1d4ed8' : '#ffffff') : (isDark ? '#1e3a5f' : '#bfdbfe')}; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
 			                ${pctString}
 			            </div>
 			        `;
@@ -6449,8 +6473,8 @@
                     chartInstances[canvasId].destroy();
                     delete graphZoomState[canvasId]; // Reset zoom state on recreate
                 }
-                const isDark = (window.isGeneratingExcel) ? false : document.body.classList.contains('dark-mode');
-                Chart.defaults.color = isDark ? '#e2e8f0' : '#4b5563';
+                const isDark = (window.isGeneratingExcel) ? false : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                Chart.defaults.color = isDark ? '#f1f5f9' : '#1e293b';
                 Chart.defaults.borderColor = isDark ? '#374151' : '#e5e7eb';
                 
                 const isPercentage = data.datasets && data.datasets.some(d => d.label && d.label.includes('%'));
@@ -6471,7 +6495,14 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 0 },
+                    animation: false,
+                    animations: {},
+                    transitions: {
+                        active: { animation: { duration: 0 } },
+                        resize: { animation: { duration: 0 } },
+                        show: { animation: { duration: 0 } },
+                        hide: { animation: { duration: 0 } }
+                    },
                     interaction: { mode: 'nearest', intersect: true }
                 };
                 
@@ -6612,6 +6643,10 @@
                     chartInstances[canvasId].$originalMax = chartInstances[canvasId].scales.y.max;
                 }
                 
+                // Allow native page scrolling when pan tool is off
+                const canvasEl = document.getElementById(canvasId);
+                if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'xy') ? 'none' : 'pan-y';
+                
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
                 try {
                     const zoomKey = 'qc_zoom_' + activeParentId + '_' + canvasId + (chartContexts[canvasId] ? '_' + chartContexts[canvasId] : '');
@@ -6629,14 +6664,17 @@
                 if (!chart) return;
                 
                 const isPanActive = btn.classList.contains('pan-active');
+                const canvasEl = document.getElementById(canvasId);
                 if (isPanActive) {
                     btn.classList.remove('pan-active');
-                    chart.options.plugins.zoom.pan.mode = ''; // Disable pan
+                    chart.options.plugins.zoom.pan.mode = '';
                     chart.update('none');
+                    if (canvasEl) canvasEl.style.touchAction = 'pan-y';
                 } else {
                     btn.classList.add('pan-active');
-                    chart.options.plugins.zoom.pan.mode = 'xy'; // Enable free pan
+                    chart.options.plugins.zoom.pan.mode = 'xy';
                     chart.update('none');
+                    if (canvasEl) canvasEl.style.touchAction = 'none';
                 }
             }
 
@@ -6745,11 +6783,25 @@
                 if (el) el.style.display = visible ? 'flex' : 'none';
             }
 
+            let _graphsDirty = false;
+
             function renderGraphs() {
                 const p = parentGroups.find(g => g.id === activeParentId);
                 if (!p || !document.getElementById('canvas-tally')) return;
                 
-                // --- Tally Counters ---
+                // Don't render charts when the graphs card is collapsed
+                const graphsCard = document.getElementById('card-graphs');
+                if (graphsCard && graphsCard.classList.contains('collapsed')) {
+                    _graphsDirty = true;
+                    return;
+                }
+                
+                _doRenderGraphs(p);
+            }
+
+            function _doRenderGraphs(p) {
+                if (!p || !document.getElementById('canvas-tally')) return;
+                
                 const tallyWrapper = document.getElementById('graph-wrapper-tally');
                 const tallyNoData = document.getElementById('graph-no-data-tally');
                 let hasTallyData = false;
