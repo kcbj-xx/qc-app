@@ -889,6 +889,30 @@
             color: white;
             border-color: var(--primary-hover);
         }
+        .graph-scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
+            transition: scrollbar-color 0.3s ease;
+        }
+        .graph-scroll-container:hover, .graph-scroll-container:active {
+            scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+        }
+        .graph-scroll-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .graph-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .graph-scroll-container::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 3px;
+        }
+        .graph-scroll-container:hover::-webkit-scrollbar-thumb,
+        .graph-scroll-container:active::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -999,7 +1023,7 @@
                             </div>
                             <div id="graph-no-data-tally" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-tally" class="graph-html-legend"></div>
-                            <div style="overflow-x: auto; overflow-y: hidden;">
+                            <div class="graph-scroll-container">
                                 <div id="graph-wrapper-tally" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-tally"></canvas>
                                 </div>
@@ -1017,7 +1041,7 @@
                             </div>
                             <div id="graph-no-data-salinity" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-salinity" class="graph-html-legend"></div>
-                            <div style="overflow-x: auto; overflow-y: hidden;">
+                            <div class="graph-scroll-container">
                                 <div id="graph-wrapper-salinity" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-salinity"></canvas>
                                 </div>
@@ -1038,7 +1062,7 @@
                             </div>
                             <div id="graph-no-data-averaging" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-averaging" class="graph-html-legend"></div>
-                            <div style="overflow-x: auto; overflow-y: hidden;">
+                            <div class="graph-scroll-container">
                                 <div id="graph-wrapper-averaging" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-averaging"></canvas>
                                 </div>
@@ -1059,7 +1083,7 @@
                             </div>
                             <div id="graph-no-data-pickup" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pickup" class="graph-html-legend"></div>
-                            <div style="overflow-x: auto; overflow-y: hidden;">
+                            <div class="graph-scroll-container">
                                 <div id="graph-wrapper-pickup" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-pickup"></canvas>
                                 </div>
@@ -1080,7 +1104,7 @@
                             </div>
                             <div id="graph-no-data-pace" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pace" class="graph-html-legend"></div>
-                            <div style="overflow-x: auto; overflow-y: hidden;">
+                            <div class="graph-scroll-container">
                                 <div id="graph-wrapper-pace" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-pace"></canvas>
                                 </div>
@@ -6534,8 +6558,11 @@
                         ul.firstChild.remove();
                     }
 
-                    if (!chart.options.plugins.legend.labels.generateLabels) return;
-                    const items = chart.options.plugins.legend.labels.generateLabels(chart);
+                    const generateLabels = (chart.options.plugins.legend && chart.options.plugins.legend.labels && chart.options.plugins.legend.labels.generateLabels) 
+                                           ? chart.options.plugins.legend.labels.generateLabels 
+                                           : Chart.defaults.plugins.legend.labels.generateLabels;
+                    if (!generateLabels) return;
+                    const items = generateLabels.call(this, chart);
 
                     items.forEach(item => {
                         const li = document.createElement('li');
@@ -6614,7 +6641,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'nearest', intersect: true },
+                    interaction: { mode: 'nearest', intersect: false },
                     elements: {
                         point: {
                             hitRadius: 40,
