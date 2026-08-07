@@ -1639,7 +1639,7 @@
             let currentToolFilter = 'all';
 
             const alarm = document.getElementById('alarmSound');
-            const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-percentage', 'card-tally', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-timestamps', 'card-notes', 'card-graphs'];
+            const allCardIds = ['card-pickup', 'card-averaging', 'card-salinity', 'card-temp', 'card-tally', 'card-percentage', 'card-stopwatch', 'card-estimator', 'card-sampling', 'card-timestamps', 'card-notes', 'card-graphs'];
             
             function safeRound(value, decimals) {
                 return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
@@ -1833,7 +1833,7 @@
 				    'card-pickup': 'computing',
 				    'card-averaging': 'computing',
 				    'card-salinity': 'computing',
-				    'card-percentage': 'computing',
+				    'card-percentage': 'tools',
 				    'card-temp': 'tools',          // Moved to tools
 				    'card-estimator': 'time',      // Moved to time
 				    'card-notes': 'tools',
@@ -4219,6 +4219,8 @@
                 const p = parentGroups.find(g => g.id === activeParentId);
                 p.activeSumSetId = activeSumSetId;
                 
+                refreshGroupDataReferences();
+                
                 saveAllGroupData();
                 renderSumSets();
                 updateSumSetMenuState();
@@ -5784,10 +5786,11 @@
                     
                     if (p.tallyTabs.length > 0) {
                         const lastTab = p.tallyTabs[p.tallyTabs.length - 1];
+                        const totalCount = (lastTab.tallies || []).reduce((sum, t) => sum + (parseFloat(t.count) || 0), 0);
                         newTallies = (lastTab.tallies || []).map((t, ti) => ({
                             id: 'tally_' + Date.now() + '_' + ti,
                             name: t.name,
-                            count: t.isLocked ? t.count : 0,
+                            count: t.isLocked ? totalCount : 0,
                             isLocked: t.isLocked
                         }));
                     }
@@ -5808,11 +5811,12 @@
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
                 if (!activeTab) return;
                 
+                const totalCount = (activeTab.tallies || []).reduce((sum, t) => sum + (parseFloat(t.count) || 0), 0);
                 const newId = 'ttab_' + Date.now();
                 const newTallies = (activeTab.tallies || []).map((t, ti) => ({
                     id: 'tally_' + Date.now() + '_' + ti,
                     name: t.name,
-                    count: t.isLocked ? t.count : 0,
+                    count: t.isLocked ? totalCount : 0,
                     isLocked: t.isLocked
                 }));
                 
@@ -6536,7 +6540,13 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'nearest', intersect: false }
+                    interaction: { mode: 'nearest', intersect: false },
+                    elements: {
+                        point: {
+                            hitRadius: 25,
+                            hoverRadius: 10
+                        }
+                    }
                 };
                 
                 mergedOptions.layout = passedOptions.layout || {};
@@ -6678,7 +6688,7 @@
                 
                 // Allow native page scrolling when pan tool is off
                 const canvasEl = document.getElementById(canvasId);
-                if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'xy') ? 'none' : 'pan-y';
+                if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'xy') ? 'none' : 'auto';
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
                 try {
@@ -6702,7 +6712,7 @@
                     btn.classList.remove('pan-active');
                     chart.options.plugins.zoom.pan.mode = '';
                     chart.update('none');
-                    if (canvasEl) canvasEl.style.touchAction = 'pan-y';
+                    if (canvasEl) canvasEl.style.touchAction = 'auto';
                 } else {
                     btn.classList.add('pan-active');
                     chart.options.plugins.zoom.pan.mode = 'xy';
