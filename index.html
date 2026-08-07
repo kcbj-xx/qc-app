@@ -998,6 +998,7 @@
                                 </div>
                             </div>
                             <div id="graph-no-data-tally" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div id="graph-legend-tally" class="graph-html-legend"></div>
                             <div style="overflow-x: auto; overflow-y: hidden;">
                                 <div id="graph-wrapper-tally" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-tally"></canvas>
@@ -1015,6 +1016,7 @@
                                 </div>
                             </div>
                             <div id="graph-no-data-salinity" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div id="graph-legend-salinity" class="graph-html-legend"></div>
                             <div style="overflow-x: auto; overflow-y: hidden;">
                                 <div id="graph-wrapper-salinity" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-salinity"></canvas>
@@ -1035,6 +1037,7 @@
                                 </div>
                             </div>
                             <div id="graph-no-data-averaging" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div id="graph-legend-averaging" class="graph-html-legend"></div>
                             <div style="overflow-x: auto; overflow-y: hidden;">
                                 <div id="graph-wrapper-averaging" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-averaging"></canvas>
@@ -1055,6 +1058,7 @@
                                 </div>
                             </div>
                             <div id="graph-no-data-pickup" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div id="graph-legend-pickup" class="graph-html-legend"></div>
                             <div style="overflow-x: auto; overflow-y: hidden;">
                                 <div id="graph-wrapper-pickup" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-pickup"></canvas>
@@ -1075,6 +1079,7 @@
                                 </div>
                             </div>
                             <div id="graph-no-data-pace" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
+                            <div id="graph-legend-pace" class="graph-html-legend"></div>
                             <div style="overflow-x: auto; overflow-y: hidden;">
                                 <div id="graph-wrapper-pace" style="position: relative; height: 250px; min-width: 100%; display: none;">
                                     <canvas id="canvas-pace"></canvas>
@@ -5758,6 +5763,7 @@
                             updateTallyTabMenuState();
                         } else {
                             p.activeTallyTabId = tab.id;
+                            tab.tallyMenuCollapsed = true;
                             p.tallyTabsMenuOpen = false;
                             saveAllGroupData();
                             renderTallyTabs();
@@ -5797,7 +5803,7 @@
                     
                     const newName = getNextTabName(p.tallyTabs, "Sample");
                     
-                    p.tallyTabs.push({ id: newId, name: newName, tallies: newTallies });
+                    p.tallyTabs.push({ id: newId, name: newName, tallies: newTallies, tallyMenuCollapsed: true });
                     p.activeTallyTabId = newId;
                     saveAllGroupData();
                     renderTallyTabs();
@@ -5820,7 +5826,7 @@
                     isLocked: t.isLocked
                 }));
                 
-                p.tallyTabs.push({ id: newId, name: generateDuplicateTabName(activeTab.name, p.tallyTabs), tallies: newTallies });
+                p.tallyTabs.push({ id: newId, name: generateDuplicateTabName(activeTab.name, p.tallyTabs), tallies: newTallies, tallyMenuCollapsed: true });
                 p.activeTallyTabId = newId;
                 saveAllGroupData();
                 renderTallyTabs();
@@ -5893,7 +5899,7 @@
 			    } else {
 			        if (!activeTab.activeTallyId || !tallies.find(t => t.id === activeTab.activeTallyId)) {
 			            activeTab.activeTallyId = tallies[0].id;
-			            activeTab.tallyMenuCollapsed = false;
+			            activeTab.tallyMenuCollapsed = true;
 			        }
 			        const activeTally = tallies.find(t => t.id === activeTab.activeTallyId);
 			        if (activeTab.tallyMenuCollapsed) {
@@ -6503,6 +6509,73 @@
             let chartInstances = {};
             const chartContexts = {};
 
+            const htmlLegendPlugin = {
+                id: 'htmlLegend',
+                afterUpdate(chart) {
+                    const canvasId = chart.canvas.id;
+                    const suffix = canvasId.replace('canvas-', '');
+                    const legendContainer = document.getElementById('graph-legend-' + suffix);
+                    if (!legendContainer) return;
+
+                    let ul = legendContainer.querySelector('ul');
+                    if (!ul) {
+                        ul = document.createElement('ul');
+                        ul.style.display = 'flex';
+                        ul.style.flexWrap = 'wrap';
+                        ul.style.justifyContent = 'center';
+                        ul.style.listStyle = 'none';
+                        ul.style.padding = '0';
+                        ul.style.margin = '5px 0 10px 0';
+                        legendContainer.appendChild(ul);
+                    }
+
+                    while (ul.firstChild) {
+                        ul.firstChild.remove();
+                    }
+
+                    if (!chart.options.plugins.legend.labels.generateLabels) return;
+                    const items = chart.options.plugins.legend.labels.generateLabels(chart);
+
+                    items.forEach(item => {
+                        const li = document.createElement('li');
+                        li.style.display = 'inline-flex';
+                        li.style.alignItems = 'center';
+                        li.style.marginRight = '15px';
+                        li.style.marginBottom = '5px';
+                        li.style.cursor = 'pointer';
+                        li.style.fontSize = '12px';
+                        li.style.color = 'var(--text)';
+                        li.style.textDecoration = item.hidden ? 'line-through' : '';
+
+                        li.onclick = () => {
+                            const type = chart.config.type;
+                            if (type === 'pie' || type === 'doughnut') {
+                                chart.toggleDataVisibility(item.index);
+                            } else {
+                                chart.setDatasetVisibility(item.datasetIndex, !chart.isDatasetVisible(item.datasetIndex));
+                            }
+                            chart.update();
+                        };
+
+                        const boxSpan = document.createElement('span');
+                        boxSpan.style.display = 'inline-block';
+                        boxSpan.style.width = '12px';
+                        boxSpan.style.height = '12px';
+                        boxSpan.style.marginRight = '5px';
+                        boxSpan.style.backgroundColor = item.fillStyle;
+                        boxSpan.style.border = `1px solid ${item.strokeStyle}`;
+                        boxSpan.style.borderRadius = '2px';
+
+                        const textContainer = document.createElement('span');
+                        textContainer.innerText = item.text;
+
+                        li.appendChild(boxSpan);
+                        li.appendChild(textContainer);
+                        ul.appendChild(li);
+                    });
+                }
+            };
+
             function createOrUpdateChart(canvasId, type, data, options = {}, contextId = '') {
                 chartContexts[canvasId] = contextId;
                 const ctx = document.getElementById(canvasId).getContext('2d');
@@ -6540,7 +6613,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'nearest', intersect: false },
+                    interaction: { mode: 'index', intersect: false },
                     elements: {
                         point: {
                             hitRadius: 25,
@@ -6558,10 +6631,12 @@
                 mergedOptions.scales.x.grid.z = -1;
 
                 mergedOptions.scales.y = mergedOptions.scales.y || {};
-                mergedOptions.scales.y = mergedOptions.scales.y || {};
-
                 mergedOptions.scales.y.grid = mergedOptions.scales.y.grid || {};
                 mergedOptions.scales.y.grid.z = -1;
+
+                mergedOptions.plugins = mergedOptions.plugins || {};
+                mergedOptions.plugins.legend = mergedOptions.plugins.legend || {};
+                mergedOptions.plugins.legend.display = false; // Using custom HTML legend
                 
                 if (passedOptions.reduceGridOpacity) {
                     const lowOpacityColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
@@ -6638,12 +6713,13 @@
                 // Check if the pan tool is currently active for this chart
                 const controlsContainer = document.getElementById('zoom-controls-' + canvasId.replace('canvas-', ''));
                 const panBtn = controlsContainer ? controlsContainer.querySelector('button[title="Pan Tool"]') : null;
-                const initialPanMode = (panBtn && panBtn.classList.contains('pan-active')) ? 'xy' : '';
+                const initialPanMode = (panBtn && panBtn.classList.contains('pan-active')) ? 'y' : '';
 
                 const extraPlugins = passedOptions.extraPlugins || [];
                 chartInstances[canvasId] = new Chart(ctx, {
                     type: type,
                     data: data,
+                    plugins: [htmlLegendPlugin, ...extraPlugins],
                     options: Object.assign(mergedOptions, {
                         plugins: Object.assign(mergedOptions.plugins || {}, {
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {
@@ -6686,9 +6762,9 @@
                     chartInstances[canvasId].$originalMax = chartInstances[canvasId].scales.y.max;
                 }
                 
-                // Allow native page scrolling when pan tool is off
+                // Allow native page horizontal scrolling when pan tool is on (since it only pans Y now)
                 const canvasEl = document.getElementById(canvasId);
-                if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'xy') ? 'none' : 'auto';
+                if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
                 try {
@@ -6715,9 +6791,9 @@
                     if (canvasEl) canvasEl.style.touchAction = 'auto';
                 } else {
                     btn.classList.add('pan-active');
-                    chart.options.plugins.zoom.pan.mode = 'xy';
+                    chart.options.plugins.zoom.pan.mode = 'y';
                     chart.update('none');
-                    if (canvasEl) canvasEl.style.touchAction = 'none';
+                    if (canvasEl) canvasEl.style.touchAction = 'pan-x';
                 }
             }
 
