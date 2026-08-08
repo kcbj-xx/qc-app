@@ -4951,8 +4951,21 @@
                         ul.firstChild.remove();
                     }
 
-                    if (!chart.options.plugins.legend.labels.generateLabels) return;
-                    const items = chart.options.plugins.legend.labels.generateLabels(chart);
+                    const items = chart.data.datasets.map((dataset, i) => {
+                        return {
+                            text: dataset.label,
+                            fillStyle: dataset.backgroundColor || dataset.borderColor,
+                            hidden: !chart.isDatasetVisible(i),
+                            lineCap: dataset.borderCapStyle,
+                            lineDash: dataset.borderDash,
+                            lineDashOffset: dataset.borderDashOffset,
+                            lineJoin: dataset.borderJoinStyle,
+                            strokeStyle: dataset.borderColor,
+                            pointStyle: dataset.pointStyle,
+                            rotation: dataset.rotation,
+                            datasetIndex: i
+                        };
+                    });
 
                     items.forEach(item => {
                         const li = document.createElement('li');
@@ -5031,11 +5044,11 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: { mode: 'nearest', intersect: false },
                     elements: {
                         point: {
-                            hitRadius: 25,
-                            hoverRadius: 10
+                            hitRadius: 40,
+                            hoverRadius: 15
                         }
                     }
                 };
@@ -5062,11 +5075,45 @@
                     mergedOptions.scales.y.grid.color = lowOpacityColor;
                 }
 
-                // Always use clean integer ticks
+                mergedOptions.scales.y.afterBuildTicks = function(axis) {
+                    const range = axis.max - axis.min;
+                    if (range <= 0) return;
+                    
+                    // Target about 6 ticks
+                    const roughStep = range / 6;
+                    
+                    // Calculate a nice step size (1, 2, 5, 10, etc)
+                    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+                    const normalized = roughStep / magnitude;
+                    let niceStep;
+                    if (normalized < 1.5) niceStep = 1;
+                    else if (normalized < 3.5) niceStep = 2;
+                    else if (normalized < 7.5) niceStep = 5;
+                    else niceStep = 10;
+                    
+                    niceStep *= magnitude;
+                    
+                    // Allow precision down to 1/1000
+                    if (niceStep < 0.001) niceStep = 0.001;
+                    
+                    // Fix floating point math errors
+                    niceStep = parseFloat(niceStep.toPrecision(10));
+                    
+                    const minVal = Math.ceil(axis.min / niceStep) * niceStep;
+                    const maxVal = Math.floor(axis.max / niceStep) * niceStep;
+                    
+                    const newTicks = [];
+                    for (let i = minVal; i <= maxVal; i += niceStep) {
+                        newTicks.push({ value: i });
+                    }
+                    axis.ticks = newTicks;
+                };
+
+                // Allow dynamic decimal ticks, cleaning up floating point artifacts
                 mergedOptions.scales.y.ticks = mergedOptions.scales.y.ticks || {};
-                mergedOptions.scales.y.ticks.precision = 0;
                 mergedOptions.scales.y.ticks.callback = function(value) { 
-                    return isPercentage ? value + '%' : value; 
+                    const formatted = parseFloat(Number(value).toPrecision(10));
+                    return isPercentage ? formatted + '%' : formatted; 
                 };
                 
                 mergedOptions.plugins = passedOptions.plugins || {};
@@ -5257,7 +5304,7 @@
                     newMin = curMin + shiftBottom;
                     newMax = curMax - shiftTop;
                     
-                    if (newMax - newMin < 0.5) return; // Allow deep zooming
+                    if (newMax - newMin < 0.005) return; // Allow extremely deep zooming to 1/1000
                 } else {
                     newMin = Math.max(0, curMin - diff);
                     newMax = curMax + diff;
@@ -5298,6 +5345,40 @@
                 const el = document.getElementById('zoom-controls-' + suffix);
                 if (el) el.style.display = visible ? 'flex' : 'none';
             }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const buttons = document.querySelectorAll('.graph-zoom-controls button');
+                buttons.forEach(btn => {
+                    const onclickAttr = btn.getAttribute('onclick');
+                    if (onclickAttr && onclickAttr.startsWith('graphZoom')) {
+                        const match = onclickAttr.match(/graphZoom\('([^']+)',\s*(true|false)\)/);
+                        if (match) {
+                            const canvasId = match[1];
+                            const isZoomIn = match[2] === 'true';
+                            btn.removeAttribute('onclick');
+                            
+                            let interval;
+                            const start = (e) => {
+                                if (e.type === 'touchstart') e.preventDefault();
+                                if (interval) clearInterval(interval);
+                                graphZoom(canvasId, isZoomIn);
+                                interval = setInterval(() => graphZoom(canvasId, isZoomIn), 75);
+                            };
+                            const stop = () => {
+                                if (interval) clearInterval(interval);
+                                interval = null;
+                            };
+                            
+                            btn.addEventListener('mousedown', start);
+                            btn.addEventListener('touchstart', start, {passive: false});
+                            btn.addEventListener('mouseup', stop);
+                            btn.addEventListener('mouseleave', stop);
+                            btn.addEventListener('touchend', stop);
+                            btn.addEventListener('touchcancel', stop);
+                        }
+                    }
+                });
+            });
 
             let _graphsDirty = false;
 

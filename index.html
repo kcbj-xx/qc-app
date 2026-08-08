@@ -6538,75 +6538,6 @@
             let chartInstances = {};
             const chartContexts = {};
 
-            const htmlLegendPlugin = {
-                id: 'htmlLegend',
-                afterUpdate(chart) {
-                    const canvasId = chart.canvas.id;
-                    const suffix = canvasId.replace('canvas-', '');
-                    const legendContainer = document.getElementById('graph-legend-' + suffix);
-                    if (!legendContainer) return;
-
-                    let ul = legendContainer.querySelector('ul');
-                    if (!ul) {
-                        ul = document.createElement('ul');
-                        ul.style.display = 'flex';
-                        ul.style.flexWrap = 'wrap';
-                        ul.style.justifyContent = 'center';
-                        ul.style.listStyle = 'none';
-                        ul.style.padding = '0';
-                        ul.style.margin = '5px 0 10px 0';
-                        legendContainer.appendChild(ul);
-                    }
-
-                    while (ul.firstChild) {
-                        ul.firstChild.remove();
-                    }
-
-                    const generateLabels = (chart.options.plugins.legend && chart.options.plugins.legend.labels && chart.options.plugins.legend.labels.generateLabels) 
-                                           ? chart.options.plugins.legend.labels.generateLabels 
-                                           : Chart.defaults.plugins.legend.labels.generateLabels;
-                    if (!generateLabels) return;
-                    const items = generateLabels.call(this, chart);
-
-                    items.forEach(item => {
-                        const li = document.createElement('li');
-                        li.style.display = 'inline-flex';
-                        li.style.alignItems = 'center';
-                        li.style.marginRight = '15px';
-                        li.style.marginBottom = '5px';
-                        li.style.cursor = 'pointer';
-                        li.style.fontSize = '12px';
-                        li.style.color = 'var(--text)';
-                        li.style.textDecoration = item.hidden ? 'line-through' : '';
-
-                        li.onclick = () => {
-                            const type = chart.config.type;
-                            if (type === 'pie' || type === 'doughnut') {
-                                chart.toggleDataVisibility(item.index);
-                            } else {
-                                chart.setDatasetVisibility(item.datasetIndex, !chart.isDatasetVisible(item.datasetIndex));
-                            }
-                            chart.update();
-                        };
-
-                        const boxSpan = document.createElement('span');
-                        boxSpan.style.display = 'inline-block';
-                        boxSpan.style.width = '12px';
-                        boxSpan.style.height = '12px';
-                        boxSpan.style.marginRight = '5px';
-                        boxSpan.style.backgroundColor = item.fillStyle;
-                        boxSpan.style.border = `1px solid ${item.strokeStyle}`;
-                        boxSpan.style.borderRadius = '2px';
-
-                        const textContainer = document.createElement('span');
-                        textContainer.innerText = item.text;
-
-                        li.appendChild(boxSpan);
-                        li.appendChild(textContainer);
-                        ul.appendChild(li);
-                    });
-                }
-            };
 
             function createOrUpdateChart(canvasId, type, data, options = {}, contextId = '') {
                 chartContexts[canvasId] = contextId;
@@ -6645,11 +6576,12 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'nearest', intersect: false },
+                    interaction: { mode: 'nearest', intersect: true },
                     elements: {
                         point: {
+                            radius: 3,
                             hitRadius: 40,
-                            hoverRadius: 15
+                            hoverRadius: 5
                         }
                     }
                 };
@@ -6766,7 +6698,7 @@
                 chartInstances[canvasId] = new Chart(ctx, {
                     type: type,
                     data: data,
-                    plugins: [htmlLegendPlugin, ...extraPlugins],
+                    plugins: extraPlugins,
                     options: Object.assign(mergedOptions, {
                         plugins: Object.assign(mergedOptions.plugins || {}, {
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {}),
@@ -6793,8 +6725,6 @@
                                     ? { x: { min: 'original', max: 'original' }, y: { min: 0, max: 'original' } }
                                     : { y: { min: 0 } },
                                 zoom: {
-                                    wheel: { enabled: false },
-                                    pinch: { enabled: false },
                                     mode: 'xy'
                                 }
                             }
@@ -6821,6 +6751,68 @@
                         if (xMin !== undefined && xMax !== undefined) chartInstances[canvasId].zoomScale('x', { min: xMin, max: xMax }, 'none');
                     }
                 } catch(e) {}
+                
+                // Manually build the HTML legend immediately after chart creation
+                const suffix = canvasId.replace('canvas-', '');
+                const legendContainer = document.getElementById('graph-legend-' + suffix);
+                if (legendContainer) {
+                    let ul = legendContainer.querySelector('ul');
+                    if (!ul) {
+                        ul = document.createElement('ul');
+                        ul.style.display = 'flex';
+                        ul.style.flexWrap = 'wrap';
+                        ul.style.justifyContent = 'center';
+                        ul.style.listStyle = 'none';
+                        ul.style.padding = '0';
+                        ul.style.margin = '5px 0 10px 0';
+                        legendContainer.appendChild(ul);
+                    }
+                    ul.innerHTML = '';
+                    
+                    const chart = chartInstances[canvasId];
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const li = document.createElement('li');
+                        li.style.display = 'inline-flex';
+                        li.style.alignItems = 'center';
+                        li.style.marginRight = '15px';
+                        li.style.marginBottom = '5px';
+                        li.style.cursor = 'pointer';
+                        li.style.fontSize = '12px';
+                        li.style.color = 'var(--text)';
+                        li.style.textDecoration = chart.isDatasetVisible(i) ? '' : 'line-through';
+                        
+                        li.onclick = () => {
+                            const t = chart.config.type;
+                            if (t === 'pie' || t === 'doughnut') {
+                                chart.toggleDataVisibility(i);
+                            } else {
+                                chart.setDatasetVisibility(i, !chart.isDatasetVisible(i));
+                            }
+                            chart.update();
+                            li.style.textDecoration = chart.isDatasetVisible(i) ? '' : 'line-through';
+                        };
+
+                        const boxSpan = document.createElement('span');
+                        boxSpan.style.display = 'inline-block';
+                        boxSpan.style.width = '12px';
+                        boxSpan.style.height = '12px';
+                        boxSpan.style.marginRight = '5px';
+                        boxSpan.style.backgroundColor = dataset.backgroundColor || dataset.borderColor;
+                        boxSpan.style.border = `2px solid ${dataset.borderColor || dataset.backgroundColor || '#ccc'}`;
+                        if (dataset.borderDash && dataset.borderDash.length > 0) {
+                            boxSpan.style.borderStyle = 'dashed';
+                            boxSpan.style.backgroundColor = 'transparent';
+                        }
+                        boxSpan.style.borderRadius = '2px';
+
+                        const textSpan = document.createElement('span');
+                        textSpan.innerText = dataset.label;
+
+                        li.appendChild(boxSpan);
+                        li.appendChild(textSpan);
+                        ul.appendChild(li);
+                    });
+                }
             }
             
             function togglePanTool(canvasId, btn) {
@@ -7336,8 +7328,8 @@
                                     id: 'avgLineBackground',
                                     beforeDatasetsDraw(chart) {
                                         if (overallAvg === null) return;
-                                        const avgDs = chart.data.datasets.find(ds => ds.label && ds.label.includes('Average'));
-                                        if (!avgDs) return;
+                                        const avgIndex = chart.data.datasets.findIndex(ds => ds.label && ds.label.includes('Average'));
+                                        if (avgIndex === -1 || !chart.isDatasetVisible(avgIndex)) return;
                                         const yScale = chart.scales.y;
                                         const xScale = chart.scales.x;
                                         if (!yScale || !xScale) return;
