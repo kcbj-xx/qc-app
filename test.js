@@ -5044,7 +5044,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'nearest', intersect: false },
+                    interaction: { mode: 'index', intersect: false },
                     elements: {
                         point: {
                             hitRadius: 40,

@@ -892,30 +892,11 @@
         .graph-scroll-container {
             overflow-x: auto;
             overflow-y: hidden;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
         }
-        @media (hover: hover) and (pointer: fine) {
-            .graph-scroll-container {
-                scrollbar-width: thin;
-                scrollbar-color: transparent transparent;
-                transition: scrollbar-color 0.3s ease;
-            }
-            .graph-scroll-container:hover, .graph-scroll-container:active {
-                scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
-            }
-            .graph-scroll-container::-webkit-scrollbar {
-                height: 6px;
-            }
-            .graph-scroll-container::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .graph-scroll-container::-webkit-scrollbar-thumb {
-                background: transparent;
-                border-radius: 3px;
-            }
-            .graph-scroll-container:hover::-webkit-scrollbar-thumb,
-            .graph-scroll-container:active::-webkit-scrollbar-thumb {
-                background: rgba(148, 163, 184, 0.5);
-            }
+        .graph-scroll-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
         }
     </style>
 </head>
@@ -6576,7 +6557,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'nearest', intersect: true },
+                    interaction: { mode: 'index', intersect: false },
                     elements: {
                         point: {
                             radius: 3,
