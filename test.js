@@ -5198,7 +5198,7 @@
                 chartInstances[canvasId] = new Chart(ctx, {
                     type: type,
                     data: data,
-                    plugins: [htmlLegendPlugin, ...extraPlugins],
+                    plugins: [htmlLegendPlugin, tapOnlyPlugin, ...extraPlugins],
                     options: Object.assign(mergedOptions, {
                         plugins: Object.assign(mergedOptions.plugins || {}, {
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {}),
