@@ -4927,38 +4927,6 @@
             let chartInstances = {};
             const chartContexts = {};
 
-            const tapOnlyPlugin = {
-                id: 'tapOnly',
-                beforeEvent(chart, args, pluginOptions) {
-                    const event = args.event;
-                    if (event.type === 'touchstart') {
-                        chart.customTouchStartX = event.x;
-                        chart.customTouchStartY = event.y;
-                        chart.customIsScrolling = false;
-                        return false;
-                    }
-                    if (event.type === 'touchmove') {
-                        if (chart.customTouchStartX !== undefined) {
-                            const dx = Math.abs(event.x - chart.customTouchStartX);
-                            const dy = Math.abs(event.y - chart.customTouchStartY);
-                            if (dx > 5 || dy > 5) {
-                                chart.customIsScrolling = true;
-                            }
-                        }
-                        return false; 
-                    }
-                    if (event.type === 'touchend') {
-                        if (chart.customIsScrolling) return false;
-                    }
-                    if (event.type === 'mousemove' || event.type === 'mouseout') {
-                        return false;
-                    }
-                    if (event.type === 'click') {
-                        if (chart.customIsScrolling) return false;
-                    }
-                }
-            };
-
             const htmlLegendPlugin = {
                 id: 'htmlLegend',
                 afterUpdate(chart) {
@@ -5068,7 +5036,7 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    events: ['click', 'touchstart', 'touchmove', 'touchend'],
+                    events: ['mousemove', 'mouseout'],
                     animation: false,
                     animations: {},
                     transitions: {
@@ -5198,7 +5166,7 @@
                 chartInstances[canvasId] = new Chart(ctx, {
                     type: type,
                     data: data,
-                    plugins: [htmlLegendPlugin, tapOnlyPlugin, ...extraPlugins],
+                    plugins: [htmlLegendPlugin, ...extraPlugins],
                     options: Object.assign(mergedOptions, {
                         plugins: Object.assign(mergedOptions.plugins || {}, {
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {}),
@@ -5242,6 +5210,35 @@
                 // Allow native page horizontal scrolling when pan tool is on (since it only pans Y now)
                 const canvasEl = document.getElementById(canvasId);
                 if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
+                
+                const chart = chartInstances[canvasId];
+                if (chart && canvasEl) {
+                    if (chart.mcTap) {
+                        chart.mcTap.destroy();
+                    }
+                    const mc = new Hammer.Manager(canvasEl, {
+                        touchAction: 'auto',
+                        recognizers: [
+                            [Hammer.Tap]
+                        ]
+                    });
+                    chart.mcTap = mc;
+                    mc.on('tap', function(e) {
+                        const rect = canvasEl.getBoundingClientRect();
+                        const x = e.center.x - rect.left;
+                        const y = e.center.y - rect.top;
+                        
+                        const elements = chart.getElementsAtEventForMode({ x, y }, 'index', { intersect: false }, false);
+                        if (elements && elements.length > 0) {
+                            chart.tooltip.setActiveElements(elements);
+                            chart.setActiveElements(elements);
+                        } else {
+                            chart.tooltip.setActiveElements([]);
+                            chart.setActiveElements([]);
+                        }
+                        chart.update();
+                    });
+                }
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
                 try {
