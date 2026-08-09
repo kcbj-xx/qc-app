@@ -4927,6 +4927,38 @@
             let chartInstances = {};
             const chartContexts = {};
 
+            const tapOnlyPlugin = {
+                id: 'tapOnly',
+                beforeEvent(chart, args, pluginOptions) {
+                    const event = args.event;
+                    if (event.type === 'touchstart') {
+                        chart.customTouchStartX = event.x;
+                        chart.customTouchStartY = event.y;
+                        chart.customIsScrolling = false;
+                        return false;
+                    }
+                    if (event.type === 'touchmove') {
+                        if (chart.customTouchStartX !== undefined) {
+                            const dx = Math.abs(event.x - chart.customTouchStartX);
+                            const dy = Math.abs(event.y - chart.customTouchStartY);
+                            if (dx > 5 || dy > 5) {
+                                chart.customIsScrolling = true;
+                            }
+                        }
+                        return false; 
+                    }
+                    if (event.type === 'touchend') {
+                        if (chart.customIsScrolling) return false;
+                    }
+                    if (event.type === 'mousemove' || event.type === 'mouseout') {
+                        return false;
+                    }
+                    if (event.type === 'click') {
+                        if (chart.customIsScrolling) return false;
+                    }
+                }
+            };
+
             const htmlLegendPlugin = {
                 id: 'htmlLegend',
                 afterUpdate(chart) {
@@ -5036,7 +5068,7 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    events: ['click'],
+                    events: ['click', 'touchstart', 'touchmove', 'touchend'],
                     animation: false,
                     animations: {},
                     transitions: {
