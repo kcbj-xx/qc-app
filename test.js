@@ -5036,6 +5036,7 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
+                    events: ['click'],
                     animation: false,
                     animations: {},
                     transitions: {
@@ -5044,7 +5045,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: { mode: 'index', axis: 'x', intersect: false },
                     elements: {
                         point: {
                             hitRadius: 40,
