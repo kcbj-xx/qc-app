@@ -4215,7 +4215,7 @@
                         newTallies = (lastTab.tallies || []).map((t, ti) => ({
                             id: 'tally_' + Date.now() + '_' + ti,
                             name: t.name,
-                            count: 0,
+                            count: t.isLocked ? totalCount : 0,
                             isLocked: t.isLocked
                         }));
                     }
@@ -4241,7 +4241,7 @@
                 const newTallies = (activeTab.tallies || []).map((t, ti) => ({
                     id: 'tally_' + Date.now() + '_' + ti,
                     name: t.name,
-                    count: 0,
+                    count: t.isLocked ? totalCount : 0,
                     isLocked: t.isLocked
                 }));
                 
