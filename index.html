@@ -2722,8 +2722,8 @@
                         });
                     }
                 };
-                // document.addEventListener('touchstart', dismissTooltips, {passive: true});
-                // document.addEventListener('mousedown', dismissTooltips, {passive: true});
+                document.addEventListener('touchstart', dismissTooltips, {passive: true});
+                document.addEventListener('mousedown', dismissTooltips, {passive: true});
                 
                 document.querySelectorAll('.tabs-container').forEach(container => {
                     container.addEventListener('wheel', (e) => {
@@ -6548,7 +6548,7 @@
                 
                 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
                 let mergedOptions = {
-                    responsive: false, // temporarily disable responsive to see if resize observer corrupts on scroll
+                    responsive: true,
                     maintainAspectRatio: false,
                     events: isTouchDevice ? ['touchstart', 'click'] : ['mousemove', 'mouseout', 'touchstart', 'click'],
                     animation: false,
@@ -6687,7 +6687,7 @@
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {}),
                             zoom: {
                                 pan: { 
-                                    enabled: true, 
+                                    enabled: !!(initialPanMode && initialPanMode !== ''), 
                                     mode: initialPanMode,
                                     threshold: 2,
                                     onPanComplete: function({chart}) {
@@ -6810,11 +6810,13 @@
                 const canvasEl = document.getElementById(canvasId);
                 if (isPanActive) {
                     btn.classList.remove('pan-active');
+                    chart.options.plugins.zoom.pan.enabled = false;
                     chart.options.plugins.zoom.pan.mode = '';
                     chart.update('none');
                     if (canvasEl) canvasEl.style.touchAction = 'auto';
                 } else {
                     btn.classList.add('pan-active');
+                    chart.options.plugins.zoom.pan.enabled = true;
                     chart.options.plugins.zoom.pan.mode = 'y';
                     chart.update('none');
                     if (canvasEl) canvasEl.style.touchAction = 'pan-x';
