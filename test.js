@@ -168,6 +168,7 @@
                     updateEstimatorTabMenuState();
                 }
                 saveAllGroupData();
+                renderGraphs();
             }
 
             function toggleCard(cardId) {
@@ -5008,6 +5009,69 @@
                 }
             };
 
+            function drawFixedYAxis(chart, axisCanvasId) {
+                const yAxis = chart.scales.y;
+                if (!yAxis) return;
+                const axisCanvas = document.getElementById(axisCanvasId);
+                if (!axisCanvas) return;
+
+                const actx = axisCanvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                const width = 45;
+                const height = chart.height || 250;
+
+                if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
+                    axisCanvas.width = width * dpr;
+                    axisCanvas.height = height * dpr;
+                    axisCanvas.style.width = width + 'px';
+                    axisCanvas.style.height = height + 'px';
+                }
+
+                actx.save();
+                actx.scale(dpr, dpr);
+                actx.clearRect(0, 0, width, height);
+
+                const isDark = (window.isGeneratingExcel) ? false : 
+                               (document.documentElement.classList.contains('dark') || 
+                               (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches));
+
+                actx.fillStyle = isDark ? '#1e293b' : '#ffffff';
+                actx.fillRect(0, 0, width, height);
+
+                actx.strokeStyle = isDark ? '#374151' : '#e5e7eb';
+                actx.lineWidth = 1;
+                actx.beginPath();
+                actx.moveTo(width - 0.5, 0);
+                actx.lineTo(width - 0.5, height);
+                actx.stroke();
+
+                actx.font = '11px sans-serif';
+                actx.fillStyle = isDark ? '#94a3b8' : '#475569';
+                actx.textAlign = 'right';
+                actx.textBaseline = 'middle';
+
+                const isPercentage = chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'));
+
+                if (yAxis.ticks) {
+                    yAxis.ticks.forEach(tick => {
+                        const yPos = yAxis.getPixelForValue(tick.value);
+                        if (chart.chartArea && yPos >= chart.chartArea.top - 5 && yPos <= chart.chartArea.bottom + 5) {
+                            const formatted = parseFloat(Number(tick.value).toPrecision(10));
+                            const text = isPercentage ? formatted + '%' : formatted;
+                            actx.fillText(text, width - 6, yPos);
+                        }
+                    });
+                }
+                actx.restore();
+            }
+
+            const fixedYAxisPlugin = {
+                id: 'fixedYAxisPlugin',
+                afterDraw(chart) {
+                    drawFixedYAxis(chart, chart.canvas.id + '-axis');
+                }
+            };
+
             function createOrUpdateChart(canvasId, type, data, options = {}, contextId = '') {
                 chartContexts[canvasId] = contextId;
                 const ctx = document.getElementById(canvasId).getContext('2d');
@@ -5070,7 +5134,7 @@
                 mergedOptions.scales.y.grid = mergedOptions.scales.y.grid || {};
                 mergedOptions.scales.y.grid.z = -1;
                 mergedOptions.scales.y.ticks = mergedOptions.scales.y.ticks || {};
-                mergedOptions.scales.y.ticks.display = true;
+                mergedOptions.scales.y.ticks.display = false;
 
                 mergedOptions.plugins = mergedOptions.plugins || {};
                 mergedOptions.plugins.legend = mergedOptions.plugins.legend || {};
@@ -5172,7 +5236,7 @@
                 chartInstances[canvasId] = new Chart(ctx, {
                     type: type,
                     data: data,
-                    plugins: [htmlLegendPlugin, ...extraPlugins],
+                    plugins: [fixedYAxisPlugin, htmlLegendPlugin, ...extraPlugins],
                     options: Object.assign(mergedOptions, {
                         plugins: Object.assign(mergedOptions.plugins || {}, {
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {}),
@@ -5413,6 +5477,7 @@
                 if (!p || !document.getElementById('canvas-tally')) return;
                 
                 const tallyWrapper = document.getElementById('graph-wrapper-tally');
+                const tallyAxisWrapper = document.getElementById('graph-axis-wrapper-tally');
                 const tallyNoData = document.getElementById('graph-no-data-tally');
                 let hasTallyData = false;
                 
@@ -5440,6 +5505,7 @@
                     if (labels.length > 0) {
                         hasTallyData = true;
                         tallyNoData.style.display = 'none';
+                        if (tallyAxisWrapper) tallyAxisWrapper.style.display = 'block';
                         tallyWrapper.style.display = 'block';
                         tallyWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
                         const overallAvg = data.reduce((a, b) => a + b, 0) / data.length;
@@ -5473,6 +5539,7 @@
                 }
                 if (!hasTallyData) {
                     tallyNoData.style.display = 'block';
+                    if (tallyAxisWrapper) tallyAxisWrapper.style.display = 'none';
                     tallyWrapper.style.display = 'none';
                     setGraphZoomControlsVisible('tally', false);
                 } else {
@@ -5481,6 +5548,7 @@
 
                 // --- Salinity Calculator ---
                 const salWrapper = document.getElementById('graph-wrapper-salinity');
+                const salAxisWrapper = document.getElementById('graph-axis-wrapper-salinity');
                 const salNoData = document.getElementById('graph-no-data-salinity');
                 let hasSalData = false;
                 if (p.salinityTabs && p.salinityTabs.length > 0) {
@@ -5488,6 +5556,7 @@
                     if (validTabs.length > 0) {
                         hasSalData = true;
                         salNoData.style.display = 'none';
+                        if (salAxisWrapper) salAxisWrapper.style.display = 'block';
                         salWrapper.style.display = 'block';
                         
                         const labels = validTabs.map(t => t.name);
@@ -5529,6 +5598,7 @@
                 }
                 if (!hasSalData) {
                     salNoData.style.display = 'block';
+                    if (salAxisWrapper) salAxisWrapper.style.display = 'none';
                     salWrapper.style.display = 'none';
                     setGraphZoomControlsVisible('salinity', false);
                 } else {
@@ -5537,6 +5607,7 @@
                 
                 // --- Sum & Averaging ---
                 const avgWrapper = document.getElementById('graph-wrapper-averaging');
+                const avgAxisWrapper = document.getElementById('graph-axis-wrapper-averaging');
                 const avgNoData = document.getElementById('graph-no-data-averaging');
                 const avgSelect = document.getElementById('graph-select-averaging');
                 let hasAvgData = false;
@@ -5555,6 +5626,7 @@
                         if (validTabs.length > 0) {
                             hasAvgData = true;
                             avgNoData.style.display = 'none';
+                            if (avgAxisWrapper) avgAxisWrapper.style.display = 'block';
                             avgWrapper.style.display = 'block';
                             
                             const labels = validTabs.map(t => t.name);
@@ -5599,6 +5671,7 @@
                 }
                 if (!hasAvgData) {
                     avgNoData.style.display = 'block';
+                    if (avgAxisWrapper) avgAxisWrapper.style.display = 'none';
                     avgWrapper.style.display = 'none';
                     setGraphZoomControlsVisible('averaging', false);
                 } else {
@@ -5607,6 +5680,7 @@
 
                 // --- Pickup Calculator ---
                 const pickupWrapper = document.getElementById('graph-wrapper-pickup');
+                const pickupAxisWrapper = document.getElementById('graph-axis-wrapper-pickup');
                 const pickupNoData = document.getElementById('graph-no-data-pickup');
                 const pickupSelect = document.getElementById('graph-select-pickup');
                 let hasPickupData = false;
@@ -5625,6 +5699,7 @@
                         if (validTabs.length > 0) {
                             hasPickupData = true;
                             pickupNoData.style.display = 'none';
+                            if (pickupAxisWrapper) pickupAxisWrapper.style.display = 'block';
                             pickupWrapper.style.display = 'block';
                             
                             const labels = validTabs.map(t => t.name);
@@ -5671,6 +5746,7 @@
                 }
                 if (!hasPickupData) {
                     pickupNoData.style.display = 'block';
+                    if (pickupAxisWrapper) pickupAxisWrapper.style.display = 'none';
                     pickupWrapper.style.display = 'none';
                     setGraphZoomControlsVisible('pickup', false);
                 } else {
@@ -5679,6 +5755,7 @@
 
                 // --- Production Pace ---
                 const paceWrapper = document.getElementById('graph-wrapper-pace');
+                const paceAxisWrapper = document.getElementById('graph-axis-wrapper-pace');
                 const paceNoData = document.getElementById('graph-no-data-pace');
                 const paceSelect = document.getElementById('graph-select-pace');
                 let hasPaceData = false;
@@ -5717,6 +5794,7 @@
                             if (labels.length > 0) {
                                 hasPaceData = true;
                                 paceNoData.style.display = 'none';
+                                if (paceAxisWrapper) paceAxisWrapper.style.display = 'block';
                                 paceWrapper.style.display = 'block';
                                 paceWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
                                 
@@ -5781,6 +5859,7 @@
                 }
                 if (!hasPaceData) {
                     paceNoData.style.display = 'block';
+                    if (paceAxisWrapper) paceAxisWrapper.style.display = 'none';
                     paceWrapper.style.display = 'none';
                     setGraphZoomControlsVisible('pace', false);
                 } else {
