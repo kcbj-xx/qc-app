@@ -5033,10 +5033,11 @@
                 
                 let passedOptions = options || {};
                 
+                const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    events: ['mousemove', 'mouseout', 'touchstart', 'touchmove', 'click'],
+                    events: isTouchDevice ? ['touchstart', 'click'] : ['mousemove', 'mouseout', 'touchstart', 'click'],
                     animation: false,
                     animations: {},
                     transitions: {
