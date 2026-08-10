@@ -6548,7 +6548,7 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    events: ['mousemove', 'mouseout'],
+                    events: ['mousemove', 'mouseout', 'touchstart', 'touchmove', 'click'],
                     animation: false,
                     animations: {},
                     transitions: {
@@ -6561,7 +6561,7 @@
                     elements: {
                         point: {
                             radius: 3,
-                            hitRadius: 40,
+                            hitRadius: 5,
                             hoverRadius: 5
                         }
                     }
@@ -6723,50 +6723,7 @@
                 if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
                 const chart = chartInstances[canvasId];
                 if (chart && canvasEl) {
-                    let tapStartX = 0;
-                    let tapStartY = 0;
-                    let isScrolling = false;
-                    
-                    canvasEl.addEventListener('touchstart', (e) => {
-                        tapStartX = e.touches[0].clientX;
-                        tapStartY = e.touches[0].clientY;
-                        isScrolling = false;
-                    }, { passive: true });
-                    
-                    canvasEl.addEventListener('touchmove', (e) => {
-                        if (isScrolling) return;
-                        const deltaX = Math.abs(e.touches[0].clientX - tapStartX);
-                        const deltaY = Math.abs(e.touches[0].clientY - tapStartY);
-                        if (deltaX > 15 || deltaY > 15) {
-                            isScrolling = true;
-                            chart.tooltip.setActiveElements([]);
-                            chart.setActiveElements([]);
-                            chart.update();
-                        }
-                    }, { passive: true });
-                    
-                    canvasEl.addEventListener('touchend', (e) => {
-                        if (e.changedTouches.length === 0) return;
-                        
-                        if (!isScrolling) {
-                            // It's a clean tap! Prevent simulated mouse events (like mouseout) which instantly clear tooltips on iOS
-                            if (e.cancelable) e.preventDefault();
-                            
-                            const rect = canvasEl.getBoundingClientRect();
-                            const x = e.changedTouches[0].clientX - rect.left;
-                            const y = e.changedTouches[0].clientY - rect.top;
-                            
-                            const elements = chart.getElementsAtEventForMode({ x, y }, 'index', { intersect: false }, false);
-                            if (elements && elements.length > 0) {
-                                chart.tooltip.setActiveElements(elements);
-                                chart.setActiveElements(elements);
-                            } else {
-                                chart.tooltip.setActiveElements([]);
-                                chart.setActiveElements([]);
-                            }
-                            chart.update();
-                        }
-                    }, { passive: false });
+                // Removed custom touch logic per user request
                 }
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
