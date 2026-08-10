@@ -5008,6 +5008,68 @@
                 }
             };
 
+            const stickyYAxisPlugin = {
+                id: 'stickyYAxis',
+                afterDraw(chart) {
+                    const yAxis = chart.scales.y;
+                    if (!yAxis) return;
+
+                    const canvasId = chart.canvas.id;
+                    const stickyCanvas = document.getElementById(canvasId + '-sticky');
+                    if (!stickyCanvas) return;
+
+                    const sctx = stickyCanvas.getContext('2d');
+                    const dpr = window.devicePixelRatio || 1;
+                    const width = 45;
+                    const height = chart.height || 250;
+
+                    if (stickyCanvas.width !== width * dpr || stickyCanvas.height !== height * dpr) {
+                        stickyCanvas.width = width * dpr;
+                        stickyCanvas.height = height * dpr;
+                        stickyCanvas.style.width = width + 'px';
+                        stickyCanvas.style.height = height + 'px';
+                    }
+
+                    sctx.save();
+                    sctx.scale(dpr, dpr);
+                    sctx.clearRect(0, 0, width, height);
+
+                    const isDark = (window.isGeneratingExcel) ? false : 
+                                   (document.documentElement.classList.contains('dark') || 
+                                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches));
+
+                    sctx.fillStyle = isDark ? '#1e293b' : '#ffffff';
+                    sctx.fillRect(0, 0, width, height);
+
+                    sctx.strokeStyle = isDark ? '#374151' : '#e5e7eb';
+                    sctx.lineWidth = 1;
+                    sctx.beginPath();
+                    sctx.moveTo(width - 0.5, 0);
+                    sctx.lineTo(width - 0.5, height);
+                    sctx.stroke();
+
+                    sctx.font = '11px sans-serif';
+                    sctx.fillStyle = isDark ? '#94a3b8' : '#475569';
+                    sctx.textAlign = 'right';
+                    sctx.textBaseline = 'middle';
+
+                    const isPercentage = chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'));
+
+                    if (yAxis.ticks) {
+                        yAxis.ticks.forEach(tick => {
+                            const yPos = yAxis.getPixelForValue(tick.value);
+                            if (chart.chartArea && yPos >= chart.chartArea.top - 5 && yPos <= chart.chartArea.bottom + 5) {
+                                const formatted = parseFloat(Number(tick.value).toPrecision(10));
+                                const text = isPercentage ? formatted + '%' : formatted;
+                                sctx.fillText(text, width - 6, yPos);
+                            }
+                        });
+                    }
+
+                    sctx.restore();
+                }
+            };
+
             function createOrUpdateChart(canvasId, type, data, options = {}, contextId = '') {
                 chartContexts[canvasId] = contextId;
                 const ctx = document.getElementById(canvasId).getContext('2d');
@@ -5066,9 +5128,11 @@
                 mergedOptions.scales.x.grid.z = -1;
 
                 mergedOptions.scales.y = mergedOptions.scales.y || {};
-                mergedOptions.scales.y.position = 'right';
+                mergedOptions.scales.y.position = 'left';
                 mergedOptions.scales.y.grid = mergedOptions.scales.y.grid || {};
                 mergedOptions.scales.y.grid.z = -1;
+                mergedOptions.scales.y.ticks = mergedOptions.scales.y.ticks || {};
+                mergedOptions.scales.y.ticks.display = false;
 
                 mergedOptions.plugins = mergedOptions.plugins || {};
                 mergedOptions.plugins.legend = mergedOptions.plugins.legend || {};
@@ -5170,7 +5234,7 @@
                 chartInstances[canvasId] = new Chart(ctx, {
                     type: type,
                     data: data,
-                    plugins: [htmlLegendPlugin, ...extraPlugins],
+                    plugins: [stickyYAxisPlugin, htmlLegendPlugin, ...extraPlugins],
                     options: Object.assign(mergedOptions, {
                         plugins: Object.assign(mergedOptions.plugins || {}, {
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {}),
