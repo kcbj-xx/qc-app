@@ -6589,31 +6589,27 @@
 
                 const isPercentage = chart.data && chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'));
 
-                let ticks = [];
-                if (yAxis.ticks && yAxis.ticks.length > 0) {
-                    ticks = yAxis.ticks;
-                } else if (yAxis.getTicks) {
-                    ticks = yAxis.getTicks();
+                let ticks = yAxis.getTicks ? yAxis.getTicks() : (yAxis.ticks || []);
+                if (!ticks || ticks.length === 0) {
+                    ticks = yAxis.ticks || [];
                 }
 
-                if (!ticks || ticks.length === 0) {
-                    const min = yAxis.min !== undefined ? yAxis.min : 0;
-                    const max = yAxis.max !== undefined ? yAxis.max : 100;
-                    const step = (max - min) / 5 || 20;
-                    ticks = [];
-                    for (let v = min; v <= max; v += step) {
-                        ticks.push({ value: v });
-                    }
-                }
+                const chartAreaTop = chart.chartArea ? chart.chartArea.top : 0;
+                const chartAreaBottom = chart.chartArea ? chart.chartArea.bottom : height;
 
                 ticks.forEach(tick => {
                     const val = (tick && tick.value !== undefined) ? tick.value : tick;
                     if (typeof val === 'number' && !isNaN(val)) {
                         const yPos = yAxis.getPixelForValue(val);
-                        if (!isNaN(yPos) && yPos >= 0 && yPos <= height) {
+                        if (!isNaN(yPos) && yPos >= chartAreaTop - 2 && yPos <= chartAreaBottom + 2) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
-                            actx.fillText(text, width - 6, yPos);
+                            actx.fillText(text, width - 8, yPos);
+
+                            actx.beginPath();
+                            actx.moveTo(width - 4, yPos);
+                            actx.lineTo(width, yPos);
+                            actx.stroke();
                         }
                     }
                 });
@@ -6624,8 +6620,9 @@
                 id: 'fixedYAxisPlugin',
                 afterDraw(chart) {
                     drawFixedYAxis(chart, chart.canvas.id + '-axis');
-                    requestAnimationFrame(() => drawFixedYAxis(chart, chart.canvas.id + '-axis'));
-                    setTimeout(() => drawFixedYAxis(chart, chart.canvas.id + '-axis'), 100);
+                },
+                afterRender(chart) {
+                    drawFixedYAxis(chart, chart.canvas.id + '-axis');
                 }
             };
 
@@ -7025,6 +7022,7 @@
                 } else {
                     localStorage.setItem(zoomKey, JSON.stringify({ min: finalMin, max: finalMax }));
                 }
+                drawFixedYAxis(chart, canvasId + '-axis');
             }
 
             function graphResetZoom(canvasId) {
@@ -7033,6 +7031,7 @@
                 const zoomKey = 'qc_zoom_' + activeParentId + '_' + canvasId + (chartContexts[canvasId] ? '_' + chartContexts[canvasId] : '');
                 localStorage.removeItem(zoomKey);
                 chart.resetZoom('none');
+                drawFixedYAxis(chart, canvasId + '-axis');
             }
 
             // Show/hide zoom control buttons for a graph
