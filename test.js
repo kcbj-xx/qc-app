@@ -5010,15 +5010,15 @@
             };
 
             function drawFixedYAxis(chart, axisCanvasId) {
+                if (!chart || !chart.scales || !chart.scales.y) return;
                 const yAxis = chart.scales.y;
-                if (!yAxis) return;
                 const axisCanvas = document.getElementById(axisCanvasId);
                 if (!axisCanvas) return;
 
                 const actx = axisCanvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
                 const width = 45;
-                const height = chart.height || 250;
+                const height = chart.height || axisCanvas.clientHeight || 250;
 
                 if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
                     axisCanvas.width = width * dpr;
@@ -5050,20 +5050,36 @@
                 actx.textAlign = 'right';
                 actx.textBaseline = 'middle';
 
-                const isPercentage = chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'));
+                const isPercentage = chart.data && chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'));
 
-                const ticks = yAxis.getTicks ? yAxis.getTicks() : (yAxis.ticks || []);
-                if (ticks && ticks.length > 0) {
-                    ticks.forEach(tick => {
-                        const val = tick.value !== undefined ? tick.value : tick;
+                let ticks = [];
+                if (yAxis.ticks && yAxis.ticks.length > 0) {
+                    ticks = yAxis.ticks;
+                } else if (yAxis.getTicks) {
+                    ticks = yAxis.getTicks();
+                }
+
+                if (!ticks || ticks.length === 0) {
+                    const min = yAxis.min !== undefined ? yAxis.min : 0;
+                    const max = yAxis.max !== undefined ? yAxis.max : 100;
+                    const step = (max - min) / 5 || 20;
+                    ticks = [];
+                    for (let v = min; v <= max; v += step) {
+                        ticks.push({ value: v });
+                    }
+                }
+
+                ticks.forEach(tick => {
+                    const val = (tick && tick.value !== undefined) ? tick.value : tick;
+                    if (typeof val === 'number' && !isNaN(val)) {
                         const yPos = yAxis.getPixelForValue(val);
-                        if (chart.chartArea && yPos >= chart.chartArea.top - 5 && yPos <= chart.chartArea.bottom + 5) {
+                        if (!isNaN(yPos) && yPos >= 0 && yPos <= height) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
                             actx.fillText(text, width - 6, yPos);
                         }
-                    });
-                }
+                    }
+                });
                 actx.restore();
             }
 
@@ -5071,6 +5087,7 @@
                 id: 'fixedYAxisPlugin',
                 afterDraw(chart) {
                     drawFixedYAxis(chart, chart.canvas.id + '-axis');
+                    setTimeout(() => drawFixedYAxis(chart, chart.canvas.id + '-axis'), 50);
                 }
             };
 
