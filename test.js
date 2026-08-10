@@ -5017,7 +5017,7 @@
 
                 const actx = axisCanvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
-                const width = 36;
+                const width = 32;
                 const height = (chart.height && chart.height > 50) ? chart.height : (axisCanvas.clientHeight > 50 ? axisCanvas.clientHeight : 250);
 
                 if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
@@ -5062,7 +5062,7 @@
                         if (!isNaN(yPos) && yPos >= chartAreaTop - 2 && yPos <= chartAreaBottom + 2) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
-                            actx.fillText(text, width - 4, yPos);
+                            actx.fillText(text, width - 2, yPos);
                         }
                     }
                 });
@@ -5144,6 +5144,9 @@
                 mergedOptions.scales.y.ticks = mergedOptions.scales.y.ticks || {};
                 mergedOptions.scales.y.ticks.display = true;
                 mergedOptions.scales.y.ticks.color = 'transparent';
+                mergedOptions.scales.y.afterFit = function(axis) {
+                    axis.width = 0;
+                };
 
                 mergedOptions.plugins = mergedOptions.plugins || {};
                 mergedOptions.plugins.legend = mergedOptions.plugins.legend || {};
