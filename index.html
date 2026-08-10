@@ -6731,37 +6731,42 @@
                         tapStartX = e.touches[0].clientX;
                         tapStartY = e.touches[0].clientY;
                         isScrolling = false;
-                        
-                        const rect = canvasEl.getBoundingClientRect();
-                        const x = tapStartX - rect.left;
-                        const y = tapStartY - rect.top;
-                        
-                        const elements = chart.getElementsAtEventForMode({ x, y }, 'index', { intersect: false }, false);
-                        if (elements && elements.length > 0) {
-                            chart.tooltip.setActiveElements(elements);
-                            chart.setActiveElements(elements);
-                        } else {
-                            chart.tooltip.setActiveElements([]);
-                            chart.setActiveElements([]);
-                        }
-                        chart.update();
                     }, { passive: true });
                     
                     canvasEl.addEventListener('touchmove', (e) => {
                         if (isScrolling) return;
-                        
-                        const currentX = e.touches[0].clientX;
-                        const currentY = e.touches[0].clientY;
-                        const deltaX = Math.abs(currentX - tapStartX);
-                        const deltaY = Math.abs(currentY - tapStartY);
-                        
-                        if (deltaX > 10 || deltaY > 10) {
+                        const deltaX = Math.abs(e.touches[0].clientX - tapStartX);
+                        const deltaY = Math.abs(e.touches[0].clientY - tapStartY);
+                        if (deltaX > 15 || deltaY > 15) {
                             isScrolling = true;
                             chart.tooltip.setActiveElements([]);
                             chart.setActiveElements([]);
                             chart.update();
                         }
                     }, { passive: true });
+                    
+                    canvasEl.addEventListener('touchend', (e) => {
+                        if (e.changedTouches.length === 0) return;
+                        
+                        if (!isScrolling) {
+                            // It's a clean tap! Prevent simulated mouse events (like mouseout) which instantly clear tooltips on iOS
+                            if (e.cancelable) e.preventDefault();
+                            
+                            const rect = canvasEl.getBoundingClientRect();
+                            const x = e.changedTouches[0].clientX - rect.left;
+                            const y = e.changedTouches[0].clientY - rect.top;
+                            
+                            const elements = chart.getElementsAtEventForMode({ x, y }, 'index', { intersect: false }, false);
+                            if (elements && elements.length > 0) {
+                                chart.tooltip.setActiveElements(elements);
+                                chart.setActiveElements(elements);
+                            } else {
+                                chart.tooltip.setActiveElements([]);
+                                chart.setActiveElements([]);
+                            }
+                            chart.update();
+                        }
+                    }, { passive: false });
                 }
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
