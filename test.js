@@ -1130,8 +1130,8 @@
                         });
                     }
                 };
-                document.addEventListener('touchstart', dismissTooltips, {passive: true});
-                document.addEventListener('mousedown', dismissTooltips, {passive: true});
+                // document.addEventListener('touchstart', dismissTooltips, {passive: true});
+                // document.addEventListener('mousedown', dismissTooltips, {passive: true});
                 
                 document.querySelectorAll('.tabs-container').forEach(container => {
                     container.addEventListener('wheel', (e) => {
@@ -5036,7 +5036,7 @@
                 
                 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
                 let mergedOptions = {
-                    responsive: true,
+                    responsive: false, // temporarily disable responsive to see if resize observer corrupts on scroll
                     maintainAspectRatio: false,
                     events: isTouchDevice ? ['touchstart', 'click'] : ['mousemove', 'mouseout', 'touchstart', 'click'],
                     animation: false,
