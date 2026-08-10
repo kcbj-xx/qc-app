@@ -6548,7 +6548,7 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    events: ['mousemove', 'mouseout', 'touchstart', 'touchmove', 'click'],
+                    events: ['mousemove', 'mouseout'],
                     animation: false,
                     animations: {},
                     transitions: {
@@ -6721,7 +6721,46 @@
                 // Allow native page horizontal scrolling when pan tool is on (since it only pans Y now)
                 const canvasEl = document.getElementById(canvasId);
                 if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
-                // Removed Hammer.js tap logic to allow native Chart.js touch events to work properly
+                const chart = chartInstances[canvasId];
+                if (chart && canvasEl) {
+                    let tapStartX = 0;
+                    let tapStartY = 0;
+                    canvasEl.addEventListener('touchstart', (e) => {
+                        tapStartX = e.touches[0].clientX;
+                        tapStartY = e.touches[0].clientY;
+                    }, { passive: true });
+                    
+                    canvasEl.addEventListener('touchend', (e) => {
+                        if (e.changedTouches.length === 0) return;
+                        const touchEndX = e.changedTouches[0].clientX;
+                        const touchEndY = e.changedTouches[0].clientY;
+                        
+                        const deltaX = Math.abs(touchEndX - tapStartX);
+                        const deltaY = Math.abs(touchEndY - tapStartY);
+                        
+                        // Treat as tap if finger moved less than 15px
+                        if (deltaX < 15 && deltaY < 15) {
+                            const rect = canvasEl.getBoundingClientRect();
+                            const x = touchEndX - rect.left;
+                            const y = touchEndY - rect.top;
+                            
+                            const elements = chart.getElementsAtEventForMode({ x, y }, 'index', { intersect: false }, false);
+                            if (elements && elements.length > 0) {
+                                chart.tooltip.setActiveElements(elements);
+                                chart.setActiveElements(elements);
+                            } else {
+                                chart.tooltip.setActiveElements([]);
+                                chart.setActiveElements([]);
+                            }
+                            chart.update();
+                        } else {
+                            // If it was a scroll, clear tooltips
+                            chart.tooltip.setActiveElements([]);
+                            chart.setActiveElements([]);
+                            chart.update();
+                        }
+                    }, { passive: true });
+                }
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
                 try {
