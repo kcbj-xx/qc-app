@@ -5018,7 +5018,7 @@
                 const actx = axisCanvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
                 const width = 45;
-                const height = chart.height || axisCanvas.clientHeight || 250;
+                const height = (chart.height && chart.height > 50) ? chart.height : (axisCanvas.clientHeight > 50 ? axisCanvas.clientHeight : 250);
 
                 if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
                     axisCanvas.width = width * dpr;
@@ -5087,7 +5087,8 @@
                 id: 'fixedYAxisPlugin',
                 afterDraw(chart) {
                     drawFixedYAxis(chart, chart.canvas.id + '-axis');
-                    setTimeout(() => drawFixedYAxis(chart, chart.canvas.id + '-axis'), 50);
+                    requestAnimationFrame(() => drawFixedYAxis(chart, chart.canvas.id + '-axis'));
+                    setTimeout(() => drawFixedYAxis(chart, chart.canvas.id + '-axis'), 100);
                 }
             };
 
@@ -5555,6 +5556,9 @@
                             labels, 
                             datasets: datasets
                         }, { scales: { y: { beginAtZero: true, max: 100 } } }, p.activeTallyTabId);
+                        requestAnimationFrame(() => {
+                            if (chartInstances['canvas-tally']) drawFixedYAxis(chartInstances['canvas-tally'], 'canvas-tally-axis');
+                        });
                     }
                 }
                 if (!hasTallyData) {
@@ -5614,6 +5618,9 @@
                             labels,
                             datasets: datasets
                         }, { scales: { y: { beginAtZero: true, max: 100 } } });
+                        requestAnimationFrame(() => {
+                            if (chartInstances['canvas-salinity']) drawFixedYAxis(chartInstances['canvas-salinity'], 'canvas-salinity-axis');
+                        });
                     }
                 }
                 if (!hasSalData) {
@@ -5686,6 +5693,9 @@
                                 labels,
                                 datasets: datasets
                             }, {}, activeSumSetId);
+                            requestAnimationFrame(() => {
+                                if (chartInstances['canvas-averaging']) drawFixedYAxis(chartInstances['canvas-averaging'], 'canvas-averaging-axis');
+                            });
                         }
                     }
                 }
@@ -5761,6 +5771,9 @@
                                 labels,
                                 datasets: datasets
                             }, {}, activePickupSetId);
+                            requestAnimationFrame(() => {
+                                if (chartInstances['canvas-pickup']) drawFixedYAxis(chartInstances['canvas-pickup'], 'canvas-pickup-axis');
+                            });
                         }
                     }
                 }
@@ -5872,6 +5885,9 @@
                                     layout: { padding: { top: 15, left: 8, right: 8 } },
                                     scales: { y: { grace: '10%', min: 0 } },
                                     extraPlugins: [avgLinePlugin]
+                                });
+                                requestAnimationFrame(() => {
+                                    if (chartInstances['canvas-pace']) drawFixedYAxis(chartInstances['canvas-pace'], 'canvas-pace-axis');
                                 });
                             }
                         }
