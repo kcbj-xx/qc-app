@@ -5260,10 +5260,14 @@
                             tooltip: Object.assign(mergedOptions.plugins?.tooltip || {}, {}),
                             zoom: {
                                 pan: { 
-                                    enabled: !!(initialPanMode && initialPanMode !== ''), 
+                                    enabled: true, 
                                     mode: initialPanMode,
                                     threshold: 2,
+                                    onPan: function({chart}) {
+                                        drawFixedYAxis(chart, canvasId + '-axis');
+                                    },
                                     onPanComplete: function({chart}) {
+                                        drawFixedYAxis(chart, canvasId + '-axis');
                                         const yAxis = chart.scales.y;
                                         const xAxis = chart.scales.x;
                                         if (yAxis && xAxis) {
@@ -5277,13 +5281,14 @@
                                         }
                                     }
                                 },
-                                limits: (canvasId === 'canvas-tally' || canvasId === 'canvas-salinity' || canvasId === 'canvas-pickup') 
-                                    ? { x: { min: 'original', max: 'original' }, y: { min: 0, max: 'original' } }
-                                    : { y: { min: 0 } },
+                                limits: {
+                                    x: { min: 'original', max: 'original' },
+                                    y: { min: 0 }
+                                },
                                 zoom: {
                                     wheel: { enabled: false },
                                     pinch: { enabled: false },
-                                    mode: 'xy'
+                                    mode: 'y'
                                 }
                             }
                         })
@@ -5323,7 +5328,7 @@
                 const canvasEl = document.getElementById(canvasId);
                 if (isPanActive) {
                     btn.classList.remove('pan-active');
-                    chart.options.plugins.zoom.pan.enabled = false;
+                    chart.options.plugins.zoom.pan.enabled = true;
                     chart.options.plugins.zoom.pan.mode = '';
                     chart.update('none');
                     if (canvasEl) canvasEl.style.touchAction = 'auto';
@@ -5498,6 +5503,8 @@
                 
                 const tallyWrapper = document.getElementById('graph-wrapper-tally');
                 const tallyAxisWrapper = document.getElementById('graph-axis-wrapper-tally');
+                const tallyFlexWrapper = document.getElementById('graph-flex-wrapper-tally');
+                const tallySection = document.getElementById('graph-section-tally');
                 const tallyNoData = document.getElementById('graph-no-data-tally');
                 let hasTallyData = false;
                 
@@ -5527,6 +5534,8 @@
                         tallyNoData.style.display = 'none';
                         if (tallyAxisWrapper) tallyAxisWrapper.style.display = 'block';
                         tallyWrapper.style.display = 'block';
+                        if (tallyFlexWrapper) tallyFlexWrapper.style.display = 'flex';
+                        if (tallySection) tallySection.style.marginBottom = '20px';
                         tallyWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
                         const overallAvg = data.reduce((a, b) => a + b, 0) / data.length;
                         let datasets = [
@@ -5564,6 +5573,10 @@
                     tallyNoData.style.display = 'block';
                     if (tallyAxisWrapper) tallyAxisWrapper.style.display = 'none';
                     tallyWrapper.style.display = 'none';
+                    if (tallyFlexWrapper) tallyFlexWrapper.style.display = 'none';
+                    if (tallySection) tallySection.style.marginBottom = '8px';
+                    const leg = document.getElementById('graph-legend-tally');
+                    if (leg) leg.innerHTML = '';
                     setGraphZoomControlsVisible('tally', false);
                 } else {
                     setGraphZoomControlsVisible('tally', true);
@@ -5572,6 +5585,8 @@
                 // --- Salinity Calculator ---
                 const salWrapper = document.getElementById('graph-wrapper-salinity');
                 const salAxisWrapper = document.getElementById('graph-axis-wrapper-salinity');
+                const salFlexWrapper = document.getElementById('graph-flex-wrapper-salinity');
+                const salSection = document.getElementById('graph-section-salinity');
                 const salNoData = document.getElementById('graph-no-data-salinity');
                 let hasSalData = false;
                 if (p.salinityTabs && p.salinityTabs.length > 0) {
@@ -5581,6 +5596,8 @@
                         salNoData.style.display = 'none';
                         if (salAxisWrapper) salAxisWrapper.style.display = 'block';
                         salWrapper.style.display = 'block';
+                        if (salFlexWrapper) salFlexWrapper.style.display = 'flex';
+                        if (salSection) salSection.style.marginBottom = '20px';
                         
                         const labels = validTabs.map(t => t.name);
                         salWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
@@ -5626,6 +5643,10 @@
                     salNoData.style.display = 'block';
                     if (salAxisWrapper) salAxisWrapper.style.display = 'none';
                     salWrapper.style.display = 'none';
+                    if (salFlexWrapper) salFlexWrapper.style.display = 'none';
+                    if (salSection) salSection.style.marginBottom = '8px';
+                    const leg = document.getElementById('graph-legend-salinity');
+                    if (leg) leg.innerHTML = '';
                     setGraphZoomControlsVisible('salinity', false);
                 } else {
                     setGraphZoomControlsVisible('salinity', true);
@@ -5634,6 +5655,8 @@
                 // --- Sum & Averaging ---
                 const avgWrapper = document.getElementById('graph-wrapper-averaging');
                 const avgAxisWrapper = document.getElementById('graph-axis-wrapper-averaging');
+                const avgFlexWrapper = document.getElementById('graph-flex-wrapper-averaging');
+                const avgSection = document.getElementById('graph-section-averaging');
                 const avgNoData = document.getElementById('graph-no-data-averaging');
                 const avgSelect = document.getElementById('graph-select-averaging');
                 let hasAvgData = false;
@@ -5654,6 +5677,8 @@
                             avgNoData.style.display = 'none';
                             if (avgAxisWrapper) avgAxisWrapper.style.display = 'block';
                             avgWrapper.style.display = 'block';
+                            if (avgFlexWrapper) avgFlexWrapper.style.display = 'flex';
+                            if (avgSection) avgSection.style.marginBottom = '20px';
                             
                             const labels = validTabs.map(t => t.name);
                             avgWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
@@ -5702,6 +5727,10 @@
                     avgNoData.style.display = 'block';
                     if (avgAxisWrapper) avgAxisWrapper.style.display = 'none';
                     avgWrapper.style.display = 'none';
+                    if (avgFlexWrapper) avgFlexWrapper.style.display = 'none';
+                    if (avgSection) avgSection.style.marginBottom = '8px';
+                    const leg = document.getElementById('graph-legend-averaging');
+                    if (leg) leg.innerHTML = '';
                     setGraphZoomControlsVisible('averaging', false);
                 } else {
                     setGraphZoomControlsVisible('averaging', true);
@@ -5710,6 +5739,8 @@
                 // --- Pickup Calculator ---
                 const pickupWrapper = document.getElementById('graph-wrapper-pickup');
                 const pickupAxisWrapper = document.getElementById('graph-axis-wrapper-pickup');
+                const pickupFlexWrapper = document.getElementById('graph-flex-wrapper-pickup');
+                const pickupSection = document.getElementById('graph-section-pickup');
                 const pickupNoData = document.getElementById('graph-no-data-pickup');
                 const pickupSelect = document.getElementById('graph-select-pickup');
                 let hasPickupData = false;
@@ -5730,6 +5761,8 @@
                             pickupNoData.style.display = 'none';
                             if (pickupAxisWrapper) pickupAxisWrapper.style.display = 'block';
                             pickupWrapper.style.display = 'block';
+                            if (pickupFlexWrapper) pickupFlexWrapper.style.display = 'flex';
+                            if (pickupSection) pickupSection.style.marginBottom = '20px';
                             
                             const labels = validTabs.map(t => t.name);
                             pickupWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
@@ -5780,6 +5813,10 @@
                     pickupNoData.style.display = 'block';
                     if (pickupAxisWrapper) pickupAxisWrapper.style.display = 'none';
                     pickupWrapper.style.display = 'none';
+                    if (pickupFlexWrapper) pickupFlexWrapper.style.display = 'none';
+                    if (pickupSection) pickupSection.style.marginBottom = '8px';
+                    const leg = document.getElementById('graph-legend-pickup');
+                    if (leg) leg.innerHTML = '';
                     setGraphZoomControlsVisible('pickup', false);
                 } else {
                     setGraphZoomControlsVisible('pickup', true);
@@ -5788,6 +5825,8 @@
                 // --- Production Pace ---
                 const paceWrapper = document.getElementById('graph-wrapper-pace');
                 const paceAxisWrapper = document.getElementById('graph-axis-wrapper-pace');
+                const paceFlexWrapper = document.getElementById('graph-flex-wrapper-pace');
+                const paceSection = document.getElementById('graph-section-pace');
                 const paceNoData = document.getElementById('graph-no-data-pace');
                 const paceSelect = document.getElementById('graph-select-pace');
                 let hasPaceData = false;
@@ -5828,6 +5867,8 @@
                                 paceNoData.style.display = 'none';
                                 if (paceAxisWrapper) paceAxisWrapper.style.display = 'block';
                                 paceWrapper.style.display = 'block';
+                                if (paceFlexWrapper) paceFlexWrapper.style.display = 'flex';
+                                if (paceSection) paceSection.style.marginBottom = '20px';
                                 paceWrapper.style.minWidth = `max(100%, ${labels.length * 60}px)`;
                                 
                                 const overallAvg = labels.length > 1 ? paceData.reduce((a, b) => a + b, 0) / paceData.length : null;
@@ -5896,6 +5937,10 @@
                     paceNoData.style.display = 'block';
                     if (paceAxisWrapper) paceAxisWrapper.style.display = 'none';
                     paceWrapper.style.display = 'none';
+                    if (paceFlexWrapper) paceFlexWrapper.style.display = 'none';
+                    if (paceSection) paceSection.style.marginBottom = '8px';
+                    const leg = document.getElementById('graph-legend-pace');
+                    if (leg) leg.innerHTML = '';
                     setGraphZoomControlsVisible('pace', false);
                 } else {
                     setGraphZoomControlsVisible('pace', true);
