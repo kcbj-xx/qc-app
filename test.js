@@ -5052,11 +5052,13 @@
 
                 const isPercentage = chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'));
 
-                if (yAxis.ticks) {
-                    yAxis.ticks.forEach(tick => {
-                        const yPos = yAxis.getPixelForValue(tick.value);
+                const ticks = yAxis.getTicks ? yAxis.getTicks() : (yAxis.ticks || []);
+                if (ticks && ticks.length > 0) {
+                    ticks.forEach(tick => {
+                        const val = tick.value !== undefined ? tick.value : tick;
+                        const yPos = yAxis.getPixelForValue(val);
                         if (chart.chartArea && yPos >= chart.chartArea.top - 5 && yPos <= chart.chartArea.bottom + 5) {
-                            const formatted = parseFloat(Number(tick.value).toPrecision(10));
+                            const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
                             actx.fillText(text, width - 6, yPos);
                         }
@@ -5134,7 +5136,8 @@
                 mergedOptions.scales.y.grid = mergedOptions.scales.y.grid || {};
                 mergedOptions.scales.y.grid.z = -1;
                 mergedOptions.scales.y.ticks = mergedOptions.scales.y.ticks || {};
-                mergedOptions.scales.y.ticks.display = false;
+                mergedOptions.scales.y.ticks.display = true;
+                mergedOptions.scales.y.ticks.color = 'transparent';
 
                 mergedOptions.plugins = mergedOptions.plugins || {};
                 mergedOptions.plugins.legend = mergedOptions.plugins.legend || {};
