@@ -5210,35 +5210,7 @@
                 // Allow native page horizontal scrolling when pan tool is on (since it only pans Y now)
                 const canvasEl = document.getElementById(canvasId);
                 if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
-                
-                const chart = chartInstances[canvasId];
-                if (chart && canvasEl) {
-                    if (chart.mcTap) {
-                        chart.mcTap.destroy();
-                    }
-                    const mc = new Hammer.Manager(canvasEl, {
-                        touchAction: 'auto',
-                        recognizers: [
-                            [Hammer.Tap]
-                        ]
-                    });
-                    chart.mcTap = mc;
-                    mc.on('tap', function(e) {
-                        const rect = canvasEl.getBoundingClientRect();
-                        const x = e.center.x - rect.left;
-                        const y = e.center.y - rect.top;
-                        
-                        const elements = chart.getElementsAtEventForMode({ x, y }, 'index', { intersect: false }, false);
-                        if (elements && elements.length > 0) {
-                            chart.tooltip.setActiveElements(elements);
-                            chart.setActiveElements(elements);
-                        } else {
-                            chart.tooltip.setActiveElements([]);
-                            chart.setActiveElements([]);
-                        }
-                        chart.update();
-                    });
-                }
+                // Removed Hammer.js tap logic to allow native Chart.js touch events to work properly
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
                 try {
