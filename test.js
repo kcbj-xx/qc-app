@@ -1068,7 +1068,7 @@
                             tallies: (tab.tallies || []).map((t, ti) => ({
                                 id: 'tally_' + Date.now() + '_' + tabIdx + '_' + ti,
                                 name: t.name,
-                                count: t.isLocked ? tabTotalCount : 0,
+                                count: 0,
                                 isLocked: t.isLocked
                             }))
                         };
@@ -4215,7 +4215,7 @@
                         newTallies = (lastTab.tallies || []).map((t, ti) => ({
                             id: 'tally_' + Date.now() + '_' + ti,
                             name: t.name,
-                            count: t.isLocked ? totalCount : 0,
+                            count: 0,
                             isLocked: t.isLocked
                         }));
                     }
@@ -4241,7 +4241,7 @@
                 const newTallies = (activeTab.tallies || []).map((t, ti) => ({
                     id: 'tally_' + Date.now() + '_' + ti,
                     name: t.name,
-                    count: t.isLocked ? totalCount : 0,
+                    count: 0,
                     isLocked: t.isLocked
                 }));
                 
@@ -5047,7 +5047,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'index', axis: 'x', intersect: false },
+                    interaction: { mode: 'index', axis: 'x', intersect: true },
                     elements: {
                         point: {
                             radius: 3,
@@ -5066,6 +5066,7 @@
                 mergedOptions.scales.x.grid.z = -1;
 
                 mergedOptions.scales.y = mergedOptions.scales.y || {};
+                mergedOptions.scales.y.position = 'right';
                 mergedOptions.scales.y.grid = mergedOptions.scales.y.grid || {};
                 mergedOptions.scales.y.grid.z = -1;
 
