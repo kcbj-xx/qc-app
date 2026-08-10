@@ -1123,6 +1123,7 @@
                                 const active = chart.tooltip.getActiveElements();
                                 if (active && active.length > 0) {
                                     chart.tooltip.setActiveElements([], {x: 0, y: 0});
+                                    chart.setActiveElements([]);
                                     chart.update();
                                 }
                             }
