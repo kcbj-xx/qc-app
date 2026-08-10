@@ -5036,7 +5036,7 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    events: ['mousemove', 'mouseout'],
+                    events: ['mousemove', 'mouseout', 'touchstart', 'touchmove', 'touchend', 'click'],
                     animation: false,
                     animations: {},
                     transitions: {

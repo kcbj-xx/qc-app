@@ -1571,7 +1571,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v104</div>
+            <div class="footer-version">v105</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -6548,7 +6548,7 @@
                 let mergedOptions = {
                     responsive: true,
                     maintainAspectRatio: false,
-                    events: ['mousemove', 'mouseout'],
+                    events: ['mousemove', 'mouseout', 'touchstart', 'touchmove', 'touchend', 'click'],
                     animation: false,
                     animations: {},
                     transitions: {
