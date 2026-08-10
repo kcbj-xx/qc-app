@@ -5017,7 +5017,7 @@
 
                 const actx = axisCanvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
-                const width = 45;
+                const width = 36;
                 const height = (chart.height && chart.height > 50) ? chart.height : (axisCanvas.clientHeight > 50 ? axisCanvas.clientHeight : 250);
 
                 if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
@@ -5037,13 +5037,6 @@
 
                 actx.fillStyle = isDark ? '#1e293b' : '#ffffff';
                 actx.fillRect(0, 0, width, height);
-
-                actx.strokeStyle = isDark ? '#374151' : '#e5e7eb';
-                actx.lineWidth = 1;
-                actx.beginPath();
-                actx.moveTo(width - 0.5, 0);
-                actx.lineTo(width - 0.5, height);
-                actx.stroke();
 
                 actx.font = '11px sans-serif';
                 actx.fillStyle = isDark ? '#94a3b8' : '#475569';
@@ -5069,12 +5062,7 @@
                         if (!isNaN(yPos) && yPos >= chartAreaTop - 2 && yPos <= chartAreaBottom + 2) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
-                            actx.fillText(text, width - 8, yPos);
-
-                            actx.beginPath();
-                            actx.moveTo(width - 4, yPos);
-                            actx.lineTo(width, yPos);
-                            actx.stroke();
+                            actx.fillText(text, width - 4, yPos);
                         }
                     }
                 });
