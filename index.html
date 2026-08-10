@@ -898,15 +898,6 @@
         .graph-scroll-container::-webkit-scrollbar {
             display: none; /* Chrome, Safari and Opera */
         }
-        .graph-sticky-axis {
-            position: sticky;
-            left: 0;
-            top: 0;
-            z-index: 10;
-            pointer-events: none;
-            float: left;
-            margin-right: -45px;
-        }
     </style>
 </head>
 <body>
@@ -1017,9 +1008,11 @@
                             </div>
                             <div id="graph-no-data-tally" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-tally" class="graph-html-legend"></div>
-                            <div class="graph-scroll-container">
+                            <div class="graph-scroll-container" style="position: relative;">
+                                <div style="position: sticky; left: 0; top: 0; width: 0; height: 0; z-index: 10; pointer-events: none;">
+                                    <canvas id="canvas-tally-sticky" style="position: absolute; left: 0; top: 0; width: 45px; height: 250px; pointer-events: none; display: none;"></canvas>
+                                </div>
                                 <div id="graph-wrapper-tally" style="position: relative; height: 250px; min-width: 100%; display: none;">
-                                    <canvas id="canvas-tally-sticky" class="graph-sticky-axis"></canvas>
                                     <canvas id="canvas-tally"></canvas>
                                 </div>
                             </div>
@@ -1036,9 +1029,11 @@
                             </div>
                             <div id="graph-no-data-salinity" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-salinity" class="graph-html-legend"></div>
-                            <div class="graph-scroll-container">
+                            <div class="graph-scroll-container" style="position: relative;">
+                                <div style="position: sticky; left: 0; top: 0; width: 0; height: 0; z-index: 10; pointer-events: none;">
+                                    <canvas id="canvas-salinity-sticky" style="position: absolute; left: 0; top: 0; width: 45px; height: 250px; pointer-events: none; display: none;"></canvas>
+                                </div>
                                 <div id="graph-wrapper-salinity" style="position: relative; height: 250px; min-width: 100%; display: none;">
-                                    <canvas id="canvas-salinity-sticky" class="graph-sticky-axis"></canvas>
                                     <canvas id="canvas-salinity"></canvas>
                                 </div>
                             </div>
@@ -1058,9 +1053,11 @@
                             </div>
                             <div id="graph-no-data-averaging" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-averaging" class="graph-html-legend"></div>
-                            <div class="graph-scroll-container">
+                            <div class="graph-scroll-container" style="position: relative;">
+                                <div style="position: sticky; left: 0; top: 0; width: 0; height: 0; z-index: 10; pointer-events: none;">
+                                    <canvas id="canvas-averaging-sticky" style="position: absolute; left: 0; top: 0; width: 45px; height: 250px; pointer-events: none; display: none;"></canvas>
+                                </div>
                                 <div id="graph-wrapper-averaging" style="position: relative; height: 250px; min-width: 100%; display: none;">
-                                    <canvas id="canvas-averaging-sticky" class="graph-sticky-axis"></canvas>
                                     <canvas id="canvas-averaging"></canvas>
                                 </div>
                             </div>
@@ -1080,9 +1077,11 @@
                             </div>
                             <div id="graph-no-data-pickup" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pickup" class="graph-html-legend"></div>
-                            <div class="graph-scroll-container">
+                            <div class="graph-scroll-container" style="position: relative;">
+                                <div style="position: sticky; left: 0; top: 0; width: 0; height: 0; z-index: 10; pointer-events: none;">
+                                    <canvas id="canvas-pickup-sticky" style="position: absolute; left: 0; top: 0; width: 45px; height: 250px; pointer-events: none; display: none;"></canvas>
+                                </div>
                                 <div id="graph-wrapper-pickup" style="position: relative; height: 250px; min-width: 100%; display: none;">
-                                    <canvas id="canvas-pickup-sticky" class="graph-sticky-axis"></canvas>
                                     <canvas id="canvas-pickup"></canvas>
                                 </div>
                             </div>
@@ -1102,9 +1101,11 @@
                             </div>
                             <div id="graph-no-data-pace" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pace" class="graph-html-legend"></div>
-                            <div class="graph-scroll-container">
+                            <div class="graph-scroll-container" style="position: relative;">
+                                <div style="position: sticky; left: 0; top: 0; width: 0; height: 0; z-index: 10; pointer-events: none;">
+                                    <canvas id="canvas-pace-sticky" style="position: absolute; left: 0; top: 0; width: 45px; height: 250px; pointer-events: none; display: none;"></canvas>
+                                </div>
                                 <div id="graph-wrapper-pace" style="position: relative; height: 250px; min-width: 100%; display: none;">
-                                    <canvas id="canvas-pace-sticky" class="graph-sticky-axis"></canvas>
                                     <canvas id="canvas-pace"></canvas>
                                 </div>
                             </div>
@@ -6542,11 +6543,11 @@
 
                     const canvasId = chart.canvas.id;
                     const stickyCanvas = document.getElementById(canvasId + '-sticky');
-                    if (!stickyCanvas) return;
+                    stickyCanvas.style.display = 'block';
 
                     const sctx = stickyCanvas.getContext('2d');
                     const dpr = window.devicePixelRatio || 1;
-                    const width = 45;
+                    const width = chart.chartArea ? Math.max(35, Math.floor(chart.chartArea.left)) : 45;
                     const height = chart.height || 250;
 
                     if (stickyCanvas.width !== width * dpr || stickyCanvas.height !== height * dpr) {

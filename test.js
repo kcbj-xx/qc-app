@@ -5017,10 +5017,11 @@
                     const canvasId = chart.canvas.id;
                     const stickyCanvas = document.getElementById(canvasId + '-sticky');
                     if (!stickyCanvas) return;
+                    stickyCanvas.style.display = 'block';
 
                     const sctx = stickyCanvas.getContext('2d');
                     const dpr = window.devicePixelRatio || 1;
-                    const width = 45;
+                    const width = chart.chartArea ? Math.max(35, Math.floor(chart.chartArea.left)) : 45;
                     const height = chart.height || 250;
 
                     if (stickyCanvas.width !== width * dpr || stickyCanvas.height !== height * dpr) {
