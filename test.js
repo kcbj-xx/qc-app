@@ -168,7 +168,7 @@
                     updateEstimatorTabMenuState();
                 }
                 saveAllGroupData();
-                renderGraphs();
+                _doRenderGraphs(p);
             }
 
             function toggleCard(cardId) {
@@ -5043,8 +5043,7 @@
                 actx.textAlign = 'right';
                 actx.textBaseline = 'middle';
 
-                const isPercentage = (chart.data && chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'))) ||
-                                     (chart.canvas && (chart.canvas.id === 'canvas-tally' || chart.canvas.id === 'canvas-salinity' || chart.canvas.id === 'canvas-pickup'));
+                const isPercentage = true;
 
                 let ticks = yAxis.getTicks ? yAxis.getTicks() : (yAxis.ticks || []);
                 if (!ticks || ticks.length === 0) {
@@ -5091,7 +5090,7 @@
                 Chart.defaults.borderColor = isDark ? '#374151' : '#e5e7eb';
                 
                 const isPercentage = data.datasets && data.datasets.some(d => d.label && d.label.includes('%'));
-                const isPercentageGraph = isPercentage || canvasId === 'canvas-tally' || canvasId === 'canvas-salinity' || canvasId === 'canvas-pickup';
+                const isPercentageGraph = true;
                 
                 // Ensure bars are under the average line but over grid lines (for bar charts only)
                 if (data && data.datasets && type === 'bar') {
@@ -5119,12 +5118,12 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'index', axis: 'x', intersect: true },
+                    interaction: { mode: 'index', axis: 'x', intersect: false },
                     elements: {
                         point: {
                             radius: 3,
-                            hitRadius: 5,
-                            hoverRadius: 15
+                            hitRadius: 20,
+                            hoverRadius: 6
                         }
                     }
                 };
@@ -5404,8 +5403,7 @@
                     newMin = Math.max(0, curMin - diff);
                     newMax = curMax + diff;
                     
-                    const isPercentageGraph = (chart.data && chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'))) ||
-                                             (canvasId === 'canvas-tally' || canvasId === 'canvas-salinity' || canvasId === 'canvas-pickup');
+                    const isPercentageGraph = true;
                     if (isPercentageGraph) {
                         if (newMax >= 100 || (chart.$originalMax !== undefined && newMax >= chart.$originalMax)) {
                             graphResetZoom(canvasId);
@@ -5659,6 +5657,10 @@
                 let hasAvgData = false;
                 
                 if (p.sumSets && p.sumSets.length > 0) {
+                    if (!p.activeSumSetId || !p.sumSets.some(s => s.id === p.activeSumSetId)) {
+                        p.activeSumSetId = p.sumSets[0].id;
+                        activeSumSetId = p.sumSets[0].id;
+                    }
                     avgSelect.style.display = 'block';
                     avgSelect.innerHTML = p.sumSets.map(s => `<option value="${s.id}" ${s.id === p.activeSumSetId ? 'selected' : ''}>${s.name}</option>`).join('');
                 } else {
@@ -5713,7 +5715,7 @@
                             createOrUpdateChart('canvas-averaging', 'bar', {
                                 labels,
                                 datasets: datasets
-                            }, {}, activeSumSetId);
+                            }, { scales: { y: { beginAtZero: true, max: 100 } } }, p.activeSumSetId);
                             requestAnimationFrame(() => {
                                 if (chartInstances['canvas-averaging']) drawFixedYAxis(chartInstances['canvas-averaging'], 'canvas-averaging-axis');
                             });
@@ -5743,6 +5745,10 @@
                 let hasPickupData = false;
                 
                 if (p.pickupSets && p.pickupSets.length > 0) {
+                    if (!p.activePickupSetId || !p.pickupSets.some(s => s.id === p.activePickupSetId)) {
+                        p.activePickupSetId = p.pickupSets[0].id;
+                        activePickupSetId = p.pickupSets[0].id;
+                    }
                     pickupSelect.style.display = 'block';
                     pickupSelect.innerHTML = p.pickupSets.map(s => `<option value="${s.id}" ${s.id === p.activePickupSetId ? 'selected' : ''}>${s.name}</option>`).join('');
                 } else {
@@ -5799,7 +5805,7 @@
                             createOrUpdateChart('canvas-pickup', 'bar', {
                                 labels,
                                 datasets: datasets
-                            }, {}, activePickupSetId);
+                            }, { scales: { y: { beginAtZero: true, max: 100 } } }, p.activePickupSetId);
                             requestAnimationFrame(() => {
                                 if (chartInstances['canvas-pickup']) drawFixedYAxis(chartInstances['canvas-pickup'], 'canvas-pickup-axis');
                             });
@@ -5829,6 +5835,10 @@
                 let hasPaceData = false;
                 
                 if (p.estimatorTabs && p.estimatorTabs.length > 0) {
+                    if (!p.activeEstimatorTabId || !p.estimatorTabs.some(t => t.id === p.activeEstimatorTabId)) {
+                        p.activeEstimatorTabId = p.estimatorTabs[0].id;
+                        activeEstimatorTabId = p.estimatorTabs[0].id;
+                    }
                     paceSelect.style.display = 'block';
                     paceSelect.innerHTML = p.estimatorTabs.map(t => `<option value="${t.id}" ${t.id === p.activeEstimatorTabId ? 'selected' : ''}>${t.name}</option>`).join('');
                 } else {
@@ -5920,9 +5930,9 @@
                                 }, { 
                                     reduceGridOpacity: true,
                                     layout: { padding: { top: 15, left: 8, right: 8 } },
-                                    scales: { y: { grace: '10%', min: 0 } },
+                                    scales: { y: { beginAtZero: true, max: 100 } },
                                     extraPlugins: [avgLinePlugin]
-                                });
+                                }, p.activeEstimatorTabId);
                                 requestAnimationFrame(() => {
                                     if (chartInstances['canvas-pace']) drawFixedYAxis(chartInstances['canvas-pace'], 'canvas-pace-axis');
                                 });
