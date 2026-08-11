@@ -1009,7 +1009,7 @@
                             <div id="graph-no-data-tally" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-tally" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-tally" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-tally" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
+                                <div id="graph-axis-wrapper-tally" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
                                     <canvas id="canvas-tally-axis" width="32" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
@@ -1032,7 +1032,7 @@
                             <div id="graph-no-data-salinity" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-salinity" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-salinity" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-salinity" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
+                                <div id="graph-axis-wrapper-salinity" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
                                     <canvas id="canvas-salinity-axis" width="32" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
@@ -1058,7 +1058,7 @@
                             <div id="graph-no-data-averaging" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-averaging" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-averaging" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-averaging" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
+                                <div id="graph-axis-wrapper-averaging" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
                                     <canvas id="canvas-averaging-axis" width="32" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
@@ -1084,7 +1084,7 @@
                             <div id="graph-no-data-pickup" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pickup" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-pickup" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-pickup" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
+                                <div id="graph-axis-wrapper-pickup" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
                                     <canvas id="canvas-pickup-axis" width="32" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
@@ -1110,7 +1110,7 @@
                             <div id="graph-no-data-pace" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pace" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-pace" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-pace" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
+                                <div id="graph-axis-wrapper-pace" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
                                     <canvas id="canvas-pace-axis" width="32" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
@@ -6554,7 +6554,7 @@
 
                 const actx = axisCanvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
-                const width = 32;
+                const width = 45;
                 const height = (chart.height && chart.height > 50) ? chart.height : (axisCanvas.clientHeight > 50 ? axisCanvas.clientHeight : 250);
 
                 if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
@@ -6603,10 +6603,11 @@
                         if (!isNaN(yPos) && yPos >= chartAreaTop - 2 && yPos <= chartAreaBottom + 2) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
-                            actx.fillText(text, width - 6, yPos);
+                            // Draw label with gap before the tick dash
+                            actx.fillText(text, width - 8, yPos);
                             // Draw small tick mark extending right from axis canvas edge
                             actx.beginPath();
-                            actx.moveTo(width - 4, yPos);
+                            actx.moveTo(width - 5, yPos);
                             actx.lineTo(width, yPos);
                             actx.stroke();
                         }
