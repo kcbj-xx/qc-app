@@ -5043,7 +5043,8 @@
                 actx.textAlign = 'right';
                 actx.textBaseline = 'middle';
 
-                const isPercentage = true;
+                const isPercentage = (chart.data && chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'))) ||
+                                     (chart.canvas && (chart.canvas.id === 'canvas-tally' || chart.canvas.id === 'canvas-salinity' || chart.canvas.id === 'canvas-pickup'));
 
                 let ticks = yAxis.getTicks ? yAxis.getTicks() : (yAxis.ticks || []);
                 if (!ticks || ticks.length === 0) {
@@ -5053,6 +5054,10 @@
                 const chartAreaTop = chart.chartArea ? chart.chartArea.top : 0;
                 const chartAreaBottom = chart.chartArea ? chart.chartArea.bottom : height;
 
+                const gridColor = isDark ? '#374151' : '#e5e7eb';
+                actx.strokeStyle = gridColor;
+                actx.lineWidth = 1;
+
                 ticks.forEach(tick => {
                     const val = (tick && tick.value !== undefined) ? tick.value : tick;
                     if (typeof val === 'number' && !isNaN(val)) {
@@ -5061,7 +5066,12 @@
                         if (!isNaN(yPos) && yPos >= chartAreaTop - 2 && yPos <= chartAreaBottom + 2) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
-                            actx.fillText(text, width - 2, yPos);
+                            actx.fillText(text, width - 6, yPos);
+                            // Draw small tick mark extending right from axis canvas edge
+                            actx.beginPath();
+                            actx.moveTo(width - 4, yPos);
+                            actx.lineTo(width, yPos);
+                            actx.stroke();
                         }
                     }
                 });
@@ -5090,7 +5100,7 @@
                 Chart.defaults.borderColor = isDark ? '#374151' : '#e5e7eb';
                 
                 const isPercentage = data.datasets && data.datasets.some(d => d.label && d.label.includes('%'));
-                const isPercentageGraph = true;
+                const isPercentageGraph = isPercentage || canvasId === 'canvas-tally' || canvasId === 'canvas-salinity' || canvasId === 'canvas-pickup';
                 
                 // Ensure bars are under the average line but over grid lines (for bar charts only)
                 if (data && data.datasets && type === 'bar') {
@@ -5403,7 +5413,8 @@
                     newMin = Math.max(0, curMin - diff);
                     newMax = curMax + diff;
                     
-                    const isPercentageGraph = true;
+                    const isPercentageGraph = (chart.data && chart.data.datasets && chart.data.datasets.some(d => d.label && d.label.includes('%'))) ||
+                                             (canvasId === 'canvas-tally' || canvasId === 'canvas-salinity' || canvasId === 'canvas-pickup');
                     if (isPercentageGraph) {
                         if (newMax >= 100 || (chart.$originalMax !== undefined && newMax >= chart.$originalMax)) {
                             graphResetZoom(canvasId);
@@ -5715,7 +5726,7 @@
                             createOrUpdateChart('canvas-averaging', 'bar', {
                                 labels,
                                 datasets: datasets
-                            }, { scales: { y: { beginAtZero: true, max: 100 } } }, p.activeSumSetId);
+                            }, { scales: { y: { beginAtZero: true } } }, p.activeSumSetId);
                             requestAnimationFrame(() => {
                                 if (chartInstances['canvas-averaging']) drawFixedYAxis(chartInstances['canvas-averaging'], 'canvas-averaging-axis');
                             });
@@ -5930,7 +5941,7 @@
                                 }, { 
                                     reduceGridOpacity: true,
                                     layout: { padding: { top: 15, left: 8, right: 8 } },
-                                    scales: { y: { beginAtZero: true, max: 100 } },
+                                    scales: { y: { grace: '10%', min: 0 } },
                                     extraPlugins: [avgLinePlugin]
                                 }, p.activeEstimatorTabId);
                                 requestAnimationFrame(() => {
