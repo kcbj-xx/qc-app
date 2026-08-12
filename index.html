@@ -1596,7 +1596,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v107</div>
+            <div class="footer-version">v108</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -2755,10 +2755,20 @@
                 document.addEventListener('touchstart', dismissTooltips, {passive: true});
                 document.addEventListener('mousedown', dismissTooltips, {passive: true});
                 
-                // Hide tooltips on scroll or page drag
-                window.addEventListener('scroll', dismissAllGraphTooltips, {passive: true, capture: true});
+                // Hide tooltips & invalidate cached bounding rects on scroll or page drag
+                const handleScroll = () => {
+                    dismissAllGraphTooltips();
+                    if (typeof chartInstances !== 'undefined') {
+                        Object.values(chartInstances).forEach(chart => {
+                            if (chart) {
+                                chart._boundingClientRect = null;
+                            }
+                        });
+                    }
+                };
+                window.addEventListener('scroll', handleScroll, {passive: true, capture: true});
                 document.querySelectorAll('.graph-scroll-container, .card-body').forEach(el => {
-                    el.addEventListener('scroll', dismissAllGraphTooltips, {passive: true});
+                    el.addEventListener('scroll', handleScroll, {passive: true});
                 });
                 
                 let _touchStartPoint = null;
@@ -2773,7 +2783,7 @@
                         const dx = Math.abs(e.touches[0].clientX - _touchStartPoint.x);
                         const dy = Math.abs(e.touches[0].clientY - _touchStartPoint.y);
                         if (dx > 6 || dy > 6) {
-                            dismissAllGraphTooltips();
+                            handleScroll();
                         }
                     }
                 }, {passive: true});
@@ -6956,6 +6966,9 @@
                     canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
                     
                     const handleCanvasTap = (e) => {
+                        if ('_boundingClientRect' in chart) {
+                            chart._boundingClientRect = null;
+                        }
                         const hitElements = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
                         if (!hitElements || hitElements.length === 0) {
                             // Tapped outside any bar/point: dismiss tooltip
@@ -6963,19 +6976,28 @@
                             chart.setActiveElements([]);
                             chart.update('none');
                         } else {
+                            const hit = hitElements[0];
+                            const target = { datasetIndex: hit.datasetIndex, index: hit.index };
+                            
                             // Check if tapped element is already active
                             const activeElems = chart.tooltip.getActiveElements();
                             if (activeElems && activeElems.length > 0) {
                                 const active = activeElems[0];
-                                const hit = hitElements[0];
                                 if (active.datasetIndex === hit.datasetIndex && active.index === hit.index) {
                                     // Toggle off if tapping already active element
                                     chart.tooltip.setActiveElements([], { x: 0, y: 0 });
                                     chart.setActiveElements([]);
                                     chart.update('none');
-                                    e.stopPropagation();
+                                    if (e && e.stopPropagation) e.stopPropagation();
+                                    return;
                                 }
                             }
+                            
+                            // Set tapped element active
+                            chart.tooltip.setActiveElements([target], { x: 0, y: 0 });
+                            chart.setActiveElements([target]);
+                            chart.update('none');
+                            if (e && e.stopPropagation) e.stopPropagation();
                         }
                     };
                     

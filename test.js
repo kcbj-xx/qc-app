@@ -5311,6 +5311,9 @@
                     canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
                     
                     const handleCanvasTap = (e) => {
+                        if ('_boundingClientRect' in chart) {
+                            chart._boundingClientRect = null;
+                        }
                         const hitElements = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
                         if (!hitElements || hitElements.length === 0) {
                             // Tapped outside any bar/point: dismiss tooltip
@@ -5318,19 +5321,28 @@
                             chart.setActiveElements([]);
                             chart.update('none');
                         } else {
+                            const hit = hitElements[0];
+                            const target = { datasetIndex: hit.datasetIndex, index: hit.index };
+                            
                             // Check if tapped element is already active
                             const activeElems = chart.tooltip.getActiveElements();
                             if (activeElems && activeElems.length > 0) {
                                 const active = activeElems[0];
-                                const hit = hitElements[0];
                                 if (active.datasetIndex === hit.datasetIndex && active.index === hit.index) {
                                     // Toggle off if tapping already active element
                                     chart.tooltip.setActiveElements([], { x: 0, y: 0 });
                                     chart.setActiveElements([]);
                                     chart.update('none');
-                                    e.stopPropagation();
+                                    if (e && e.stopPropagation) e.stopPropagation();
+                                    return;
                                 }
                             }
+                            
+                            // Set tapped element active
+                            chart.tooltip.setActiveElements([target], { x: 0, y: 0 });
+                            chart.setActiveElements([target]);
+                            chart.update('none');
+                            if (e && e.stopPropagation) e.stopPropagation();
                         }
                     };
                     
