@@ -1009,8 +1009,8 @@
                             <div id="graph-no-data-tally" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-tally" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-tally" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-tally" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
-                                    <canvas id="canvas-tally-axis" width="32" height="250"></canvas>
+                                <div id="graph-axis-wrapper-tally" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
+                                    <canvas id="canvas-tally-axis" width="45" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
                                     <div id="graph-wrapper-tally" style="position: relative; height: 250px; min-width: 100%; display: none;">
@@ -1032,8 +1032,8 @@
                             <div id="graph-no-data-salinity" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-salinity" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-salinity" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-salinity" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
-                                    <canvas id="canvas-salinity-axis" width="32" height="250"></canvas>
+                                <div id="graph-axis-wrapper-salinity" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
+                                    <canvas id="canvas-salinity-axis" width="45" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
                                     <div id="graph-wrapper-salinity" style="position: relative; height: 250px; min-width: 100%; display: none;">
@@ -1058,8 +1058,8 @@
                             <div id="graph-no-data-averaging" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-averaging" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-averaging" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-averaging" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
-                                    <canvas id="canvas-averaging-axis" width="32" height="250"></canvas>
+                                <div id="graph-axis-wrapper-averaging" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
+                                    <canvas id="canvas-averaging-axis" width="45" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
                                     <div id="graph-wrapper-averaging" style="position: relative; height: 250px; min-width: 100%; display: none;">
@@ -1084,8 +1084,8 @@
                             <div id="graph-no-data-pickup" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pickup" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-pickup" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-pickup" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
-                                    <canvas id="canvas-pickup-axis" width="32" height="250"></canvas>
+                                <div id="graph-axis-wrapper-pickup" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
+                                    <canvas id="canvas-pickup-axis" width="45" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
                                     <div id="graph-wrapper-pickup" style="position: relative; height: 250px; min-width: 100%; display: none;">
@@ -1110,8 +1110,8 @@
                             <div id="graph-no-data-pace" style="color: var(--secondary-text); font-size: 12px; font-style: italic;">No data</div>
                             <div id="graph-legend-pace" class="graph-html-legend"></div>
                             <div class="graph-flex-wrapper" id="graph-flex-wrapper-pace" style="display: flex; width: 100%; height: 250px;">
-                                <div id="graph-axis-wrapper-pace" style="width: 32px; height: 250px; flex-shrink: 0; display: none;">
-                                    <canvas id="canvas-pace-axis" width="32" height="250"></canvas>
+                                <div id="graph-axis-wrapper-pace" style="width: 45px; height: 250px; flex-shrink: 0; display: none;">
+                                    <canvas id="canvas-pace-axis" width="45" height="250"></canvas>
                                 </div>
                                 <div class="graph-scroll-container" style="flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;">
                                     <div id="graph-wrapper-pace" style="position: relative; height: 250px; min-width: 100%; display: none;">
@@ -1596,7 +1596,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v106</div>
+            <div class="footer-version">v107</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -2132,7 +2132,7 @@
                 clearTimeout(_graphsDebounce);
                 _graphsDebounce = setTimeout(() => {
                     if (typeof renderGraphs === 'function') renderGraphs();
-                }, 300);
+                }, 30);
             }
         
             function renderSidebarList() {
@@ -2731,25 +2731,52 @@
                 
                 applyCardStatesToDOM(); 
                 
-                // Hide graph tooltips when touching/clicking elsewhere
-                const dismissTooltips = (e) => {
-                    const isCanvas = e.target.tagName === 'CANVAS';
+                // Global helper to dismiss all graph tooltips
+                window.dismissAllGraphTooltips = function() {
                     if (typeof chartInstances !== 'undefined') {
                         Object.values(chartInstances).forEach(chart => {
                             if (!chart || !chart.tooltip) return;
-                            if (!isCanvas || chart.canvas !== e.target) {
-                                const active = chart.tooltip.getActiveElements();
-                                if (active && active.length > 0) {
-                                    chart.tooltip.setActiveElements([], {x: 0, y: 0});
-                                    chart.setActiveElements([]);
-                                    chart.update();
-                                }
+                            const active = chart.tooltip.getActiveElements();
+                            if (active && active.length > 0) {
+                                chart.tooltip.setActiveElements([], {x: 0, y: 0});
+                                chart.setActiveElements([]);
+                                chart.update('none');
                             }
                         });
                     }
                 };
+
+                // Dismiss graph tooltips on touch/click outside canvas
+                const dismissTooltips = (e) => {
+                    if (e.target.tagName !== 'CANVAS') {
+                        dismissAllGraphTooltips();
+                    }
+                };
                 document.addEventListener('touchstart', dismissTooltips, {passive: true});
                 document.addEventListener('mousedown', dismissTooltips, {passive: true});
+                
+                // Hide tooltips on scroll or page drag
+                window.addEventListener('scroll', dismissAllGraphTooltips, {passive: true, capture: true});
+                document.querySelectorAll('.graph-scroll-container, .card-body').forEach(el => {
+                    el.addEventListener('scroll', dismissAllGraphTooltips, {passive: true});
+                });
+                
+                let _touchStartPoint = null;
+                document.addEventListener('touchstart', (e) => {
+                    if (e.touches && e.touches[0]) {
+                        _touchStartPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                    }
+                }, {passive: true});
+                
+                document.addEventListener('touchmove', (e) => {
+                    if (_touchStartPoint && e.touches && e.touches[0]) {
+                        const dx = Math.abs(e.touches[0].clientX - _touchStartPoint.x);
+                        const dy = Math.abs(e.touches[0].clientY - _touchStartPoint.y);
+                        if (dx > 6 || dy > 6) {
+                            dismissAllGraphTooltips();
+                        }
+                    }
+                }, {passive: true});
                 
                 document.querySelectorAll('.tabs-container').forEach(container => {
                     container.addEventListener('wheel', (e) => {
@@ -6176,6 +6203,7 @@
 			    document.getElementById('clearTalliesBtn').style.display = tallies.length ? 'block' : 'none';
 			    
 			    applyTallyMasonry();
+			    if (typeof renderGraphs === 'function') renderGraphs();
 			}
 
 			function toggleTallyLock(event, id) {
@@ -6634,7 +6662,7 @@
 
                 const actx = axisCanvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
-                const width = 32;
+                const width = 45;
                 const height = (chart.height && chart.height > 50) ? chart.height : (axisCanvas.clientHeight > 50 ? axisCanvas.clientHeight : 250);
 
                 if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
@@ -6683,10 +6711,10 @@
                         if (!isNaN(yPos) && yPos >= chartAreaTop - 2 && yPos <= chartAreaBottom + 2) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
-                            actx.fillText(text, width - 6, yPos);
+                            actx.fillText(text, width - 8, yPos);
                             // Draw small tick mark extending right from axis canvas edge
                             actx.beginPath();
-                            actx.moveTo(width - 4, yPos);
+                            actx.moveTo(width - 5, yPos);
                             actx.lineTo(width, yPos);
                             actx.stroke();
                         }
@@ -6923,10 +6951,46 @@
                 
                 // Allow native page horizontal scrolling when pan tool is on (since it only pans Y now)
                 const canvasEl = document.getElementById(canvasId);
-                if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
                 const chart = chartInstances[canvasId];
                 if (chart && canvasEl) {
-                // Removed custom touch logic per user request
+                    canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
+                    
+                    const handleCanvasTap = (e) => {
+                        const hitElements = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+                        if (!hitElements || hitElements.length === 0) {
+                            // Tapped outside any bar/point: dismiss tooltip
+                            chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                            chart.setActiveElements([]);
+                            chart.update('none');
+                        } else {
+                            // Check if tapped element is already active
+                            const activeElems = chart.tooltip.getActiveElements();
+                            if (activeElems && activeElems.length > 0) {
+                                const active = activeElems[0];
+                                const hit = hitElements[0];
+                                if (active.datasetIndex === hit.datasetIndex && active.index === hit.index) {
+                                    // Toggle off if tapping already active element
+                                    chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                                    chart.setActiveElements([]);
+                                    chart.update('none');
+                                    e.stopPropagation();
+                                }
+                            }
+                        }
+                    };
+                    
+                    canvasEl.addEventListener('click', handleCanvasTap);
+                    canvasEl.addEventListener('touchend', (e) => {
+                        if (!_touchStartPoint) return;
+                        const touch = e.changedTouches ? e.changedTouches[0] : null;
+                        if (touch) {
+                            const dx = Math.abs(touch.clientX - _touchStartPoint.x);
+                            const dy = Math.abs(touch.clientY - _touchStartPoint.y);
+                            if (dx < 6 && dy < 6) {
+                                handleCanvasTap(e);
+                            }
+                        }
+                    }, { passive: true });
                 }
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
@@ -7188,7 +7252,7 @@
                         createOrUpdateChart('canvas-tally', 'bar', { 
                             labels, 
                             datasets: datasets
-                        }, { scales: { y: { beginAtZero: true, max: 100 } } }, p.activeTallyTabId);
+                        }, { scales: { y: { beginAtZero: true, max: 100 } }, reduceGridOpacity: true }, p.activeTallyTabId);
                         requestAnimationFrame(() => {
                             if (chartInstances['canvas-tally']) drawFixedYAxis(chartInstances['canvas-tally'], 'canvas-tally-axis');
                         });
@@ -7258,7 +7322,7 @@
                         createOrUpdateChart('canvas-salinity', 'bar', {
                             labels,
                             datasets: datasets
-                        }, { scales: { y: { beginAtZero: true, max: 100 } } });
+                        }, { scales: { y: { beginAtZero: true, max: 100 } }, reduceGridOpacity: true }, p.activeSalinityTabId);
                         requestAnimationFrame(() => {
                             if (chartInstances['canvas-salinity']) drawFixedYAxis(chartInstances['canvas-salinity'], 'canvas-salinity-axis');
                         });
@@ -7345,7 +7409,7 @@
                             createOrUpdateChart('canvas-averaging', 'bar', {
                                 labels,
                                 datasets: datasets
-                            }, { scales: { y: { beginAtZero: true } } }, p.activeSumSetId);
+                            }, { scales: { y: { beginAtZero: true } }, reduceGridOpacity: true }, p.activeSumSetId);
                             requestAnimationFrame(() => {
                                 if (chartInstances['canvas-averaging']) drawFixedYAxis(chartInstances['canvas-averaging'], 'canvas-averaging-axis');
                             });
@@ -7435,7 +7499,7 @@
                             createOrUpdateChart('canvas-pickup', 'bar', {
                                 labels,
                                 datasets: datasets
-                            }, { scales: { y: { beginAtZero: true, max: 100 } } }, p.activePickupSetId);  // pickup is always 0-100%
+                            }, { scales: { y: { beginAtZero: true, max: 100 } }, reduceGridOpacity: true }, p.activePickupSetId);  // pickup is always 0-100%
                             requestAnimationFrame(() => {
                                 if (chartInstances['canvas-pickup']) drawFixedYAxis(chartInstances['canvas-pickup'], 'canvas-pickup-axis');
                             });

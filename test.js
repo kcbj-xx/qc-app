@@ -5017,7 +5017,7 @@
 
                 const actx = axisCanvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
-                const width = 32;
+                const width = 45;
                 const height = (chart.height && chart.height > 50) ? chart.height : (axisCanvas.clientHeight > 50 ? axisCanvas.clientHeight : 250);
 
                 if (axisCanvas.width !== width * dpr || axisCanvas.height !== height * dpr) {
@@ -5066,10 +5066,10 @@
                         if (!isNaN(yPos) && yPos >= chartAreaTop - 2 && yPos <= chartAreaBottom + 2) {
                             const formatted = parseFloat(Number(val).toPrecision(10));
                             const text = isPercentage ? formatted + '%' : formatted;
-                            actx.fillText(text, width - 6, yPos);
+                            actx.fillText(text, width - 8, yPos);
                             // Draw small tick mark extending right from axis canvas edge
                             actx.beginPath();
-                            actx.moveTo(width - 4, yPos);
+                            actx.moveTo(width - 5, yPos);
                             actx.lineTo(width, yPos);
                             actx.stroke();
                         }
@@ -5306,10 +5306,46 @@
                 
                 // Allow native page horizontal scrolling when pan tool is on (since it only pans Y now)
                 const canvasEl = document.getElementById(canvasId);
-                if (canvasEl) canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
                 const chart = chartInstances[canvasId];
                 if (chart && canvasEl) {
-                // Removed custom touch logic per user request
+                    canvasEl.style.touchAction = (initialPanMode === 'y') ? 'pan-x' : 'auto';
+                    
+                    const handleCanvasTap = (e) => {
+                        const hitElements = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+                        if (!hitElements || hitElements.length === 0) {
+                            // Tapped outside any bar/point: dismiss tooltip
+                            chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                            chart.setActiveElements([]);
+                            chart.update('none');
+                        } else {
+                            // Check if tapped element is already active
+                            const activeElems = chart.tooltip.getActiveElements();
+                            if (activeElems && activeElems.length > 0) {
+                                const active = activeElems[0];
+                                const hit = hitElements[0];
+                                if (active.datasetIndex === hit.datasetIndex && active.index === hit.index) {
+                                    // Toggle off if tapping already active element
+                                    chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                                    chart.setActiveElements([]);
+                                    chart.update('none');
+                                    e.stopPropagation();
+                                }
+                            }
+                        }
+                    };
+                    
+                    canvasEl.addEventListener('click', handleCanvasTap);
+                    canvasEl.addEventListener('touchend', (e) => {
+                        if (!_touchStartPoint) return;
+                        const touch = e.changedTouches ? e.changedTouches[0] : null;
+                        if (touch) {
+                            const dx = Math.abs(touch.clientX - _touchStartPoint.x);
+                            const dy = Math.abs(touch.clientY - _touchStartPoint.y);
+                            if (dx < 6 && dy < 6) {
+                                handleCanvasTap(e);
+                            }
+                        }
+                    }, { passive: true });
                 }
                 
                 // Restore zoom state AFTER chart is created so original bounds are correctly registered
