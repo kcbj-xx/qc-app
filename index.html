@@ -1596,7 +1596,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v108</div>
+            <div class="footer-version">v109</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -6783,7 +6783,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'index', axis: 'x', intersect: false },
+                    interaction: { mode: 'nearest', intersect: true },
                     elements: {
                         point: {
                             radius: 3,
@@ -6969,7 +6969,11 @@
                         if ('_boundingClientRect' in chart) {
                             chart._boundingClientRect = null;
                         }
-                        const hitElements = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+                        const rawHits = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false) || [];
+                        const hitElements = rawHits.filter(el => {
+                            const dsLabel = chart.data?.datasets?.[el.datasetIndex]?.label || '';
+                            return !dsLabel.includes('Overall Average');
+                        });
                         if (!hitElements || hitElements.length === 0) {
                             // Tapped outside any bar/point: dismiss tooltip
                             chart.tooltip.setActiveElements([], { x: 0, y: 0 });
@@ -7266,6 +7270,7 @@
                                 borderDash: [5, 5],
                                 pointRadius: 0,
                                 pointHoverRadius: 0,
+                                pointHitRadius: 0,
                                 borderWidth: 2,
                                 fill: false,
                                 tension: 0
@@ -7336,6 +7341,7 @@
                                 borderDash: [5, 5],
                                 pointRadius: 0,
                                 pointHoverRadius: 0,
+                                pointHitRadius: 0,
                                 borderWidth: 2,
                                 fill: false,
                                 tension: 0
@@ -7423,6 +7429,7 @@
                                     borderDash: [5, 5],
                                     pointRadius: 0,
                                     pointHoverRadius: 0,
+                                    pointHitRadius: 0,
                                     borderWidth: 2,
                                     fill: false,
                                     tension: 0
@@ -7513,6 +7520,7 @@
                                     borderDash: [5, 5],
                                     pointRadius: 0,
                                     pointHoverRadius: 0,
+                                    pointHitRadius: 0,
                                     borderWidth: 2,
                                     fill: false,
                                     tension: 0
@@ -7613,6 +7621,7 @@
                                         borderDash: [5, 5],
                                         pointRadius: 0,
                                         pointHoverRadius: 0,
+                                        pointHitRadius: 0,
                                         borderWidth: 2,
                                         fill: false,
                                         tension: 0

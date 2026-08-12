@@ -5128,7 +5128,7 @@
                         show: { animation: { duration: 0 } },
                         hide: { animation: { duration: 0 } }
                     },
-                    interaction: { mode: 'index', axis: 'x', intersect: false },
+                    interaction: { mode: 'nearest', intersect: true },
                     elements: {
                         point: {
                             radius: 3,
@@ -5314,7 +5314,11 @@
                         if ('_boundingClientRect' in chart) {
                             chart._boundingClientRect = null;
                         }
-                        const hitElements = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+                        const rawHits = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false) || [];
+                        const hitElements = rawHits.filter(el => {
+                            const dsLabel = chart.data?.datasets?.[el.datasetIndex]?.label || '';
+                            return !dsLabel.includes('Overall Average');
+                        });
                         if (!hitElements || hitElements.length === 0) {
                             // Tapped outside any bar/point: dismiss tooltip
                             chart.tooltip.setActiveElements([], { x: 0, y: 0 });
