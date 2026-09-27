@@ -920,7 +920,7 @@
     
                 <div id="batch-header" style="width: 100%; margin-bottom: 0px; padding-top: 5px;">
 				    <!-- Topmost Header Row: Simple Mode Switch -->
-				    <div id="simpleModeTopRow" style="display: flex; align-items: center; justify-content: flex-end; width: 100%; margin: 0 auto 12px auto; padding: 0 12px; box-sizing: border-box;">
+				    <div id="simpleModeTopRow" style="display: flex; align-items: center; justify-content: center; width: 100%; margin: 0 auto 12px auto; padding: 0 12px; box-sizing: border-box;">
 				        <div id="simpleModeContainer" style="display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
 				            <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Simple mode</span>
 				            <div id="simpleModeSwitch" onclick="setSimpleMode()" title="Toggle Simple Mode" style="display: inline-flex; align-items: center; background: rgba(148, 163, 184, 0.15); border: 1px solid var(--border); border-radius: 20px; padding: 2px; cursor: pointer; user-select: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; height: 28px; box-sizing: border-box;">
@@ -1854,6 +1854,9 @@
             }
 
             function setSimpleMode(val) {
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    try { document.activeElement.blur(); } catch(e){}
+                }
                 if (typeof val === 'boolean') {
                     isSimpleMode = val;
                 } else {
@@ -1862,18 +1865,49 @@
                 localStorage.setItem('qc_simple_mode', isSimpleMode);
                 refreshGroupDataReferences();
                 applySimpleMode();
+                
+                applyCardStatesToDOM();
+                updateTempDOM(true);
+                updateSamplingDOM();
+                updateStopwatchDOMToggle();
+                loadNotes();
+                renderTimestamps();
+                updatePctDOM(true);
+                renderTallyTabs();
+                
                 if (typeof renderPickupSets === 'function') renderPickupSets();
+                if (typeof renderPickupTabs === 'function') renderPickupTabs();
+                if (typeof loadPickupInputs === 'function') loadPickupInputs();
+                if (typeof updatePickupSetMenuState === 'function') updatePickupSetMenuState();
+                if (typeof updatePickupTabMenuState === 'function') updatePickupTabMenuState();
+
                 if (typeof renderSumSets === 'function') renderSumSets();
-                if (typeof renderEstimatorTabs === 'function') renderEstimatorTabs();
-                if (typeof renderSalinityTabs === 'function') renderSalinityTabs();
-                if (typeof renderTallyTabs === 'function') renderTallyTabs();
                 if (typeof renderTabs === 'function') renderTabs();
                 if (typeof renderList === 'function') renderList();
-                if (typeof renderPickupTabs === 'function') renderPickupTabs();
-                if (typeof renderPickupList === 'function') renderPickupList();
+                if (typeof updateSumSetMenuState === 'function') updateSumSetMenuState();
+                if (typeof updateTabMenuState === 'function') updateTabMenuState();
+
+                if (typeof renderEstimatorTabs === 'function') renderEstimatorTabs();
+                if (typeof loadEstimatorInputs === 'function') loadEstimatorInputs();
+                if (typeof updateEstimatorTabMenuState === 'function') updateEstimatorTabMenuState();
+
+                if (typeof renderSalinityTabs === 'function') renderSalinityTabs();
+                if (typeof updateSalinityDOM === 'function') updateSalinityDOM();
+                if (typeof updateSalinityTabMenuState === 'function') updateSalinityTabMenuState();
+
                 if (typeof reorderCards === 'function') reorderCards();
                 if (typeof renderGraphs === 'function') renderGraphs();
                 renderSidebarList();
+
+                const numInp = document.getElementById('numberInput');
+                if (numInp) numInp.value = '';
+
+                const tsTimeInp = document.getElementById('newTimestampTime');
+                if (tsTimeInp) tsTimeInp.value = '';
+
+                const tsEvtInp = document.getElementById('newTimestampEvent');
+                if (tsEvtInp) tsEvtInp.value = '';
+
                 if (isSimpleMode && isParentTabMenuOpen) {
                     isParentTabMenuOpen = false;
                     updateParentTabMenuState();
@@ -1918,7 +1952,7 @@
                     } else if (cardId === 'card-notes') {
                         if (typeof clearNotes === 'function') clearNotes();
                     } else if (cardId === 'card-estimator') {
-                        const p = (typeof isSimpleMode !== 'undefined' && isSimpleMode) ? getSimpleModeFile() : parentGroups.find(g => g.id === activeParentId);
+                        const p = getActiveParentGroup();
                         if (p && p.estimatorTabs) {
                             p.estimatorTabs.forEach(t => {
                                 t.data = [];
@@ -1935,7 +1969,7 @@
             }
 
             function changeGraphSet(type, setId) {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p) return;
                 
                 if (type === 'sum') {
@@ -1979,7 +2013,7 @@
                 }
                 
                 card.classList.toggle('collapsed');
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p.collapsedCards) p.collapsedCards = {};
                 p.collapsedCards[cardId] = card.classList.contains('collapsed');
                 saveAllGroupData();
@@ -1991,7 +2025,7 @@
                     if (cardId === 'card-graphs') {
                         // Force fresh re-render at correct size while hidden
                         requestAnimationFrame(() => {
-                            _doRenderGraphs(parentGroups.find(g => g.id === activeParentId));
+                            _doRenderGraphs(getActiveParentGroup());
                             requestAnimationFrame(() => {
                                 if (cardBody) cardBody.style.visibility = '';
                             });
@@ -2008,7 +2042,7 @@
             
             function togglePin(event, cardId) {
                 event.stopPropagation(); 
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p.pinnedCards) p.pinnedCards = [];
         
                 if (p.pinnedCards.includes(cardId)) {
@@ -2024,7 +2058,7 @@
             }
         
             function applyCardStatesToDOM() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const pinned = p.pinnedCards || [];
                 const collapsed = p.collapsedCards || {};
                 
@@ -2265,6 +2299,12 @@
                         const parsed = JSON.parse(raw);
                         if (parsed && parsed.id) {
                             simpleModeFile = parsed;
+                            if (!simpleModeFile.temp) simpleModeFile.temp = { c: '', f: '' };
+                            if (!simpleModeFile.stopwatch) simpleModeFile.stopwatch = { elapsed: 0, startTime: 0, isRunning: false, mode: null };
+                            if (!simpleModeFile.sampling) simpleModeFile.sampling = { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false };
+                            if (!simpleModeFile.notes) simpleModeFile.notes = { text: '' };
+                            if (!simpleModeFile.timestamps) simpleModeFile.timestamps = [];
+                            if (!simpleModeFile.percentage) simpleModeFile.percentage = { total: '', part: '', pct: '' };
                             return simpleModeFile;
                         }
                     } catch(e) {}
@@ -2300,6 +2340,12 @@
                     }],
                     salinityTabs: [{ id: 'stab_sm_' + Date.now(), name: 'Sample 1', brix: '' }],
                     tallyTabs: [{ id: 'ttab_sm_' + Date.now(), name: 'Item 1', count: 0 }],
+                    temp: { c: '', f: '' },
+                    stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
+                    sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
+                    notes: { text: '' },
+                    timestamps: [],
+                    percentage: { total: '', part: '', pct: '' },
                     collapsedCards: {}
                 };
                 newSimpleFile.pickupSets[0].activeTabId = newSimpleFile.pickupSets[0].tabs[0].id;
@@ -2341,6 +2387,13 @@
                     }
                 }
                 
+                if (!p.notes) p.notes = { text: '' };
+                if (!p.temp) p.temp = { c: '', f: '' };
+                if (!p.stopwatch) p.stopwatch = { elapsed: 0, startTime: 0, isRunning: false, mode: null };
+                if (!p.sampling) p.sampling = { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false };
+                if (!p.timestamps) p.timestamps = [];
+                if (!p.percentage) p.percentage = { total: '', part: '', pct: '' };
+
                 if (!p.pickupSets || p.pickupSets.length === 0) {
                     p.pickupSets = [{ id: 'pset_' + Date.now(), name: 'Set 1', unit: '', tabs: [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: '' }];
                     p.pickupSets[0].activeTabId = p.pickupSets[0].tabs[0].id;
@@ -2365,16 +2418,28 @@
                 }
 
                 pickupSets = p.pickupSets;
-                activePickupSetId = p.activePickupSetId || pickupSets[0].id;
+                activePickupSetId = (p.activePickupSetId && pickupSets.some(s => s.id === p.activePickupSetId)) ? p.activePickupSetId : pickupSets[0].id;
+                p.activePickupSetId = activePickupSetId;
                 const activePSet = pickupSets.find(s => s.id === activePickupSetId) || pickupSets[0];
                 pickupTabs = activePSet.tabs;
-                activePickupTabId = activePSet.activeTabId || pickupTabs[0].id;
+                if (activePSet.activeTabId && activePSet.tabs.some(t => t.id === activePSet.activeTabId)) {
+                    activePickupTabId = activePSet.activeTabId;
+                } else {
+                    activePickupTabId = pickupTabs[0] ? pickupTabs[0].id : null;
+                    activePSet.activeTabId = activePickupTabId;
+                }
 
                 sumSets = p.sumSets;
-                activeSumSetId = p.activeSumSetId || sumSets[0].id;
+                activeSumSetId = (p.activeSumSetId && sumSets.some(s => s.id === p.activeSumSetId)) ? p.activeSumSetId : sumSets[0].id;
+                p.activeSumSetId = activeSumSetId;
                 const activeSSet = sumSets.find(s => s.id === activeSumSetId) || sumSets[0];
                 appTabs = activeSSet.tabs;
-                activeTabId = activeSSet.activeTabId || appTabs[0].id;
+                if (activeSSet.activeTabId && activeSSet.tabs.some(t => t.id === activeSSet.activeTabId)) {
+                    activeTabId = activeSSet.activeTabId;
+                } else {
+                    activeTabId = appTabs[0] ? appTabs[0].id : null;
+                    activeSSet.activeTabId = activeTabId;
+                }
 
                 estimatorTabs = p.estimatorTabs;
                 activeEstimatorTabId = p.activeEstimatorTabId || estimatorTabs[0].id;
@@ -2977,7 +3042,7 @@
         
                 let newNameBase = p.name ? p.name : (appFolders.find(f=>f.id===p.folderId)?.name || "File");
                 const _now = new Date();
-                const _dateStr = `${String(_now.getMonth()+1).padStart(2,'0')}/${String(_now.getDate()).padStart(2,'0')}/${_now.getFullYear()}`;
+                const _dateStr = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
 
                 const newGroup = {
                     id: 'pg_' + Date.now(),
@@ -4177,8 +4242,8 @@
                             const p = getActiveParentGroup();
                             if (p) p.activePickupSetId = activePickupSetId;
                             
-                            saveAllGroupData();
                             refreshGroupDataReferences(); 
+                            saveAllGroupData();
                             renderPickupSets();
                             updatePickupSetMenuState();
                             renderPickupTabs();
@@ -4529,8 +4594,8 @@
                             const p = getActiveParentGroup();
                             if (p) p.activeSumSetId = activeSumSetId;
                             
-                            saveAllGroupData();
                             refreshGroupDataReferences(); 
+                            saveAllGroupData();
                             renderSumSets();
                             updateSumSetMenuState();
                             renderTabs();
@@ -4972,19 +5037,22 @@
             }
         
             function loadNotes() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const notesArea = document.getElementById('quickNotesArea');
                 const clearBtn = document.getElementById('clearNotesBtn');
                 
                 if (p && p.notes) {
                     notesArea.value = p.notes.text || '';
                     clearBtn.style.display = notesArea.value.trim() !== '' ? 'block' : 'none';
+                } else {
+                    notesArea.value = '';
+                    clearBtn.style.display = 'none';
                 }
                 autoResizeTextarea(notesArea);
             }
         
             function saveNotes() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const notesArea = document.getElementById('quickNotesArea');
                 const clearBtn = document.getElementById('clearNotesBtn');
                 
@@ -4997,7 +5065,7 @@
         
             function clearNotes() {
                 if (confirm('Are you sure you want to clear these notes?')) {
-                    const p = parentGroups.find(g => g.id === activeParentId);
+                    const p = getActiveParentGroup();
                     if (p && p.notes) {
                         p.notes.text = '';
                         saveAllGroupData();
@@ -5012,7 +5080,8 @@
             }
         
             function convertTemp(source) {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.temp) return;
                 const cInput = document.getElementById('celsiusVal');
                 const fInput = document.getElementById('fahrenheitVal');
                 
@@ -5030,20 +5099,28 @@
             }
         
             function resetTemp() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.temp) return;
                 p.temp.c = '';
                 p.temp.f = '';
                 saveAllGroupData();
                 updateTempDOM();
             }
         
-            function updateTempDOM() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+            function updateTempDOM(force) {
+                const p = getActiveParentGroup();
                 const cInput = document.getElementById('celsiusVal');
                 const fInput = document.getElementById('fahrenheitVal');
                 
-                if (document.activeElement !== cInput) cInput.value = p.temp.c;
-                if (document.activeElement !== fInput) fInput.value = p.temp.f;
+                if (!p || !p.temp) {
+                    if (cInput) cInput.value = '';
+                    if (fInput) fInput.value = '';
+                    document.getElementById('clearTempBtn').style.display = 'none';
+                    return;
+                }
+                
+                if (force || document.activeElement !== cInput) cInput.value = p.temp.c || '';
+                if (force || document.activeElement !== fInput) fInput.value = p.temp.f || '';
                 
                 document.getElementById('clearTempBtn').style.display = (p.temp.c || p.temp.f) ? 'block' : 'none';
             }
@@ -5052,7 +5129,8 @@
             const holdBtn = document.getElementById('holdTimerBtn');
         
             function updateStopwatchDOMToggle() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.stopwatch) return;
                 const toggleBtn = document.getElementById('toggleTimerBtn');
                 
                 if (p.stopwatch.isRunning) {
@@ -5077,7 +5155,7 @@
         
             function startGlobalStopwatch() {
                 setInterval(() => {
-                    const p = parentGroups.find(g => g.id === activeParentId);
+                    const p = getActiveParentGroup();
                     if (!p || !p.stopwatch) return;
                     
                     let diff = p.stopwatch.elapsed;
@@ -5097,7 +5175,8 @@
             }
         
             function toggleStopwatch() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.stopwatch) return;
                 if (p.stopwatch.isRunning && p.stopwatch.mode === 'hold') return; 
         
                 if (p.stopwatch.isRunning) {
@@ -5120,8 +5199,8 @@
                 if(e.button !== 0 && e.pointerType === 'mouse') return; 
                 try { holdBtn.setPointerCapture(e.pointerId); } catch(err){}
                 
-                const p = parentGroups.find(g => g.id === activeParentId);
-                if (p.stopwatch.isRunning) return; 
+                const p = getActiveParentGroup();
+                if (!p || !p.stopwatch || p.stopwatch.isRunning) return; 
                 p.stopwatch.isRunning = true;
                 p.stopwatch.mode = 'hold';
                 p.stopwatch.startTime = Date.now();
@@ -5130,8 +5209,8 @@
             });
         
             const stopAction = (e) => {
-                const p = parentGroups.find(g => g.id === activeParentId);
-                if (!p.stopwatch.isRunning || p.stopwatch.mode !== 'hold') return; 
+                const p = getActiveParentGroup();
+                if (!p || !p.stopwatch || !p.stopwatch.isRunning || p.stopwatch.mode !== 'hold') return; 
                 p.stopwatch.elapsed += (Date.now() - p.stopwatch.startTime);
                 p.stopwatch.isRunning = false; 
                 p.stopwatch.mode = null;
@@ -5144,7 +5223,8 @@
             holdBtn.addEventListener('pointercancel', stopAction);
         
             function resetStopwatch() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.stopwatch) return;
                 if (p.stopwatch.elapsed === 0 && !p.stopwatch.isRunning) return;
                 if (confirm("Reset the stopwatch for this batch?")) {
                     p.stopwatch.isRunning = false;
@@ -5158,8 +5238,8 @@
         
         
             function updateSamplingDOM() {
-                const p = parentGroups.find(g => g.id === activeParentId);
-                if (!p.sampling) return;
+                const p = getActiveParentGroup();
+                if (!p || !p.sampling) return;
         
                 document.getElementById('minMinutes').value = p.sampling.min || '';
                 document.getElementById('maxMinutes').value = p.sampling.max || '';
@@ -5203,7 +5283,7 @@
             }
         
             function saveSamplingInputs() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (p && p.sampling) {
                     p.sampling.min = document.getElementById('minMinutes').value;
                     p.sampling.max = document.getElementById('maxMinutes').value;
@@ -5213,7 +5293,8 @@
             }
             
             function generateTime(isRecursive) {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.sampling) return;
                 const minInput = document.getElementById('minMinutes');
                 const maxInput = document.getElementById('maxMinutes');
                 const startTimeInput = document.getElementById('startTime');
@@ -5261,7 +5342,8 @@
             }
         
             function handleStartTimer() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.sampling) return;
                 if (Notification.permission === "default") Notification.requestPermission();
                 if (p.sampling.timerRunning && !confirm("An active timer is already running. Override it?")) return;
                 
@@ -5277,18 +5359,20 @@
                 setInterval(() => {
                     const now = Date.now();
                     
-                    parentGroups.forEach(g => {
-                        if (g.sampling && g.sampling.timerRunning && g.sampling.targetTime) {
-                            if (g.sampling.targetTime - now < 0 && !g.sampling.timeUp) {
-                                g.sampling.timerRunning = false;
-                                g.sampling.timeUp = true;
-                                saveAllGroupData();
-                                triggerFinalAlarm(g.name);
+                    if (typeof parentGroups !== 'undefined' && parentGroups) {
+                        parentGroups.forEach(g => {
+                            if (g.sampling && g.sampling.timerRunning && g.sampling.targetTime) {
+                                if (g.sampling.targetTime - now < 0 && !g.sampling.timeUp) {
+                                    g.sampling.timerRunning = false;
+                                    g.sampling.timeUp = true;
+                                    saveAllGroupData();
+                                    triggerFinalAlarm(g.name);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
         
-                    const p = parentGroups.find(g => g.id === activeParentId);
+                    const p = getActiveParentGroup();
                     if (!p || !p.sampling) return;
                     
                     const display = document.getElementById('countdown');
@@ -5332,7 +5416,8 @@
             }
         
             async function stopTimer() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.sampling) return;
                 p.sampling.timerRunning = false;
                 p.sampling.timeUp = false;
                 saveAllGroupData();
@@ -5356,7 +5441,8 @@
             }
         
             function resetSamplingTime() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.sampling) return;
                 const confirmMsg = p.sampling.timerRunning ? "Cancel current timer and clear time data?" : "Are you sure you want to clear the sampling time data?";
                 if (!confirm(confirmMsg)) return;
                 
@@ -5681,7 +5767,7 @@
         
                 if (listDraggingIdx !== targetIdx) {
                     if (isTallyList) {
-                        const p = parentGroups.find(g => g.id === activeParentId);
+                        const p = getActiveParentGroup();
                         const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
                         const arr = activeTab ? activeTab.tallies : [];
                         if (arr.length > 0) {
@@ -5964,7 +6050,8 @@
             }
 
 			function calcPercentage(source) {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
+			    if (!p || !p.percentage) return;
 			    const totalEl = document.getElementById('pctTotal');
 			    const partEl = document.getElementById('pctPart');
 			    const pctEl = document.getElementById('pctValue');
@@ -5998,23 +6085,30 @@
 			}
         
             function resetPercentage() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
+                if (!p || !p.percentage) return;
                 p.percentage = { total: '', part: '', pct: '' };
                 saveAllGroupData();
                 updatePctDOM();
             }
         
-            function updatePctDOM() {
-                const p = parentGroups.find(g => g.id === activeParentId);
-                if (!p.percentage) p.percentage = { total: '', part: '', pct: '' };
-                
+            function updatePctDOM(force) {
+                const p = getActiveParentGroup();
                 const totalEl = document.getElementById('pctTotal');
                 const partEl = document.getElementById('pctPart');
                 const pctEl = document.getElementById('pctValue');
                 
-                if (document.activeElement !== totalEl) totalEl.value = p.percentage.total;
-                if (document.activeElement !== partEl) partEl.value = p.percentage.part;
-                if (document.activeElement !== pctEl) pctEl.value = p.percentage.pct;
+                if (!p || !p.percentage) {
+                    if (totalEl) totalEl.value = '';
+                    if (partEl) partEl.value = '';
+                    if (pctEl) pctEl.value = '';
+                    document.getElementById('clearPctBtn').style.display = 'none';
+                    return;
+                }
+                
+                if (force || document.activeElement !== totalEl) totalEl.value = p.percentage.total || '';
+                if (force || document.activeElement !== partEl) partEl.value = p.percentage.part || '';
+                if (force || document.activeElement !== pctEl) pctEl.value = p.percentage.pct || '';
                 
                 document.getElementById('clearPctBtn').style.display = (p.percentage.total || p.percentage.part || p.percentage.pct) ? 'block' : 'none';
             }
@@ -6029,7 +6123,7 @@
 			    event.stopPropagation();
 			    _tallyDeleteHoldTimer = setTimeout(() => {
 			        if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
-			        const p = parentGroups.find(g => g.id === activeParentId);
+			        const p = getActiveParentGroup();
 			        if (p && p.tallies.length > 1 && confirm(`Delete ALL ${p.tallies.length} counters? This cannot be undone.`)) {
 			            p.tallies = [];
 			            p.activeTallyId = null;
@@ -6045,7 +6139,7 @@
 			}
 
 			function collapseTallyMenu() {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
 			    if (p) {
 			        p.tallyMenuCollapsed = true;
 			        saveAllGroupData();
@@ -6144,7 +6238,7 @@
                 const list = document.getElementById('tallyTabsList');
                 list.innerHTML = '';
                 
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p || !p.tallyTabs) return;
                 
                 p.tallyTabs.forEach((tab, index) => {
@@ -6186,7 +6280,7 @@
 
 
             function addNewTallyTab() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (p && p.tallyTabs) {
                     const newId = 'ttab_' + Date.now();
                     let newTallies = [];
@@ -6212,7 +6306,7 @@
             }
 
             function duplicateTallyTab() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p || !p.tallyTabs) return;
                 
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
@@ -6234,7 +6328,7 @@
             }
 
             function deleteTallyTab() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p || !p.tallyTabs || p.tallyTabs.length <= 1) {
                     alert("Cannot delete the last sample.");
                     return;
@@ -6250,7 +6344,7 @@
             function updateTallyTabMenuState() {
                 const panel = document.getElementById('tallyTabOptionsPanel');
                 if (!panel) return;
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p) return;
                 
                 if (p.tallyTabsMenuOpen) {
@@ -6263,7 +6357,7 @@
             }
 
             function saveTallyTabName() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p || !p.tallyTabs) return;
                 const tab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
                 if (tab) {
@@ -6274,7 +6368,7 @@
             }
 
 			function renderTallies() {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
 			    if (!p) return;
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
                 if (!activeTab) return;
@@ -6323,7 +6417,7 @@
 			        cardBody.addEventListener('click', (e) => {
 			            const onInteractive = e.target.closest('.number-item, button, input, [contenteditable], #tallyMasterControls, .tab-btn');
 			            if (!onInteractive) {
-			                const pp = parentGroups.find(g => g.id === activeParentId);
+			                const pp = getActiveParentGroup();
 			                if (pp) { 
                                 const actTab = pp.tallyTabs.find(t => t.id === pp.activeTallyTabId);
                                 if (actTab) actTab.tallyMenuCollapsed = true; 
@@ -6545,7 +6639,7 @@
 
 			function toggleTallyLock(event, id) {
 			    if (event) event.stopPropagation(); // Prevents the card from being selected when locked
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
 			    activeTab.tallies.forEach(t => {
 			        if (t.id === id) {
@@ -6559,7 +6653,7 @@
 			}
 			
             function addTally() {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
 			    const newName = getNextTabName(activeTab.tallies, "Counter");
 			    activeTab.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0, isLocked: false });
@@ -6568,14 +6662,14 @@
 			}
         
             function updateTallyName(id, val) {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
                 const tally = activeTab.tallies.find(t => t.id === id);
                 if (tally) { tally.name = val; saveAllGroupData(); }
             }
 
             function saveActiveTallyName() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
                 if (!activeTab) return;
                 const activeTally = activeTab.tallies.find(t => t.id === activeTab.activeTallyId);
@@ -6601,7 +6695,7 @@
             }
         
             function updateTallyCount(id, val) {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
 			    const tally = activeTab.tallies.find(t => t.id === id);
 			    if (tally) { 
@@ -6641,7 +6735,7 @@
 			}
         
             function adjustTally(id, amount) {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
 			    const tally = activeTab.tallies.find(t => t.id === id);
 			    if (tally) {
@@ -6685,7 +6779,7 @@
             function removeTally(event, id) {
 			    if (event) event.stopPropagation(); // Prevents the card from being selected when deleted
 			    if (confirm("Are you sure you want to remove this tally counter?")) {
-			        const p = parentGroups.find(g => g.id === activeParentId);
+			        const p = getActiveParentGroup();
                     const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
 			        activeTab.tallies = activeTab.tallies.filter(t => t.id !== id);
 			        if (activeTab.activeTallyId === id) activeTab.activeTallyId = null;
@@ -6695,7 +6789,7 @@
 			}
 
 			function adjustActiveTally(amount) {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
                 const activeTab = p && p.tallyTabs ? p.tallyTabs.find(t => t.id === p.activeTallyTabId) : null;
 			    if (activeTab && activeTab.activeTallyId) {
 			        const currentCount = parseFloat((activeTab.tallies.find(t => t.id === activeTab.activeTallyId) || {}).count) || 0;
@@ -6706,7 +6800,7 @@
 			}
 			
 			function updateActiveTallyCount(val) {
-			    const p = parentGroups.find(g => g.id === activeParentId);
+			    const p = getActiveParentGroup();
                 const activeTab = p && p.tallyTabs ? p.tallyTabs.find(t => t.id === p.activeTallyTabId) : null;
 			    if (activeTab && activeTab.activeTallyId) {
 			        updateTallyCount(activeTab.activeTallyId, val);
@@ -6714,7 +6808,7 @@
 			}
         
             function resetTallies() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
                 const hasLocked = (activeTab.tallies || []).some(t => t.isLocked);
                 const promptMsg = hasLocked
@@ -6741,7 +6835,7 @@
             // ---- TIMESTAMPS ENGINE ----
             // ==========================================
             function renderTimestamps() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const container = document.getElementById('timestampsList');
                 const clearBtn = document.getElementById('clearTimestampsBtn');
                 
@@ -6783,7 +6877,7 @@
             }
         
             function addTimestamp() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const timeInput = document.getElementById('newTimestampTime');
                 const eventInput = document.getElementById('newTimestampEvent');
                 
@@ -6823,7 +6917,7 @@
             }
             
             function updateTimestampTime(id, val) {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const ts = p.timestamps.find(t => t.id === id);
                 if (ts) { 
                     ts.time = val; 
@@ -6840,14 +6934,14 @@
             }
         
             function updateTimestampEvent(id, val) {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 const ts = p.timestamps.find(t => t.id === id);
                 if (ts) { ts.event = val; saveAllGroupData(); }
             }
         
             function removeTimestamp(id) {
                 if (confirm("Are you sure you want to remove this time log?")) {
-                    const p = parentGroups.find(g => g.id === activeParentId);
+                    const p = getActiveParentGroup();
                     p.timestamps = p.timestamps.filter(t => t.id !== id);
                     saveAllGroupData();
                     renderTimestamps();
@@ -6856,7 +6950,7 @@
             
             function clearTimestamps() {
                 if (confirm("Are you sure you want to clear all timestamp logs?")) {
-                    const p = parentGroups.find(g => g.id === activeParentId);
+                    const p = getActiveParentGroup();
                     p.timestamps = [];
                     saveAllGroupData();
                     renderTimestamps();
@@ -7526,7 +7620,7 @@
             let _graphsDirty = false;
 
             function renderGraphs() {
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 if (!p || !document.getElementById('canvas-tally')) return;
                 
                 // Don't render charts when the graphs card is collapsed
@@ -8011,7 +8105,7 @@
                     return;
                 }
                 
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 
                 // Fallback to parent folder name if file name is empty
                 let fileExportName = p.name ? p.name : (appFolders.find(f => f.id === p.folderId)?.name || "Unnamed File");
@@ -8249,7 +8343,7 @@
                     return;
                 }
 
-                const p = parentGroups.find(g => g.id === activeParentId);
+                const p = getActiveParentGroup();
                 let fileExportName = p.name ? p.name : (appFolders.find(f => f.id === p.folderId)?.name || "Unnamed File");
                 const safeExportDate = new Date().toLocaleString().replace(/,/g, ' at');
 
