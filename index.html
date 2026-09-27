@@ -575,6 +575,7 @@
         .btn-recursive { background-color: var(--success); margin-top: 8px; font-size: 0.95rem; }
         
         body.export-mode { background-color: #cbd5e1; }
+        body.export-mode .main-content { padding-bottom: 175px !important; }
         body.export-mode .card { cursor: pointer; }
         body.export-mode .card * { pointer-events: none !important; }
         body.export-mode .card[data-exportable="true"] { outline: 3px dashed #94a3b8; opacity: 0.8; }
@@ -918,19 +919,29 @@
             <div class="container" id="main-container">
     
                 <div id="batch-header" style="width: 100%; margin-bottom: 0px; padding-top: 5px;">
-				    <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 auto 24px auto; width: 100%; max-width: 100%; padding: 0 12px; gap: 10px; box-sizing: border-box;">
+				    <!-- Topmost Header Row: Simple Mode Switch -->
+				    <div id="simpleModeTopRow" style="display: flex; align-items: center; justify-content: flex-end; width: 100%; margin: 0 auto 12px auto; padding: 0 12px; box-sizing: border-box;">
+				        <div id="simpleModeContainer" style="display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
+				            <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Simple mode</span>
+				            <div id="simpleModeSwitch" onclick="setSimpleMode()" title="Toggle Simple Mode" style="display: inline-flex; align-items: center; background: rgba(148, 163, 184, 0.15); border: 1px solid var(--border); border-radius: 20px; padding: 2px; cursor: pointer; user-select: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; height: 28px; box-sizing: border-box;">
+				                <button id="simpleModeOffBtn" type="button" onclick="event.stopPropagation(); setSimpleMode(false);" style="border: none; background: transparent; color: #94a3b8; font-size: 0.68rem; font-weight: 700; padding: 0 10px; border-radius: 16px; cursor: pointer; transition: all 0.2s ease; outline: none; margin: 0; display: inline-flex; align-items: center; justify-content: center; height: 22px; line-height: 1; box-sizing: border-box; -webkit-appearance: none; appearance: none;">off</button>
+				                <button id="simpleModeOnBtn" type="button" onclick="event.stopPropagation(); setSimpleMode(true);" style="border: none; background: transparent; color: #94a3b8; font-size: 0.68rem; font-weight: 700; padding: 0 10px; border-radius: 16px; cursor: pointer; transition: all 0.2s ease; outline: none; margin: 0; display: inline-flex; align-items: center; justify-content: center; height: 22px; line-height: 1; box-sizing: border-box; -webkit-appearance: none; appearance: none;">on</button>
+				            </div>
+				        </div>
+				    </div>
 				
-				        <button onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0; margin:0; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; outline:none; width: 32px; height: 32px; -webkit-tap-highlight-color: transparent;">&#10094;</button>
+				    <!-- Date Header & File Navigation Row -->
+				    <div id="dateNavRow" style="display: flex; align-items: center; justify-content: space-between; margin: 0 auto 16px auto; width: 100%; max-width: 100%; padding: 0 12px; gap: 10px; box-sizing: border-box;">
+				        <button id="prevFileBtn" onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0; margin:0; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; outline:none; width: 32px; height: 32px; -webkit-tap-highlight-color: transparent;">&#10094;</button>
 				        
-				        <div id="batchTitleDisplay" style="flex: 1; min-width: 0; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active File</div>
+				        <div id="batchTitleDisplay" style="flex: 1; min-width: 0; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
 				        
-				        <button onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0; margin:0; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; outline:none; width: 32px; height: 32px; -webkit-tap-highlight-color: transparent;">&#10095;</button>
-				    
+				        <button id="nextFileBtn" onclick="nextFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0; margin:0; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; outline:none; width: 32px; height: 32px; -webkit-tap-highlight-color: transparent;">&#10095;</button>
 				    </div>
 				    
-				    <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px; width: 100%; padding: 0 4px; box-sizing: border-box; align-items: center;">
-    
-                        <button onclick="toggleSidebar();" style="background: transparent; color: var(--text); padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; border: none; outline: none; cursor: pointer; -webkit-tap-highlight-color: transparent;">
+				    <!-- File Header Row (Hidden in Simple Mode) -->
+				    <div id="fileHeaderRow" style="display: grid; grid-template-columns: auto 1fr; gap: 12px; width: 100%; padding: 0 4px; box-sizing: border-box; align-items: center;">
+                        <button id="sidebarToggleBtn" onclick="toggleSidebar();" style="background: transparent; color: var(--text); padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; border: none; outline: none; cursor: pointer; -webkit-tap-highlight-color: transparent;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
                         </button>
                         
@@ -938,7 +949,6 @@
                             <h1 id="activeGroupHeaderTitle" onclick="toggleParentGroupMenu()" style="margin: 0; font-size: 1.5rem; font-weight: 800; text-align: left; color: var(--text); line-height: 1.2; overflow-wrap: break-word; white-space: normal; cursor: pointer; -webkit-tap-highlight-color: transparent;">File 1</h1>
                             <div id="activeGroupHeaderSubtitle" style="display: none; font-size: 0.7rem; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
                         </div>
-                        
                     </div>
                     
                     <div id="parentTabOptionsPanel" class="tab-options-panel" style="margin-top: 10px; background: var(--card-bg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left;">
@@ -1141,10 +1151,10 @@
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Set</label>
                             
                             <div class="panel-row">
-                                <input type="text" id="renamePickupSetInput" placeholder="Set Name" class="panel-input">
+                                <input type="text" id="renamePickupSetInput" placeholder="Set Name" class="panel-input" oninput="savePickupSetName()">
                             </div>
                             <div class="panel-row">
-                                <input type="text" id="unitPickupSetInput" placeholder="Unit..." class="panel-input">
+                                <input type="text" id="unitPickupSetInput" placeholder="Unit..." class="panel-input" oninput="savePickupSetName()">
                                 <button onclick="savePickupSetName()" class="panel-btn">Save</button>
                             </div>
                             
@@ -1164,7 +1174,7 @@
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
                             
                             <div class="panel-row">
-                                <input type="text" id="renamePickupTabInput" placeholder="Sample Name" class="panel-input">
+                                <input type="text" id="renamePickupTabInput" placeholder="Sample Name" class="panel-input" oninput="savePickupTabName()">
                                 <button onclick="savePickupTabName()" class="panel-btn">Save</button>
                             </div>
 
@@ -1211,10 +1221,10 @@
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Set</label>
                             
                             <div class="panel-row">
-                                <input type="text" id="renameSumSetInput" placeholder="Set Name" class="panel-input">
+                                <input type="text" id="renameSumSetInput" placeholder="Set Name" class="panel-input" oninput="saveSumSetName()">
                             </div>
                             <div class="panel-row">
-                                <input type="text" id="unitSumSetInput" placeholder="Unit..." class="panel-input">
+                                <input type="text" id="unitSumSetInput" placeholder="Unit..." class="panel-input" oninput="saveSumSetName()">
                                 <button onclick="saveSumSetName()" class="panel-btn">Save</button>
                             </div>
 
@@ -1237,7 +1247,7 @@
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample Name</label>
                             
                             <div class="panel-row">
-                                <input type="text" id="renameTabInput" placeholder="Sample Name" class="panel-input">
+                                <input type="text" id="renameTabInput" placeholder="Sample Name" class="panel-input" oninput="saveTabName()">
                                 <button onclick="saveTabName()" class="panel-btn">Save</button>
                             </div>
                             
@@ -1294,7 +1304,7 @@
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
                             
                             <div class="panel-row">
-                                <input type="text" id="renameSalinityTabInput" placeholder="Sample Name" class="panel-input">
+                                <input type="text" id="renameSalinityTabInput" placeholder="Sample Name" class="panel-input" oninput="saveSalinityTabName()">
                                 <button onclick="saveSalinityTabName()" class="panel-btn">Save</button>
                             </div>
 
@@ -1417,7 +1427,7 @@
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Line</label>
                             
                             <div class="panel-row">
-                                <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" class="panel-input">
+                                <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" class="panel-input" oninput="saveEstimatorTabName()">
                                 <button onclick="saveEstimatorTabName()" class="panel-btn">Save</button>
                             </div>
 
@@ -1493,7 +1503,7 @@
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Sample</label>
                             
                             <div class="panel-row">
-                                <input type="text" id="renameTallyTabInput" placeholder="Sample Name" class="panel-input">
+                                <input type="text" id="renameTallyTabInput" placeholder="Sample Name" class="panel-input" oninput="saveTallyTabName()">
                                 <button onclick="saveTallyTabName()" class="panel-btn">Save</button>
                             </div>
                             <div class="panel-row">
@@ -1609,6 +1619,9 @@
                 <button onclick="executeExportXLSX()" ontouchstart="executeExportXLSX(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem; background: #10b981; border-color: #059669;">Export Excel</button>
                 <button onclick="cancelExportMode()" ontouchstart="cancelExportMode(); event.preventDefault();" class="action-btn" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem;">Cancel</button>
             </div>
+            <div id="exportClearSelectionRow" style="display: none;">
+                <button onclick="clearSelectedCardsContent()" ontouchstart="clearSelectedCardsContent(); event.preventDefault();" style="margin: 0; width: 100%; min-height: 40px; font-size: 0.95rem; background: #dc2626; border-color: #b91c1c; color: #ffffff; font-weight: 700;">Reset</button>
+            </div>
         </div>
         
         <audio id="alarmSound" loop preload="auto">
@@ -1721,6 +1734,7 @@
 			}
         
             function toggleParentGroupMenu() {
+                if (isSimpleMode) return; // Disabled in simple mode
                 isParentTabMenuOpen = !isParentTabMenuOpen;
                 updateParentTabMenuState();
                 
@@ -1731,28 +1745,194 @@
             }
             
             function updateBatchTitle() {
-                const now = new Date();
-                const start = new Date(now.getFullYear(), 0, 0);
-                const diff = now - start;
+                let d = new Date();
+                const activeGroup = (typeof parentGroups !== 'undefined') ? parentGroups.find(g => g.id === activeParentId) : null;
+                if (activeGroup && activeGroup.date && activeGroup.date.trim() !== '') {
+                    const parts = activeGroup.date.split('-');
+                    if (parts.length === 3) {
+                        const y = parseInt(parts[0], 10);
+                        const m = parseInt(parts[1], 10);
+                        const day = parseInt(parts[2], 10);
+                        if (!isNaN(y) && !isNaN(m) && !isNaN(day)) {
+                            d = new Date(y, m - 1, day);
+                        }
+                    }
+                }
+                const start = new Date(d.getFullYear(), 0, 0);
+                const diff = d - start + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60 * 1000;
                 const oneDay = 1000 * 60 * 60 * 24;
                 const julian = Math.floor(diff / oneDay).toString().padStart(3, '0');
-        
-                const dd = String(now.getDate()).padStart(2, '0');
-                const mm = String(now.getMonth() + 1).padStart(2, '0');
-                const yyyy = now.getFullYear();
-        
+
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+
                 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                const dayName = days[now.getDay()];
-        
-                document.getElementById('batchTitleDisplay').innerText = `Day ${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
+                const dayName = days[d.getDay()];
+
+                const el = document.getElementById('batchTitleDisplay');
+                if (el) {
+                    el.innerText = `Day ${julian} • ${dd}/${mm}/${yyyy} • ${dayName}`;
+                }
             }
             
             function setToolFilter(filter, btn) {
 			    currentToolFilter = filter;
 			    document.querySelectorAll('#toolFilterTabs .set-tab-btn').forEach(b => b.classList.remove('active'));
 			    btn.classList.add('active');
+			    // Close all open cards when switching category tabs
+			    const p = parentGroups.find(g => g.id === activeParentId);
+			    if (p) {
+			        if (!p.collapsedCards) p.collapsedCards = {};
+			        allCardIds.forEach(id => {
+			            const card = document.getElementById(id);
+			            if (card && !card.classList.contains('collapsed')) {
+			                card.classList.add('collapsed');
+			                p.collapsedCards[id] = true;
+			            }
+			        });
+			        saveAllGroupData();
+			    }
 			    reorderCards();
 			}
+
+            // ==========================================
+            // ---- SIMPLE MODE -------------------------
+            // ==========================================
+            let isSimpleMode = (localStorage.getItem('qc_simple_mode') === 'true');
+
+            function applySimpleMode() {
+                const prevBtn = document.getElementById('prevFileBtn');
+                const nextBtn = document.getElementById('nextFileBtn');
+                const sidebarBtn = document.getElementById('sidebarToggleBtn');
+                const fileHeaderRow = document.getElementById('fileHeaderRow');
+                const clearSelRow = document.getElementById('exportClearSelectionRow');
+                const offBtn = document.getElementById('simpleModeOffBtn');
+                const onBtn = document.getElementById('simpleModeOnBtn');
+
+                if (isSimpleMode) {
+                    if (prevBtn) prevBtn.style.display = 'none';
+                    if (nextBtn) nextBtn.style.display = 'none';
+                    if (sidebarBtn) sidebarBtn.style.display = 'none';
+                    if (fileHeaderRow) fileHeaderRow.style.display = 'none';
+                    if (clearSelRow) clearSelRow.style.display = 'block';
+                    
+                    if (onBtn) {
+                        onBtn.style.background = 'var(--primary, #2563eb)';
+                        onBtn.style.color = '#ffffff';
+                        onBtn.style.boxShadow = '0 1px 4px rgba(0,0,0,0.2)';
+                    }
+                    if (offBtn) {
+                        offBtn.style.background = 'transparent';
+                        offBtn.style.color = '#94a3b8';
+                        offBtn.style.boxShadow = 'none';
+                    }
+                    
+                    const h1 = document.getElementById('activeGroupHeaderTitle');
+                    if (h1) h1.style.cursor = 'default';
+                } else {
+                    if (prevBtn) prevBtn.style.display = '';
+                    if (nextBtn) nextBtn.style.display = '';
+                    if (sidebarBtn) sidebarBtn.style.display = '';
+                    if (fileHeaderRow) fileHeaderRow.style.display = 'grid';
+                    if (clearSelRow) clearSelRow.style.display = 'none';
+                    
+                    if (offBtn) {
+                        offBtn.style.background = '#64748b';
+                        offBtn.style.color = '#ffffff';
+                        offBtn.style.boxShadow = '0 1px 4px rgba(0,0,0,0.2)';
+                    }
+                    if (onBtn) {
+                        onBtn.style.background = 'transparent';
+                        onBtn.style.color = '#94a3b8';
+                        onBtn.style.boxShadow = 'none';
+                    }
+                    
+                    const h1 = document.getElementById('activeGroupHeaderTitle');
+                    if (h1) h1.style.cursor = 'pointer';
+                }
+            }
+
+            function setSimpleMode(val) {
+                if (typeof val === 'boolean') {
+                    isSimpleMode = val;
+                } else {
+                    isSimpleMode = !isSimpleMode;
+                }
+                localStorage.setItem('qc_simple_mode', isSimpleMode);
+                refreshGroupDataReferences();
+                applySimpleMode();
+                if (typeof renderPickupSets === 'function') renderPickupSets();
+                if (typeof renderSumSets === 'function') renderSumSets();
+                if (typeof renderEstimatorTabs === 'function') renderEstimatorTabs();
+                if (typeof renderSalinityTabs === 'function') renderSalinityTabs();
+                if (typeof renderTallyTabs === 'function') renderTallyTabs();
+                if (typeof renderTabs === 'function') renderTabs();
+                if (typeof renderList === 'function') renderList();
+                if (typeof renderPickupTabs === 'function') renderPickupTabs();
+                if (typeof renderPickupList === 'function') renderPickupList();
+                if (typeof reorderCards === 'function') reorderCards();
+                if (typeof renderGraphs === 'function') renderGraphs();
+                renderSidebarList();
+                if (isSimpleMode && isParentTabMenuOpen) {
+                    isParentTabMenuOpen = false;
+                    updateParentTabMenuState();
+                }
+            }
+
+            function toggleSimpleMode() {
+                setSimpleMode();
+            }
+
+            function clearSelectedCardsContent() {
+                let targetCardIds = [];
+                if (typeof selectedExportCards !== 'undefined' && selectedExportCards.size > 0) {
+                    targetCardIds = Array.from(selectedExportCards);
+                } else {
+                    targetCardIds = Array.from(document.querySelectorAll('.card')).map(c => c.id);
+                }
+
+                if (targetCardIds.length === 0) return;
+
+                if (!confirm("Are you sure you want to reset the content of the selected cards?")) return;
+
+                targetCardIds.forEach(cardId => {
+                    if (cardId === 'card-pickup') {
+                        if (typeof resetPickup === 'function') resetPickup();
+                    } else if (cardId === 'card-sum') {
+                        if (typeof clearSumSetData === 'function') clearSumSetData();
+                    } else if (cardId === 'card-numpad') {
+                        if (typeof clearNumbers === 'function') clearNumbers();
+                    } else if (cardId === 'card-salinity') {
+                        if (typeof resetSalinity === 'function') resetSalinity();
+                    } else if (cardId === 'card-temp') {
+                        if (typeof resetTemp === 'function') resetTemp();
+                    } else if (cardId === 'card-time') {
+                        if (typeof resetSamplingTime === 'function') resetSamplingTime();
+                    } else if (cardId === 'card-tally') {
+                        if (typeof resetTallies === 'function') resetTallies();
+                    } else if (cardId === 'card-pct') {
+                        if (typeof resetPercentage === 'function') resetPercentage();
+                    } else if (cardId === 'card-timestamps') {
+                        if (typeof clearTimestamps === 'function') clearTimestamps();
+                    } else if (cardId === 'card-notes') {
+                        if (typeof clearNotes === 'function') clearNotes();
+                    } else if (cardId === 'card-estimator') {
+                        const p = (typeof isSimpleMode !== 'undefined' && isSimpleMode) ? getSimpleModeFile() : parentGroups.find(g => g.id === activeParentId);
+                        if (p && p.estimatorTabs) {
+                            p.estimatorTabs.forEach(t => {
+                                t.data = [];
+                                t.startTime = '';
+                                t.remaining = '';
+                            });
+                            if (typeof renderEstimatorTab === 'function') renderEstimatorTab();
+                        }
+                    }
+                });
+
+                saveAllGroupData();
+                if (typeof renderGraphs === 'function') renderGraphs();
+            }
 
             function changeGraphSet(type, setId) {
                 const p = parentGroups.find(g => g.id === activeParentId);
@@ -2076,55 +2256,195 @@
                 });
             }
         
-            function refreshGroupDataReferences() {
+            let simpleModeFile = null;
+            function getSimpleModeFile() {
+                if (simpleModeFile) return simpleModeFile;
+                let raw = localStorage.getItem('qc_simple_mode_file');
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && parsed.id) {
+                            simpleModeFile = parsed;
+                            return simpleModeFile;
+                        }
+                    } catch(e) {}
+                }
+                const newSimpleFile = {
+                    id: 'simple_mode_independent_file',
+                    name: 'Simple Mode',
+                    productCode: '',
+                    date: '',
+                    startTime: '',
+                    endTime: '',
+                    folderId: 'root',
+                    pickupSets: [{
+                        id: 'pset_sm_' + Date.now(),
+                        name: 'Set 1',
+                        unit: '',
+                        tabs: [{ id: 'ptab_sm_' + Date.now(), name: 'Sample 1', pre: '', post: '' }],
+                        activeTabId: ''
+                    }],
+                    sumSets: [{
+                        id: 'sset_sm_' + Date.now(),
+                        name: 'Set 1',
+                        tabs: [{ id: 'tab_sm_' + Date.now(), name: 'Sample 1', data: [] }],
+                        activeTabId: ''
+                    }],
+                    estimatorTabs: [{
+                        id: 'etab_sm_' + Date.now(),
+                        name: 'Line 1',
+                        unit: '',
+                        startTime: '',
+                        remaining: '',
+                        data: []
+                    }],
+                    salinityTabs: [{ id: 'stab_sm_' + Date.now(), name: 'Sample 1', brix: '' }],
+                    tallyTabs: [{ id: 'ttab_sm_' + Date.now(), name: 'Item 1', count: 0 }],
+                    collapsedCards: {}
+                };
+                newSimpleFile.pickupSets[0].activeTabId = newSimpleFile.pickupSets[0].tabs[0].id;
+                newSimpleFile.sumSets[0].activeTabId = newSimpleFile.sumSets[0].tabs[0].id;
+                newSimpleFile.activePickupSetId = newSimpleFile.pickupSets[0].id;
+                newSimpleFile.activeSumSetId = newSimpleFile.sumSets[0].id;
+                newSimpleFile.activeEstimatorTabId = newSimpleFile.estimatorTabs[0].id;
+                newSimpleFile.activeSalinityTabId = newSimpleFile.salinityTabs[0].id;
+                newSimpleFile.activeTallyTabId = newSimpleFile.tallyTabs[0].id;
+                simpleModeFile = newSimpleFile;
+                localStorage.setItem('qc_simple_mode_file', JSON.stringify(newSimpleFile));
+                return simpleModeFile;
+            }
+
+            function getActiveParentGroup() {
+                if (typeof isSimpleMode !== 'undefined' && isSimpleMode) {
+                    return getSimpleModeFile();
+                }
+                if (typeof parentGroups === 'undefined' || !parentGroups || parentGroups.length === 0) return null;
                 let p = parentGroups.find(g => g.id === activeParentId);
-                if (!p) {
-                    p = parentGroups.find(g => g.folderId === currentFolderId);
+                if (!p) p = parentGroups[0];
+                return p;
+            }
+
+            function refreshGroupDataReferences() {
+                let p;
+                if (typeof isSimpleMode !== 'undefined' && isSimpleMode) {
+                    p = getSimpleModeFile();
+                } else {
+                    p = parentGroups.find(g => g.id === activeParentId);
                     if (!p) {
-                        p = parentGroups[0];
-                        currentFolderId = p.folderId;
-                        localStorage.setItem('qc_current_folder', currentFolderId);
+                        p = parentGroups.find(g => g.folderId === currentFolderId);
+                        if (!p) {
+                            p = parentGroups[0];
+                            currentFolderId = p.folderId;
+                            localStorage.setItem('qc_current_folder', currentFolderId);
+                        }
+                        activeParentId = p.id;
                     }
-                    activeParentId = p.id;
                 }
                 
+                if (!p.pickupSets || p.pickupSets.length === 0) {
+                    p.pickupSets = [{ id: 'pset_' + Date.now(), name: 'Set 1', unit: '', tabs: [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: '' }];
+                    p.pickupSets[0].activeTabId = p.pickupSets[0].tabs[0].id;
+                    p.activePickupSetId = p.pickupSets[0].id;
+                }
+                if (!p.sumSets || p.sumSets.length === 0) {
+                    p.sumSets = [{ id: 'sset_' + Date.now(), name: 'Set 1', tabs: [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }], activeTabId: '' }];
+                    p.sumSets[0].activeTabId = p.sumSets[0].tabs[0].id;
+                    p.activeSumSetId = p.sumSets[0].id;
+                }
+                if (!p.estimatorTabs || p.estimatorTabs.length === 0) {
+                    p.estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }];
+                    p.activeEstimatorTabId = p.estimatorTabs[0].id;
+                }
+                if (!p.salinityTabs || p.salinityTabs.length === 0) {
+                    p.salinityTabs = [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }];
+                    p.activeSalinityTabId = p.salinityTabs[0].id;
+                }
+                if (!p.tallyTabs || p.tallyTabs.length === 0) {
+                    p.tallyTabs = [{ id: 'ttab_' + Date.now(), name: 'Item 1', count: 0 }];
+                    p.activeTallyTabId = p.tallyTabs[0].id;
+                }
+
                 pickupSets = p.pickupSets;
-                activePickupSetId = p.activePickupSetId;
-                const activePSet = pickupSets.find(s => s.id === activePickupSetId);
+                activePickupSetId = p.activePickupSetId || pickupSets[0].id;
+                const activePSet = pickupSets.find(s => s.id === activePickupSetId) || pickupSets[0];
                 pickupTabs = activePSet.tabs;
-                activePickupTabId = activePSet.activeTabId;
-        
+                activePickupTabId = activePSet.activeTabId || pickupTabs[0].id;
+
                 sumSets = p.sumSets;
-                activeSumSetId = p.activeSumSetId;
-                const activeSSet = sumSets.find(s => s.id === activeSumSetId);
+                activeSumSetId = p.activeSumSetId || sumSets[0].id;
+                const activeSSet = sumSets.find(s => s.id === activeSumSetId) || sumSets[0];
                 appTabs = activeSSet.tabs;
-                activeTabId = activeSSet.activeTabId;
-        
+                activeTabId = activeSSet.activeTabId || appTabs[0].id;
+
                 estimatorTabs = p.estimatorTabs;
-                activeEstimatorTabId = p.activeEstimatorTabId;
-        
+                activeEstimatorTabId = p.activeEstimatorTabId || estimatorTabs[0].id;
+
                 salinityTabs = p.salinityTabs;
-                activeSalinityTabId = p.activeSalinityTabId;
+                activeSalinityTabId = p.activeSalinityTabId || salinityTabs[0].id;
+
+                if (typeof tallyTabs !== 'undefined') {
+                    tallyTabs = p.tallyTabs;
+                    activeTallyTabId = p.activeTallyTabId || tallyTabs[0].id;
+                }
             }
-        
+
             let _graphsDebounce = null;
             function saveAllGroupData() {
+                if (typeof isSimpleMode !== 'undefined' && isSimpleMode) {
+                    const p = getSimpleModeFile();
+                    p.pickupSets = pickupSets;
+                    p.sumSets = sumSets;
+
+                    const activePSet = p.pickupSets.find(s => s.id === activePickupSetId);
+                    if (activePSet) activePSet.activeTabId = activePickupTabId;
+                    p.activePickupSetId = activePickupSetId;
+
+                    const activeSSet = p.sumSets.find(s => s.id === activeSumSetId);
+                    if (activeSSet) activeSSet.activeTabId = activeTabId;
+                    p.activeSumSetId = activeSumSetId;
+
+                    p.estimatorTabs = estimatorTabs;
+                    p.activeEstimatorTabId = activeEstimatorTabId;
+
+                    p.salinityTabs = salinityTabs;
+                    p.activeSalinityTabId = activeSalinityTabId;
+
+                    if (typeof tallyTabs !== 'undefined') {
+                        p.tallyTabs = tallyTabs;
+                        p.activeTallyTabId = activeTallyTabId;
+                    }
+
+                    localStorage.setItem('qc_simple_mode_file', JSON.stringify(p));
+
+                    clearTimeout(_graphsDebounce);
+                    _graphsDebounce = setTimeout(() => {
+                        if (typeof renderGraphs === 'function') renderGraphs();
+                    }, 30);
+                    return;
+                }
+
                 const p = parentGroups.find(g => g.id === activeParentId);
+                if (!p) return;
                 
                 const activePSet = p.pickupSets.find(s => s.id === activePickupSetId);
                 if(activePSet) activePSet.activeTabId = activePickupTabId;
                 p.activePickupSetId = activePickupSetId;
-        
+
                 const activeSSet = p.sumSets.find(s => s.id === activeSumSetId);
                 if(activeSSet) activeSSet.activeTabId = activeTabId;
                 p.activeSumSetId = activeSumSetId;
                 
                 p.estimatorTabs = estimatorTabs;
                 p.activeEstimatorTabId = activeEstimatorTabId;
-        
+
                 p.salinityTabs = salinityTabs;
                 p.activeSalinityTabId = activeSalinityTabId;
                 
+                if (typeof tallyTabs !== 'undefined') {
+                    p.tallyTabs = tallyTabs;
+                    p.activeTallyTabId = activeTallyTabId;
+                }
+
                 localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
                 localStorage.setItem('qc_active_parent_id', activeParentId);
                 localStorage.setItem('qc_current_folder', currentFolderId);
@@ -2176,6 +2496,7 @@
 			                subtitleEl.style.display = 'none';
 			            }
 			        }
+			        updateBatchTitle();
 			    }
 			
 			    if (currentFolderId !== 'root') {
@@ -2655,13 +2976,15 @@
                 });
         
                 let newNameBase = p.name ? p.name : (appFolders.find(f=>f.id===p.folderId)?.name || "File");
+                const _now = new Date();
+                const _dateStr = `${String(_now.getMonth()+1).padStart(2,'0')}/${String(_now.getDate()).padStart(2,'0')}/${_now.getFullYear()}`;
 
                 const newGroup = {
                     id: 'pg_' + Date.now(),
                     folderId: p.folderId,
-                    name: newNameBase + " (Copy)",
+                    name: newNameBase,
+                    date: _dateStr,
                     productCode: '',
-                    date: '',
                     startTime: '',
                     endTime: '',
                     pickupSets: clonedPickupSets,
@@ -2827,6 +3150,7 @@
                 startGlobalStopwatch(); 
                 startGlobalSamplingTimer(); 
                 if (typeof renderGraphs === 'function') renderGraphs(); 
+                applySimpleMode(); // Apply persisted simple mode state
 
 				document.body.style.overscrollBehaviorY = 'none';
 				
@@ -2932,7 +3256,7 @@
                 
                 setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
                 setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveAllGroupData, renderTabs);
-                setupTabDragManager('tallyTabsContainer', 'tallyTabsList', () => parentGroups.find(g => g.id === activeParentId)?.tallyTabs || [], saveAllGroupData, renderTallyTabs);
+                setupTabDragManager('tallyTabsContainer', 'tallyTabsList', () => (getActiveParentGroup()?.tallyTabs || []), saveAllGroupData, renderTallyTabs);
                 
                 // Prompt deletes for safety
                 setupAddButtonHold('estimatorTabsList', addNewEstimatorTab, () => {
@@ -2964,12 +3288,12 @@
                     pickupSets[0].activeTabId = pickupSets[0].tabs[0].id;
                     activePickupSetId = pickupSets[0].id;
                     
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    p.activePickupSetId = activePickupSetId;
+                    const p = getActiveParentGroup();
+                    if (p) p.activePickupSetId = activePickupSetId;
                     
                     isPickupSetMenuOpen = false; 
-                    refreshGroupDataReferences();
                     saveAllGroupData();
+                    refreshGroupDataReferences();
                     renderPickupSets(); updatePickupSetMenuState();
                     renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
                 }, "Delete ALL Sets and Samples from the Pickup Calculator? This cannot be undone.");
@@ -2983,12 +3307,12 @@
                     sumSets[0].activeTabId = sumSets[0].tabs[0].id;
                     activeSumSetId = sumSets[0].id;
                     
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    p.activeSumSetId = activeSumSetId;
+                    const p = getActiveParentGroup();
+                    if (p) p.activeSumSetId = activeSumSetId;
                     
                     isSumSetMenuOpen = false; 
-                    refreshGroupDataReferences();
                     saveAllGroupData();
+                    refreshGroupDataReferences();
                     renderSumSets(); updateSumSetMenuState();
                     renderTabs(); renderList(); updateTabMenuState();
                 }, "Delete ALL Sets and Samples from Sum & Averaging? This cannot be undone.");
@@ -2997,7 +3321,7 @@
                     pickupTabs.splice(0, pickupTabs.length, { id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' });
                     activePickupTabId = pickupTabs[0].id;
                     const activePSet = pickupSets.find(s => s.id === activePickupSetId);
-                    activePSet.activeTabId = activePickupTabId;
+                    if (activePSet) activePSet.activeTabId = activePickupTabId;
                     isPickupTabMenuOpen = false;
                     saveAllGroupData();
                     renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
@@ -3007,15 +3331,16 @@
                     appTabs.splice(0, appTabs.length, { id: 'tab_' + Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' });
                     activeTabId = appTabs[0].id;
                     const activeSSet = sumSets.find(s => s.id === activeSumSetId);
-                    activeSSet.activeTabId = activeTabId;
+                    if (activeSSet) activeSSet.activeTabId = activeTabId;
                     isTabMenuOpen = false;
                     saveAllGroupData();
                     renderTabs(); renderList(); updateTabMenuState();
                 }, "Delete ALL Samples from this Set? This cannot be undone.");
         
                 setupAddButtonHold('tallyTabsList', addNewTallyTab, () => {
-                    const p = parentGroups.find(g => g.id === activeParentId);
+                    const p = getActiveParentGroup();
                     if (!p) return;
+                    if (!p.tallyTabs) p.tallyTabs = [];
                     p.tallyTabs.splice(0, p.tallyTabs.length, { id: 'ttab_' + Date.now(), name: 'Sample 1', tallies: [] });
                     p.activeTallyTabId = p.tallyTabs[0].id;
                     p.tallyTabsMenuOpen = false;
@@ -3849,11 +4174,11 @@
                             activePickupSetId = set.id;
                             isPickupSetMenuOpen = false;
                             
-                            const p = parentGroups.find(g => g.id === activeParentId);
-                            p.activePickupSetId = activePickupSetId;
+                            const p = getActiveParentGroup();
+                            if (p) p.activePickupSetId = activePickupSetId;
                             
-                            refreshGroupDataReferences(); 
                             saveAllGroupData();
+                            refreshGroupDataReferences(); 
                             renderPickupSets();
                             updatePickupSetMenuState();
                             renderPickupTabs();
@@ -3920,12 +4245,12 @@
                     
                     activePickupSetId = pickupSets[newIndex].id;
                     
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    p.activePickupSetId = activePickupSetId;
+                    const p = getActiveParentGroup();
+                    if (p) p.activePickupSetId = activePickupSetId;
                     
                     isPickupSetMenuOpen = false;
-                    refreshGroupDataReferences();
                     saveAllGroupData();
+                    refreshGroupDataReferences();
                     renderPickupSets();
                     updatePickupSetMenuState();
                     renderPickupTabs();
@@ -3949,11 +4274,11 @@
                 activePickupSetId = newSet.id;
                 isPickupSetMenuOpen = false;
                 
-                const p = parentGroups.find(g => g.id === activeParentId);
-                p.activePickupSetId = activePickupSetId;
+                const p = getActiveParentGroup();
+                if (p) p.activePickupSetId = activePickupSetId;
                 
-                refreshGroupDataReferences();
                 saveAllGroupData();
+                refreshGroupDataReferences();
                 renderPickupSets();
                 updatePickupSetMenuState();
                 renderPickupTabs();
@@ -4201,11 +4526,11 @@
                             activeSumSetId = set.id;
                             isSumSetMenuOpen = false;
                             
-                            const p = parentGroups.find(g => g.id === activeParentId);
-                            p.activeSumSetId = activeSumSetId;
+                            const p = getActiveParentGroup();
+                            if (p) p.activeSumSetId = activeSumSetId;
                             
-                            refreshGroupDataReferences(); 
                             saveAllGroupData();
+                            refreshGroupDataReferences(); 
                             renderSumSets();
                             updateSumSetMenuState();
                             renderTabs();
@@ -4295,12 +4620,11 @@
                 activeSumSetId = newSetId;
                 isSumSetMenuOpen = false;
                 
-                const p = parentGroups.find(g => g.id === activeParentId);
-                p.activeSumSetId = activeSumSetId;
-                
-                refreshGroupDataReferences();
+                const p = getActiveParentGroup();
+                if (p) p.activeSumSetId = activeSumSetId;
                 
                 saveAllGroupData();
+                refreshGroupDataReferences();
                 renderSumSets();
                 updateSumSetMenuState();
                 renderTabs();
@@ -4322,12 +4646,12 @@
                     
                     activeSumSetId = sumSets[newIndex].id;
                     
-                    const p = parentGroups.find(g => g.id === activeParentId);
-                    p.activeSumSetId = activeSumSetId;
+                    const p = getActiveParentGroup();
+                    if (p) p.activeSumSetId = activeSumSetId;
                     
                     isSumSetMenuOpen = false;
-                    refreshGroupDataReferences();
                     saveAllGroupData();
+                    refreshGroupDataReferences();
                     renderSumSets();
                     updateSumSetMenuState();
                     renderTabs();
@@ -4365,11 +4689,11 @@
                 activeSumSetId = newSet.id;
                 isSumSetMenuOpen = false;
                 
-                const p = parentGroups.find(g => g.id === activeParentId);
-                p.activeSumSetId = activeSumSetId;
+                const p = getActiveParentGroup();
+                if (p) p.activeSumSetId = activeSumSetId;
         
-                refreshGroupDataReferences();
                 saveAllGroupData();
+                refreshGroupDataReferences();
                 renderSumSets();
                 updateSumSetMenuState();
                 renderTabs();
@@ -4564,6 +4888,9 @@
                         } else {
                             activeSalinityTabId = tab.id;
                             isSalinityTabMenuOpen = false;
+                            // Clear input field first so stale value doesn't show before updateSalinityDOM runs
+                            const brixInputEl = document.getElementById('brixVal');
+                            if (brixInputEl) brixInputEl.value = '';
                             saveAllGroupData();
                             renderSalinityTabs();
                             updateSalinityDOM();
@@ -6864,7 +7191,7 @@
                     return isPercentageGraph ? formatted + '%' : formatted; 
                 };
                 
-                mergedOptions.plugins = passedOptions.plugins || {};
+                mergedOptions.plugins = Object.assign({}, passedOptions.plugins || {});
                 mergedOptions.plugins.legend = { 
                     display: false, 
                     labels: {
@@ -6951,8 +7278,7 @@
                                 }
                             }
                         })
-                    }),
-                    plugins: extraPlugins
+                    })
                 });
                 
                 if (chartInstances[canvasId].scales && chartInstances[canvasId].scales.y) {
