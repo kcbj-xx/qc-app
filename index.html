@@ -931,7 +931,7 @@
 				    </div>
 				
 				    <!-- Date Header & File Navigation Row -->
-				    <div id="dateNavRow" style="display: flex; align-items: center; justify-content: space-between; margin: 0 auto 16px auto; width: 100%; max-width: 100%; padding: 0 12px; gap: 10px; box-sizing: border-box;">
+				    <div id="dateNavRow" style="display: flex; align-items: center; justify-content: space-between; margin: 0 auto 16px auto; width: 100%; max-width: 100%; padding: 0 12px; gap: 10px; box-sizing: border-box; min-height: 32px;">
 				        <button id="prevFileBtn" onclick="prevFile()" style="background:transparent; border:none; color:var(--primary); font-size:1.5rem; padding:0; margin:0; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; outline:none; width: 32px; height: 32px; -webkit-tap-highlight-color: transparent;">&#10094;</button>
 				        
 				        <div id="batchTitleDisplay" style="flex: 1; min-width: 0; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
@@ -987,7 +987,7 @@
                 <div class="tabs-container" id="toolFilterTabs" style="margin-bottom: 20px; padding-top: 5px; border: none;">
 				    <div class="tabs-list" style="display: flex; width: 100%; justify-content: space-between; gap: 8px;">
 				        <button class="set-tab-btn active" onclick="setToolFilter('all', this)" style="flex:1;">All</button>
-				        <button class="set-tab-btn" onclick="setToolFilter('computing', this)" style="flex:1;">Computing</button>
+				        <button class="set-tab-btn" onclick="setToolFilter('sampling', this)" style="flex:1;">Sampling</button>
 				        <button class="set-tab-btn" onclick="setToolFilter('tools', this)" style="flex:1;">Tools</button>
 				        <button class="set-tab-btn" onclick="setToolFilter('time', this)" style="flex:1;">Time</button>
 				    </div>
@@ -1031,7 +1031,7 @@
                         </div>
                         <div class="graph-section" id="graph-section-salinity" style="margin-bottom: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px 0 5px 0;">
-                                <h3 style="font-size: 14px; margin: 0; color: var(--text);">Salinity Calculator</h3>
+                                <h3 style="font-size: 14px; margin: 0; color: var(--text);">Salinity Converter</h3>
                                 <div class="graph-zoom-controls" id="zoom-controls-salinity" style="display:none;">
                                     <button onclick="togglePanTool('canvas-salinity', this)" title="Pan Tool" style="display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg></button>
                                     <button onclick="graphZoom('canvas-salinity', true)" title="Zoom In">+</button>
@@ -1291,7 +1291,7 @@
                         <button class="pin-btn" onclick="togglePin(event, 'card-salinity')" title="Pin Tool">
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 11.7V6a3 3 0 0 0-6 0v5.7a2 2 0 0 1-1.11 1.84l-1.78.89A2 2 0 0 0 5 15.24Z"></path></svg>
                         </button>
-                        <div class="card-title-text">Salinity Calculator</div>
+                        <div class="card-title-text">Salinity Converter</div>
                         <div class="chevron">&#9660;</div>
                     </h2>
                     <div class="card-body">
@@ -1616,7 +1616,7 @@
             </div>
             <div style="display: flex; gap: 8px;">
                 <button onclick="executeExport()" ontouchstart="executeExport(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem;">Export CSV</button>
-                <button onclick="executeExportXLSX()" ontouchstart="executeExportXLSX(); event.preventDefault();" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem; background: #10b981; border-color: #059669;">Export Excel</button>
+                <button onclick="executeExportXLSX()" ontouchstart="if(!window._xlsxTouchFired){window._xlsxTouchFired=true;executeExportXLSX();setTimeout(()=>window._xlsxTouchFired=false,500);} event.preventDefault();" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem; background: #10b981; border-color: #059669;">Export Excel</button>
                 <button onclick="cancelExportMode()" ontouchstart="cancelExportMode(); event.preventDefault();" class="action-btn" style="margin: 0; flex: 1; min-height: 46px; font-size: 1rem;">Cancel</button>
             </div>
             <div id="exportClearSelectionRow" style="display: none;">
@@ -2084,14 +2084,14 @@
                 let pinnedCount = 0;
                 
                 const categoryMap = {
-				    'card-pickup': 'computing',
-				    'card-averaging': 'computing',
-				    'card-salinity': 'computing',
-				    'card-percentage': 'tools',
+				    'card-pickup': 'sampling',
+				    'card-averaging': 'sampling',
+				    'card-salinity': 'tools',
+				    'card-percentage': 'sampling',
 				    'card-temp': 'tools',          // Moved to tools
 				    'card-estimator': 'time',      // Moved to time
 				    'card-notes': 'tools',
-				    'card-tally': 'tools',
+				    'card-tally': 'sampling',
 				    'card-stopwatch': 'time',      // Moved to time
 				    'card-sampling': 'time',
 				    'card-timestamps': 'time',
@@ -3342,7 +3342,7 @@
                     renderSalinityTabs();
                     updateSalinityDOM();
                     updateSalinityTabMenuState();
-                }, "Delete ALL samples from the Salinity Calculator? This cannot be undone.");
+                }, "Delete ALL samples from the Salinity Converter? This cannot be undone.");
         
                 setupAddButtonHold('pickupSetsList', addNewPickupSet, () => {
                     pickupSets.splice(0, pickupSets.length, { 
@@ -8259,7 +8259,7 @@
                 }
         
                 if (selectedExportCards.has('card-salinity')) {
-                    csv += "--- SALINITY CALCULATOR ---\n";
+                    csv += "--- SALINITY CONVERTER ---\n";
                     let sNames = [], brixVals = [], pctVals = [];
                     
                     (p.salinityTabs || []).forEach(tab => {
@@ -8429,7 +8429,7 @@
                 titleRow.height = 30;
                 titleRow.getCell(1).font = { bold: true, color: { argb: WHITE }, size: 14 };
                 titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PRIMARY } };
-                titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
                 sheet.mergeCells(1, 1, 1, 10);
 
                 sheet.addRow([]);
@@ -8654,9 +8654,9 @@
                     });
                 }
 
-                // ---- SALINITY CALCULATOR ----
+                // ---- SALINITY CONVERTER ----
                 if (selectedExportCards.has('card-salinity')) {
-                    sectionRow(sheet, '🧪  SALINITY CALCULATOR');
+                    sectionRow(sheet, '🧪  SALINITY CONVERTER');
                     sheet.addRow([]);
 
                     const salHdr = [hdr(''), ...(p.salinityTabs || []).map(t => hdr(t.name))];
@@ -8742,70 +8742,67 @@
                     sheet.addRow([]);
 
                     const graphsCard = document.getElementById('card-graphs');
-                    const wasCollapsed = graphsCard.classList.contains('collapsed');
-                    if (wasCollapsed) {
-                        graphsCard.classList.remove('collapsed');
-                    }
+                    const wasCollapsed = graphsCard ? graphsCard.classList.contains('collapsed') : false;
+                    const cardBody = graphsCard ? graphsCard.querySelector('.card-body') : null;
 
-                    window.isGeneratingExcel = true;
-                    if (typeof renderGraphs === 'function') renderGraphs();
-                    // Wait for graphs to re-render in light mode before snapshotting
-                    await new Promise(r => setTimeout(r, 200));
-                    
-                    const graphConfigs = [
-                        { id: 'canvas-tally', name: 'Tally Counters' },
-                        { id: 'canvas-salinity', name: 'Salinity Calculator' },
-                        { id: 'canvas-averaging', name: 'Sum & Averaging' },
-                        { id: 'canvas-pickup', name: 'Pickup Calculator' },
-                        { id: 'canvas-pace', name: 'Production Pace' }
-                    ];
-
-                    for (const conf of graphConfigs) {
-                        if (conf.id === 'canvas-averaging' && p.sumSets && p.sumSets.length > 0) {
-                            const originalId = p.activeSumSetId;
-                            for (const set of p.sumSets) {
-                                p.activeSumSetId = set.id;
-                                if (typeof renderGraphs === 'function') renderGraphs();
-                                await new Promise(r => setTimeout(r, 200));
-                                await snapshotGraph(conf.id, `${conf.name} - ${set.name}`);
-                            }
-                            p.activeSumSetId = originalId;
-                        } 
-                        else if (conf.id === 'canvas-pickup' && p.pickupSets && p.pickupSets.length > 0) {
-                            const originalId = p.activePickupSetId;
-                            for (const set of p.pickupSets) {
-                                p.activePickupSetId = set.id;
-                                if (typeof renderGraphs === 'function') renderGraphs();
-                                await new Promise(r => setTimeout(r, 200));
-                                await snapshotGraph(conf.id, `${conf.name} - ${set.name}`);
-                            }
-                            p.activePickupSetId = originalId;
+                    try {
+                        // If collapsed, position card body offscreen so charts can render with dimensions without visually opening the card
+                        if (wasCollapsed && cardBody) {
+                            const targetWidth = Math.max(500, graphsCard.clientWidth || 600);
+                            cardBody.style.cssText = `display: block !important; position: fixed !important; top: -99999px !important; left: -99999px !important; width: ${targetWidth}px !important; height: auto !important; visibility: hidden !important; pointer-events: none !important; z-index: -9999 !important;`;
                         }
-                        else if (conf.id === 'canvas-pace' && p.estimatorTabs && p.estimatorTabs.length > 0) {
-                            const originalId = p.activeEstimatorTabId;
-                            for (const tab of p.estimatorTabs) {
-                                p.activeEstimatorTabId = tab.id;
-                                if (typeof renderGraphs === 'function') renderGraphs();
-                                await new Promise(r => setTimeout(r, 200));
-                                await snapshotGraph(conf.id, `${conf.name} - ${tab.name}`);
-                            }
-                            p.activeEstimatorTabId = originalId;
+                        window.isGeneratingExcel = true;
+                        if (typeof _doRenderGraphs === 'function') {
+                            _doRenderGraphs(p);
+                        } else if (typeof renderGraphs === 'function') {
+                            renderGraphs();
                         }
-                        else {
-                            if (typeof renderGraphs === 'function') renderGraphs();
-                            await new Promise(r => setTimeout(r, 200));
-                            await snapshotGraph(conf.id, conf.name);
+                        // Wait for graphs to re-render in light mode before snapshotting
+                        await new Promise(r => setTimeout(r, 300));
+
+                        const graphConfigs = [
+                            { id: 'canvas-tally',    name: 'Tally Counters' },
+                            { id: 'canvas-salinity', name: 'Salinity Converter' },
+                            { id: 'canvas-averaging',name: 'Sum & Averaging' },
+                            { id: 'canvas-pickup',   name: 'Pickup Calculator' },
+                            { id: 'canvas-pace',     name: 'Production Pace' }
+                        ];
+
+                        for (const conf of graphConfigs) {
+                            const canvas = document.getElementById(conf.id);
+                            if (!canvas || canvas.style.display === 'none' || !chartInstances[conf.id]) continue;
+
+                            // Composite chart canvas onto a white background so PNGs are visible in Excel
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width  = canvas.width;
+                            tempCanvas.height = canvas.height;
+                            const tctx = tempCanvas.getContext('2d');
+                            tctx.fillStyle = '#ffffff';
+                            tctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                            tctx.drawImage(canvas, 0, 0);
+
+                            const base64Image = tempCanvas.toDataURL('image/png');
+                            const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
+
+                            applyRowData(sheet, [hdr(conf.name)]);
+                            const currentRow = sheet.rowCount;
+                            sheet.addImage(imageId, {
+                                tl: { col: 0, row: currentRow },
+                                ext: { width: Math.min(canvas.width, 600), height: Math.min(canvas.height, 300) }
+                            });
+                            // ~300px height ≈ 15 rows at default row height
+                            for (let i = 0; i < 16; i++) sheet.addRow([]);
+                        }
+                    } finally {
+                        window.isGeneratingExcel = false;
+                        if (wasCollapsed && cardBody) {
+                            cardBody.style.cssText = '';
+                        }
+                        // Re-render to restore original theme colours (only re-renders if card is open)
+                        if (typeof renderGraphs === 'function') {
+                            renderGraphs();
                         }
                     }
-
-                    window.isGeneratingExcel = false;
-
-                    if (wasCollapsed) {
-                        graphsCard.classList.add('collapsed');
-                    }
-                    
-                    // Re-render graphs one last time to restore their original light/dark theme
-                    if (typeof renderGraphs === 'function') renderGraphs();
                 }
 
                 // ---- Generate & download ----

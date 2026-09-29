@@ -95,7 +95,7 @@ async function executeExportXLSX() {
                 titleRow.height = 30;
                 titleRow.getCell(1).font = { bold: true, color: { argb: WHITE }, size: 14 };
                 titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PRIMARY } };
-                titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
                 sheet.mergeCells(1, 1, 1, 10);
 
                 sheet.addRow([]);
