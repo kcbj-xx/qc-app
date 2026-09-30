@@ -1606,7 +1606,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v109</div>
+            <div class="footer-version">v110</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -3430,12 +3430,23 @@
                         if (isExportMode) return;
                         if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
         
+                        const isMouse = (e.type === 'mousedown');
                         startTouchX = e.touches ? e.touches[0].clientX : e.clientX;
                         startTouchY = e.touches ? e.touches[0].clientY : e.clientY;
         
                         holdTimer = setTimeout(() => {
                             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                             enterExportMode(card.id);
+                            // On mouse: the mouseup after a hold fires a 'click' event which would
+                            // immediately toggle the card back off. Swallow that one click.
+                            if (isMouse) {
+                                const blockNextClick = (ev) => {
+                                    ev.stopPropagation();
+                                    ev.preventDefault();
+                                    document.removeEventListener('click', blockNextClick, true);
+                                };
+                                document.addEventListener('click', blockNextClick, true);
+                            }
                         }, 800);
                     };
         
@@ -8741,67 +8752,215 @@
                     sectionRow(sheet, '📊  DATA GRAPHS');
                     sheet.addRow([]);
 
-                    const graphsCard = document.getElementById('card-graphs');
-                    const wasCollapsed = graphsCard ? graphsCard.classList.contains('collapsed') : false;
-                    const cardBody = graphsCard ? graphsCard.querySelector('.card-body') : null;
+                    const graphConfigs = [
+                        { id: 'canvas-tally',    axisId: 'canvas-tally-axis',    legendId: 'graph-legend-tally',    name: 'Tally Counters' },
+                        { id: 'canvas-salinity', axisId: 'canvas-salinity-axis', legendId: 'graph-legend-salinity', name: 'Salinity Converter' },
+                        { id: 'canvas-averaging',axisId: 'canvas-averaging-axis',legendId: 'graph-legend-averaging',name: 'Sum & Averaging' },
+                        { id: 'canvas-pickup',   axisId: 'canvas-pickup-axis',   legendId: 'graph-legend-pickup',   name: 'Pickup Calculator' },
+                        { id: 'canvas-pace',     axisId: 'canvas-pace-axis',     legendId: 'graph-legend-pace',     name: 'Production Pace' }
+                    ];
 
+                    // Set flag so drawFixedYAxis uses light-mode colors when drawing to temp canvases
+                    window.isGeneratingExcel = true;
                     try {
-                        // If collapsed, position card body offscreen so charts can render with dimensions without visually opening the card
-                        if (wasCollapsed && cardBody) {
-                            const targetWidth = Math.max(500, graphsCard.clientWidth || 600);
-                            cardBody.style.cssText = `display: block !important; position: fixed !important; top: -99999px !important; left: -99999px !important; width: ${targetWidth}px !important; height: auto !important; visibility: hidden !important; pointer-events: none !important; z-index: -9999 !important;`;
-                        }
-                        window.isGeneratingExcel = true;
-                        if (typeof _doRenderGraphs === 'function') {
-                            _doRenderGraphs(p);
-                        } else if (typeof renderGraphs === 'function') {
-                            renderGraphs();
-                        }
-                        // Wait for graphs to re-render in light mode before snapshotting
-                        await new Promise(r => setTimeout(r, 300));
-
-                        const graphConfigs = [
-                            { id: 'canvas-tally',    name: 'Tally Counters' },
-                            { id: 'canvas-salinity', name: 'Salinity Converter' },
-                            { id: 'canvas-averaging',name: 'Sum & Averaging' },
-                            { id: 'canvas-pickup',   name: 'Pickup Calculator' },
-                            { id: 'canvas-pace',     name: 'Production Pace' }
-                        ];
-
                         for (const conf of graphConfigs) {
                             const canvas = document.getElementById(conf.id);
-                            if (!canvas || canvas.style.display === 'none' || !chartInstances[conf.id]) continue;
+                            const chart  = chartInstances[conf.id];
+                            if (!canvas || !chart) continue;
 
-                            // Composite chart canvas onto a white background so PNGs are visible in Excel
-                            const tempCanvas = document.createElement('canvas');
-                            tempCanvas.width  = canvas.width;
-                            tempCanvas.height = canvas.height;
-                            const tctx = tempCanvas.getContext('2d');
-                            tctx.fillStyle = '#ffffff';
-                            tctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                            tctx.drawImage(canvas, 0, 0);
+                            // --- Collect legend items using textContent (works even if parent is visibility:hidden) ---
+                            const legendEl = conf.legendId ? document.getElementById(conf.legendId) : null;
+                            const legendItems = []; // { color: string, label: string }
+                            if (legendEl) {
+                                legendEl.querySelectorAll('li').forEach(li => {
+                                    const swatchSpan = li.querySelector('span:first-child');
+                                    const textSpan   = li.querySelector('span:last-child');
+                                    const label = textSpan ? textSpan.textContent.trim() : '';
+                                    if (label) {
+                                        legendItems.push({
+                                            color: swatchSpan ? (swatchSpan.style.backgroundColor || '#cccccc') : '#cccccc',
+                                            label
+                                        });
+                                    }
+                                });
+                            }
 
-                            const base64Image = tempCanvas.toDataURL('image/png');
+                            // --- Draw a light-mode Y-axis onto a temporary offscreen canvas ---
+                            // The real axis canvas is NOT touched — no flash, card stays as-is.
+                            const tempAxisId = '__export_axis_' + conf.id;
+                            const tempAxisCanvas = document.createElement('canvas');
+                            tempAxisCanvas.id = tempAxisId;
+                            // Position offscreen but in DOM so getElementById finds it and clientHeight works
+                            tempAxisCanvas.style.cssText = 'position:fixed;left:-99999px;top:-99999px;width:45px;height:250px;';
+                            document.body.appendChild(tempAxisCanvas);
+                            // drawFixedYAxis reads window.isGeneratingExcel (true) → draws white bg + dark labels
+                            if (typeof drawFixedYAxis === 'function') {
+                                drawFixedYAxis(chart, tempAxisId);
+                            }
+                            const axisW = tempAxisCanvas.width; // set by drawFixedYAxis
+
+                            // --- Build legend canvas strip (centered) ---
+                            const legendFontSize = 12;
+                            const swatchSize     = 12;
+                            const itemPadX       = 14;
+                            const padY           = 8;
+                            const chartPixelW    = axisW + canvas.width;
+
+                            const measureC = document.createElement('canvas');
+                            const measureCtx = measureC.getContext('2d');
+                            measureCtx.font = `${legendFontSize}px sans-serif`;
+
+                            // Wrap legend items into rows
+                            let legendRows = [];
+                            if (legendItems.length > 0) {
+                                let currentRow = [], rowWidth = 0;
+                                legendItems.forEach(item => {
+                                    const itemW = swatchSize + 5 + measureCtx.measureText(item.label).width + itemPadX;
+                                    if (rowWidth + itemW > chartPixelW && currentRow.length > 0) {
+                                        legendRows.push(currentRow);
+                                        currentRow = [item];
+                                        rowWidth = itemW;
+                                    } else {
+                                        currentRow.push(item);
+                                        rowWidth += itemW;
+                                    }
+                                });
+                                if (currentRow.length > 0) legendRows.push(currentRow);
+                            }
+
+                            const legendH = legendRows.length > 0
+                                ? legendRows.length * (legendFontSize + padY) + padY
+                                : 0;
+
+                            let legendCanvas = null;
+                            if (legendRows.length > 0) {
+                                legendCanvas = document.createElement('canvas');
+                                legendCanvas.width  = chartPixelW;
+                                legendCanvas.height = legendH;
+                                const lctx = legendCanvas.getContext('2d');
+                                lctx.fillStyle = '#ffffff';
+                                lctx.fillRect(0, 0, chartPixelW, legendH);
+                                lctx.font = `${legendFontSize}px sans-serif`;
+                                lctx.textBaseline = 'middle';
+
+                                let drawY = padY;
+                                legendRows.forEach(row => {
+                                    // Calculate row width for centering
+                                    let rowTotalW = 0;
+                                    row.forEach((item, i) => {
+                                        rowTotalW += swatchSize + 5 + measureCtx.measureText(item.label).width;
+                                        if (i < row.length - 1) rowTotalW += itemPadX;
+                                    });
+                                    let drawX = Math.max(0, (chartPixelW - rowTotalW) / 2);
+                                    const midY = drawY + legendFontSize / 2;
+                                    row.forEach((item, i) => {
+                                        lctx.fillStyle = item.color;
+                                        lctx.strokeStyle = item.color;
+                                        lctx.lineWidth = 1;
+                                        lctx.fillRect(drawX, midY - swatchSize / 2, swatchSize, swatchSize);
+                                        lctx.strokeRect(drawX, midY - swatchSize / 2, swatchSize, swatchSize);
+                                        drawX += swatchSize + 5;
+                                        lctx.fillStyle = '#1e293b';
+                                        lctx.fillText(item.label, drawX, midY);
+                                        drawX += measureCtx.measureText(item.label).width;
+                                        if (i < row.length - 1) drawX += itemPadX;
+                                    });
+                                    drawY += legendFontSize + padY;
+                                });
+                            }
+
+                            // --- Composite: legend strip + light-mode axis + chart canvas ---
+                            const chartH = Math.max(tempAxisCanvas.height, canvas.height);
+                            const totalW = axisW + canvas.width;
+                            const totalH = legendH + chartH;
+
+                            const composite = document.createElement('canvas');
+                            composite.width  = totalW;
+                            composite.height = totalH;
+                            const cctx = composite.getContext('2d');
+                            cctx.fillStyle = '#ffffff';
+                            cctx.fillRect(0, 0, totalW, totalH);
+                            if (legendCanvas) cctx.drawImage(legendCanvas, 0, 0);
+                            if (axisW > 0)    cctx.drawImage(tempAxisCanvas, 0, legendH);
+                            // --- Gridlines on the chart area ---
+                            // Drawn on white background before chart canvas so they sit cleanly behind the bars
+                            if (chart.scales && chart.scales.y && chart.chartArea) {
+                                const dpr = window.devicePixelRatio || 1;
+                                const yAxis = chart.scales.y;
+                                const ticks = (yAxis.getTicks ? yAxis.getTicks() : null) || yAxis.ticks || [];
+                                // chart.chartArea coordinates are in CSS pixels; multiply by DPR for physical pixels
+                                const caLeft  = chart.chartArea.left  * dpr;
+                                const caRight = chart.chartArea.right * dpr;
+                                cctx.save();
+                                cctx.strokeStyle = 'rgba(71, 85, 105, 0.12)'; // subtle slate-600 at 12% — soft and clean on white
+                                cctx.lineWidth = 1;
+                                ticks.forEach(tick => {
+                                    const val = (tick && tick.value !== undefined) ? tick.value : tick;
+                                    if (typeof val !== 'number' || isNaN(val)) return;
+                                    const yPosCss  = yAxis.getPixelForValue(val);
+                                    const yPosPhys = yPosCss * dpr;
+                                    if (isNaN(yPosPhys) || yPosPhys < 0 || yPosPhys > canvas.height) return;
+                                    const compositeY = legendH + yPosPhys;
+                                    cctx.beginPath();
+                                    cctx.moveTo(axisW + caLeft,  compositeY);
+                                    cctx.lineTo(axisW + caRight, compositeY);
+                                    cctx.stroke();
+                                });
+                                cctx.restore();
+                            }
+
+                            cctx.drawImage(canvas, axisW, legendH);
+
+                            // In dark mode, chart X-axis labels are drawn with light text (#f1f5f9) which is faint on white.
+                            // Re-render tick labels in readable dark text (#475569) for the export.
+                            const isDarkTheme = document.documentElement.classList.contains('dark') || 
+                                                (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                            if (isDarkTheme && chart.scales && chart.scales.x) {
+                                const xAxis = chart.scales.x;
+                                const xTicks = (xAxis.getTicks ? xAxis.getTicks() : null) || xAxis.ticks || [];
+                                const dpr = window.devicePixelRatio || 1;
+                                cctx.save();
+                                cctx.font = '11px sans-serif';
+                                cctx.fillStyle = '#475569';
+                                cctx.textAlign = 'center';
+                                cctx.textBaseline = 'top';
+                                xTicks.forEach((tick, i) => {
+                                    const text = (tick && tick.label !== undefined) ? tick.label : (chart.data && chart.data.labels ? chart.data.labels[i] : '');
+                                    if (!text) return;
+                                    const xPosCss = xAxis.getPixelForTick ? xAxis.getPixelForTick(i) : (xAxis.getPixelForValue ? xAxis.getPixelForValue(i) : null);
+                                    if (xPosCss === null || isNaN(xPosCss)) return;
+                                    const xPosPhys = axisW + xPosCss * dpr;
+                                    const yPosPhys = legendH + (xAxis.top + 4) * dpr;
+                                    if (yPosPhys < totalH) {
+                                        const textW = cctx.measureText(text).width;
+                                        cctx.fillStyle = '#ffffff';
+                                        cctx.fillRect(xPosPhys - textW / 2 - 2, yPosPhys - 1, textW + 4, 14 * dpr);
+                                        cctx.fillStyle = '#475569';
+                                        cctx.fillText(text, xPosPhys, yPosPhys);
+                                    }
+                                });
+                                cctx.restore();
+                            }
+
+                            // Remove temp axis canvas from DOM
+                            document.body.removeChild(tempAxisCanvas);
+
+                            const base64Image = composite.toDataURL('image/png');
                             const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
 
                             applyRowData(sheet, [hdr(conf.name)]);
                             const currentRow = sheet.rowCount;
+                            const dispW = Math.min(totalW, 700);
+                            const dispH = Math.round(totalH * (dispW / totalW));
                             sheet.addImage(imageId, {
                                 tl: { col: 0, row: currentRow },
-                                ext: { width: Math.min(canvas.width, 600), height: Math.min(canvas.height, 300) }
+                                ext: { width: dispW, height: Math.min(dispH, 360) }
                             });
-                            // ~300px height ≈ 15 rows at default row height
-                            for (let i = 0; i < 16; i++) sheet.addRow([]);
+                            const rowsNeeded = Math.ceil(Math.min(dispH, 360) / 20) + 1;
+                            for (let i = 0; i < rowsNeeded; i++) sheet.addRow([]);
                         }
                     } finally {
                         window.isGeneratingExcel = false;
-                        if (wasCollapsed && cardBody) {
-                            cardBody.style.cssText = '';
-                        }
-                        // Re-render to restore original theme colours (only re-renders if card is open)
-                        if (typeof renderGraphs === 'function') {
-                            renderGraphs();
-                        }
                     }
                 }
 
