@@ -40,6 +40,17 @@
                     }
                 }, { passive: false });
             });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const active = document.activeElement;
+                    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+                        if (active.closest('.tab-options-panel')) {
+                            active.blur();
+                        }
+                    }
+                }
+            });
             
             let preventTabClick = false; 
             let isTabDraggingGlobal = false; 
@@ -1893,6 +1904,13 @@
                     saveAllGroupData();
                     renderEstimatorTabs();
                 }
+            }
+
+            function saveEstimatorTabNameAndClose() {
+                saveEstimatorTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isEstimatorTabMenuOpen = false;
                 updateEstimatorTabMenuState();
             }
@@ -2299,6 +2317,13 @@
                     renderPickupSets();
                     loadPickupInputs(); 
                 }
+            }
+
+            function savePickupSetNameAndClose() {
+                savePickupSetName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isPickupSetMenuOpen = false;
                 updatePickupSetMenuState();
             }
@@ -2433,6 +2458,13 @@
                     saveAllGroupData();
                     renderPickupTabs();
                     calculatePickup();
+                }
+            }
+
+            function savePickupTabNameAndClose() {
+                savePickupTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
                 }
                 isPickupTabMenuOpen = false;
                 updatePickupTabMenuState();
@@ -2664,6 +2696,13 @@
                     updateStats(); 
                     renderList();  
                 }
+            }
+
+            function saveSumSetNameAndClose() {
+                saveSumSetName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isSumSetMenuOpen = false;
                 updateSumSetMenuState();
             }
@@ -2870,6 +2909,13 @@
                     renderTabs();
                     renderList();
                 }
+            }
+
+            function saveTabNameAndClose() {
+                saveTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isTabMenuOpen = false;
                 updateTabMenuState();
             }
@@ -3023,6 +3069,13 @@
                     tab.name = nameInp.value;
                     saveAllGroupData();
                     renderSalinityTabs();
+                }
+            }
+
+            function saveSalinityTabNameAndClose() {
+                saveSalinityTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
                 }
                 isSalinityTabMenuOpen = false;
                 updateSalinityTabMenuState();
@@ -4366,7 +4419,15 @@
                     saveAllGroupData();
                     renderTallyTabs();
                 }
-                p.tallyTabsMenuOpen = false;
+            }
+
+            function saveTallyTabNameAndClose() {
+                saveTallyTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+                const p = parentGroups.find(g => g.id === activeParentId);
+                if (p) p.tallyTabsMenuOpen = false;
                 updateTallyTabMenuState();
             }
 

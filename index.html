@@ -1156,7 +1156,7 @@
                             </div>
                             <div class="panel-row">
                                 <input type="text" id="unitPickupSetInput" placeholder="Unit..." class="panel-input" oninput="savePickupSetName()">
-                                <button onclick="savePickupSetName()" class="panel-btn">Save</button>
+                                <button onclick="savePickupSetNameAndClose()" class="panel-btn">Save</button>
                             </div>
                             
                             <div style="background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center;">
@@ -1176,7 +1176,7 @@
                             
                             <div class="panel-row">
                                 <input type="text" id="renamePickupTabInput" placeholder="Sample Name" class="panel-input" oninput="savePickupTabName()">
-                                <button onclick="savePickupTabName()" class="panel-btn">Save</button>
+                                <button onclick="savePickupTabNameAndClose()" class="panel-btn">Save</button>
                             </div>
 
                             <button onclick="confirmDeletePickupTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
@@ -1226,7 +1226,7 @@
                             </div>
                             <div class="panel-row">
                                 <input type="text" id="unitSumSetInput" placeholder="Unit..." class="panel-input" oninput="saveSumSetName()">
-                                <button onclick="saveSumSetName()" class="panel-btn">Save</button>
+                                <button onclick="saveSumSetNameAndClose()" class="panel-btn">Save</button>
                             </div>
 
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Set Range Limits</label>
@@ -1249,7 +1249,7 @@
                             
                             <div class="panel-row">
                                 <input type="text" id="renameTabInput" placeholder="Sample Name" class="panel-input" oninput="saveTabName()">
-                                <button onclick="saveTabName()" class="panel-btn">Save</button>
+                                <button onclick="saveTabNameAndClose()" class="panel-btn">Save</button>
                             </div>
                             
                             <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Range Limits</label>
@@ -1306,7 +1306,7 @@
                             
                             <div class="panel-row">
                                 <input type="text" id="renameSalinityTabInput" placeholder="Sample Name" class="panel-input" oninput="saveSalinityTabName()">
-                                <button onclick="saveSalinityTabName()" class="panel-btn">Save</button>
+                                <button onclick="saveSalinityTabNameAndClose()" class="panel-btn">Save</button>
                             </div>
 
                             <button onclick="confirmDeleteSalinityTab()" class="secondary" style="margin:0; min-height:40px;">Delete Sample</button>
@@ -1429,7 +1429,7 @@
                             
                             <div class="panel-row">
                                 <input type="text" id="renameEstimatorTabInput" placeholder="Line Name" class="panel-input" oninput="saveEstimatorTabName()">
-                                <button onclick="saveEstimatorTabName()" class="panel-btn">Save</button>
+                                <button onclick="saveEstimatorTabNameAndClose()" class="panel-btn">Save</button>
                             </div>
 
                             <button onclick="confirmDeleteEstimatorTab()" class="secondary" style="margin:0; min-height:40px;">Delete Line</button>
@@ -1505,7 +1505,7 @@
                             
                             <div class="panel-row">
                                 <input type="text" id="renameTallyTabInput" placeholder="Sample Name" class="panel-input" oninput="saveTallyTabName()">
-                                <button onclick="saveTallyTabName()" class="panel-btn">Save</button>
+                                <button onclick="saveTallyTabNameAndClose()" class="panel-btn">Save</button>
                             </div>
                             <div class="panel-row">
                                 <button onclick="duplicateTallyTab()" class="panel-btn" style="flex: 1; margin-right: 5px; background: #64748b;">Duplicate</button>
@@ -1607,7 +1607,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v111</div>
+            <div class="footer-version">v112</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1670,6 +1670,17 @@
                         }
                     }
                 }, { passive: false });
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const active = document.activeElement;
+                    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+                        if (active.closest('.tab-options-panel')) {
+                            active.blur();
+                        }
+                    }
+                }
             });
             
             let preventTabClick = false; 
@@ -3960,6 +3971,13 @@
                     saveAllGroupData();
                     renderEstimatorTabs();
                 }
+            }
+
+            function saveEstimatorTabNameAndClose() {
+                saveEstimatorTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isEstimatorTabMenuOpen = false;
                 updateEstimatorTabMenuState();
             }
@@ -4366,6 +4384,13 @@
                     renderPickupSets();
                     loadPickupInputs(); 
                 }
+            }
+
+            function savePickupSetNameAndClose() {
+                savePickupSetName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isPickupSetMenuOpen = false;
                 updatePickupSetMenuState();
             }
@@ -4500,6 +4525,13 @@
                     saveAllGroupData();
                     renderPickupTabs();
                     calculatePickup();
+                }
+            }
+
+            function savePickupTabNameAndClose() {
+                savePickupTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
                 }
                 isPickupTabMenuOpen = false;
                 updatePickupTabMenuState();
@@ -4731,6 +4763,13 @@
                     updateStats(); 
                     renderList();  
                 }
+            }
+
+            function saveSumSetNameAndClose() {
+                saveSumSetName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isSumSetMenuOpen = false;
                 updateSumSetMenuState();
             }
@@ -4936,6 +4975,13 @@
                     renderTabs();
                     renderList();
                 }
+            }
+
+            function saveTabNameAndClose() {
+                saveTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
                 isTabMenuOpen = false;
                 updateTabMenuState();
             }
@@ -5092,6 +5138,13 @@
                     tab.name = nameInp.value;
                     saveAllGroupData();
                     renderSalinityTabs();
+                }
+            }
+
+            function saveSalinityTabNameAndClose() {
+                saveSalinityTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
                 }
                 isSalinityTabMenuOpen = false;
                 updateSalinityTabMenuState();
@@ -6464,7 +6517,15 @@
                     saveAllGroupData();
                     renderTallyTabs();
                 }
-                p.tallyTabsMenuOpen = false;
+            }
+
+            function saveTallyTabNameAndClose() {
+                saveTallyTabName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+                const p = getActiveParentGroup();
+                if (p) p.tallyTabsMenuOpen = false;
                 updateTallyTabMenuState();
             }
 
