@@ -868,6 +868,14 @@
 			    // Always refresh sidebar/header so date and product code subtitle stays current
 			    renderSidebarList();
 			}
+
+            function saveParentGroupSettingsAndClose() {
+                saveParentGroupSettings();
+                isParentTabMenuOpen = false;
+                updateParentTabMenuState();
+                const chevron = document.getElementById('groupMenuChevron');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            }
         
             function confirmDeleteParentTab() {
                 const p = parentGroups.find(t => t.id === activeParentId);
@@ -1885,6 +1893,8 @@
                     saveAllGroupData();
                     renderEstimatorTabs();
                 }
+                isEstimatorTabMenuOpen = false;
+                updateEstimatorTabMenuState();
             }
         
             function confirmDeleteEstimatorTab() {
@@ -2289,6 +2299,8 @@
                     renderPickupSets();
                     loadPickupInputs(); 
                 }
+                isPickupSetMenuOpen = false;
+                updatePickupSetMenuState();
             }
         
             function confirmDeletePickupSet() {
@@ -2422,6 +2434,8 @@
                     renderPickupTabs();
                     calculatePickup();
                 }
+                isPickupTabMenuOpen = false;
+                updatePickupTabMenuState();
             }
         
             function confirmDeletePickupTab() {
@@ -2650,6 +2664,8 @@
                     updateStats(); 
                     renderList();  
                 }
+                isSumSetMenuOpen = false;
+                updateSumSetMenuState();
             }
 
             function saveSumSetRange() {
@@ -2854,6 +2870,8 @@
                     renderTabs();
                     renderList();
                 }
+                isTabMenuOpen = false;
+                updateTabMenuState();
             }
         
             function saveTabRange() {
@@ -3006,6 +3024,8 @@
                     saveAllGroupData();
                     renderSalinityTabs();
                 }
+                isSalinityTabMenuOpen = false;
+                updateSalinityTabMenuState();
             }
         
             function confirmDeleteSalinityTab() {
@@ -4346,6 +4366,8 @@
                     saveAllGroupData();
                     renderTallyTabs();
                 }
+                p.tallyTabsMenuOpen = false;
+                updateTallyTabMenuState();
             }
 
 			function renderTallies() {
