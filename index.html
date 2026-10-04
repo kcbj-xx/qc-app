@@ -1607,7 +1607,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v112</div>
+            <div class="footer-version">v113</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -2910,13 +2910,18 @@
                     return;
                 }
                 if (confirm(`Are you sure you want to delete the entire file "${p.name || 'Unnamed'}"? This removes all data inside it.`)) {
-                    let currentIndex = parentGroups.findIndex(t => t.id === activeParentId);
-                    parentGroups = parentGroups.filter(t => t.id !== activeParentId);
-                    let newIndex = currentIndex - 1;
-                    if (newIndex < 0) newIndex = 0; 
+                    const deletedId = activeParentId;
+                    const siblings = parentGroups.filter(t => t.folderId === p.folderId);
+                    const sibIndex = siblings.findIndex(t => t.id === deletedId);
+                    let target = siblings[sibIndex - 1] || siblings[sibIndex + 1];
+                    parentGroups = parentGroups.filter(t => t.id !== deletedId);
+                    if (!target) {
+                        let currentIndex = 0;
+                        target = parentGroups[currentIndex];
+                    }
                     
-                    activeParentId = parentGroups[newIndex].id; 
-                    currentFolderId = parentGroups[newIndex].folderId;
+                    activeParentId = target.id; 
+                    currentFolderId = target.folderId;
                     isParentTabMenuOpen = false;
                     refreshGroupDataReferences();
                     saveAllGroupData();
@@ -6267,15 +6272,22 @@
 			// ==========================================
 			let _tallyDeleteHoldTimer = null;
 
+			let _tallyHoldFired = false;
+
 			function startTallyDeleteHold(event, id) {
 			    event.stopPropagation();
+			    _tallyHoldFired = false;
+			    cancelTallyDeleteHold();
 			    _tallyDeleteHoldTimer = setTimeout(() => {
+			        _tallyDeleteHoldTimer = null;
+			        _tallyHoldFired = true;
 			        if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
 			        const p = getActiveParentGroup();
-			        if (p && p.tallies.length > 1 && confirm(`Delete ALL ${p.tallies.length} counters? This cannot be undone.`)) {
-			            p.tallies = [];
-			            p.activeTallyId = null;
-			            p.tallyMenuCollapsed = false;
+			        const activeTab = p && p.tallyTabs ? p.tallyTabs.find(t => t.id === p.activeTallyTabId) : null;
+			        if (activeTab && activeTab.tallies && activeTab.tallies.length > 0 && confirm(`Delete ALL ${activeTab.tallies.length} counters? This cannot be undone.`)) {
+			            activeTab.tallies = [];
+			            activeTab.activeTallyId = null;
+			            activeTab.tallyMenuCollapsed = false;
 			            saveAllGroupData();
 			            renderTallyTabs();
 			        }
@@ -6781,7 +6793,7 @@
 			        color: var(--primary);
 			        transition: 0.2s;
 			    `;
-			    addCard.onclick = addTally;
+			    addCard.onclick = (e) => { e.stopPropagation(); addTally(); };
 			    addCard.innerHTML = `
 			        <div style="font-size: 2rem; font-weight: bold; line-height: 1;">+</div>
 			        <div style="font-size: 0.75rem; font-weight: 600; margin-top: 5px;">Add Tally</div>
@@ -6818,7 +6830,13 @@
 			    const p = getActiveParentGroup();
                 const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
 			    const newName = getNextTabName(activeTab.tallies, "Counter");
-			    activeTab.tallies.push({ id: 'tally_' + Date.now(), name: newName, count: 0, isLocked: false });
+			    const menuWasOpen = !!activeTab.activeTallyId && !activeTab.tallyMenuCollapsed && activeTab.tallies.some(t => t.id === activeTab.activeTallyId);
+			    const newTally = { id: 'tally_' + Date.now(), name: newName, count: 0, isLocked: false };
+			    activeTab.tallies.push(newTally);
+			    if (menuWasOpen) {
+			        activeTab.activeTallyId = newTally.id;
+			        activeTab.tallyMenuCollapsed = false;
+			    }
 			    saveAllGroupData();
 			    renderTallies();
 			}
@@ -6940,6 +6958,7 @@
         
             function removeTally(event, id) {
 			    if (event) event.stopPropagation(); // Prevents the card from being selected when deleted
+			    if (_tallyHoldFired) { _tallyHoldFired = false; return; }
 			    if (confirm("Are you sure you want to remove this tally counter?")) {
 			        const p = getActiveParentGroup();
                     const activeTab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
