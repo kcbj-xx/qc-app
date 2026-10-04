@@ -113,6 +113,21 @@
                 }
             }
             
+            function getJulianDayFromDateString(dateStr) {
+                if (!dateStr || typeof dateStr !== 'string') return '';
+                const parts = dateStr.split('-');
+                if (parts.length !== 3) return '';
+                const y = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10);
+                const day = parseInt(parts[2], 10);
+                if (isNaN(y) || isNaN(m) || isNaN(day)) return '';
+                const d = new Date(y, m - 1, day);
+                const start = new Date(d.getFullYear(), 0, 0);
+                const diff = d - start + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60 * 1000;
+                const oneDay = 1000 * 60 * 60 * 24;
+                return Math.floor(diff / oneDay).toString().padStart(3, '0');
+            }
+
             function updateBatchTitle() {
                 const now = new Date();
                 const start = new Date(now.getFullYear(), 0, 0);
@@ -806,12 +821,13 @@
             function saveParentGroupSettings() {
 			    // Note: Removed .trim() so you can type spaces naturally without the cursor jumping
 			    const newName = document.getElementById('renameParentTabInput').value;
-			    const newProductCode = document.getElementById('groupProductCodeInput').value;
+			    let newProductCode = document.getElementById('groupProductCodeInput').value;
 			    const date = document.getElementById('groupDateInput').value;
 			    const startTime = document.getElementById('groupStartTimeInput').value;
 			    const endTime = document.getElementById('groupEndTimeInput').value;
 			    
 			    const p = parentGroups.find(t => t.id === activeParentId);
+			    if (!p) return;
 			    
 			    let requiresUIRefresh = false;
 			    
@@ -820,12 +836,30 @@
 			        requiresUIRefresh = true;
 			    }
 			    
+			    // Auto-fill product code with Julian day when date changes
+			    if (p.date !== date) {
+			        const oldJulian = getJulianDayFromDateString(p.date);
+			        p.date = date;
+			        requiresUIRefresh = true;
+			        if (date) {
+			            const julian = getJulianDayFromDateString(date);
+			            if (julian) {
+			                newProductCode = julian;
+			                const prodInp = document.getElementById('groupProductCodeInput');
+			                if (prodInp) prodInp.value = julian;
+			            }
+			        } else if (oldJulian && p.productCode === oldJulian) {
+			            newProductCode = '';
+			            const prodInp = document.getElementById('groupProductCodeInput');
+			            if (prodInp) prodInp.value = '';
+			        }
+			    }
+			    
 			    if (p.productCode !== newProductCode) {
 			        p.productCode = newProductCode;
 			        requiresUIRefresh = true;
 			    }
 			    
-			    p.date = date;
 			    p.startTime = startTime;
 			    p.endTime = endTime;
 			    
@@ -1831,7 +1865,10 @@
                 const panel = document.getElementById('estimatorTabOptionsPanel');
                 if (isEstimatorTabMenuOpen) {
                     const activeTab = getActiveEstimator();
-                    document.getElementById('renameEstimatorTabInput').value = activeTab.name;
+                    const nameInp = document.getElementById('renameEstimatorTabInput');
+                    if (nameInp && activeTab && document.activeElement !== nameInp) {
+                        nameInp.value = activeTab.name || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -1839,14 +1876,14 @@
             }
         
             function saveEstimatorTabName() {
-                const newName = document.getElementById('renameEstimatorTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = getActiveEstimator();
+                const nameInp = document.getElementById('renameEstimatorTabInput');
+                if (!nameInp) return;
+                const newName = nameInp.value;
+                const tab = getActiveEstimator();
+                if (tab) {
                     tab.name = newName;
                     saveAllGroupData();
-                    isEstimatorTabMenuOpen = false;
                     renderEstimatorTabs();
-                    updateEstimatorTabMenuState();
                 }
             }
         
@@ -2228,8 +2265,12 @@
                 const panel = document.getElementById('pickupSetOptionsPanel');
                 if (isPickupSetMenuOpen) {
                     const activeSet = pickupSets.find(s => s.id === activePickupSetId);
-                    document.getElementById('renamePickupSetInput').value = activeSet.name;
-                    document.getElementById('unitPickupSetInput').value = activeSet.unit || ''; 
+                    if (activeSet) {
+                        const nameInp = document.getElementById('renamePickupSetInput');
+                        const unitInp = document.getElementById('unitPickupSetInput');
+                        if (nameInp && document.activeElement !== nameInp) nameInp.value = activeSet.name || '';
+                        if (unitInp && document.activeElement !== unitInp) unitInp.value = activeSet.unit || '';
+                    }
                     updatePickupSetAverage(); 
                     panel.style.display = 'flex';
                 } else {
@@ -2238,18 +2279,16 @@
             }
         
             function savePickupSetName() {
-                const newName = document.getElementById('renamePickupSetInput').value.trim();
-                const newUnit = document.getElementById('unitPickupSetInput').value.trim(); 
+                const nameInp = document.getElementById('renamePickupSetInput');
+                const unitInp = document.getElementById('unitPickupSetInput');
                 const set = pickupSets.find(s => s.id === activePickupSetId);
-                
-                if (newName !== '') set.name = newName;
-                set.unit = newUnit; 
-                
-                saveAllGroupData();
-                isPickupSetMenuOpen = false;
-                renderPickupSets();
-                updatePickupSetMenuState();
-                loadPickupInputs(); 
+                if (set) {
+                    if (nameInp) set.name = nameInp.value;
+                    if (unitInp) set.unit = unitInp.value;
+                    saveAllGroupData();
+                    renderPickupSets();
+                    loadPickupInputs(); 
+                }
             }
         
             function confirmDeletePickupSet() {
@@ -2362,7 +2401,10 @@
                 const panel = document.getElementById('pickupTabOptionsPanel');
                 if (isPickupTabMenuOpen) {
                     const activeTab = pickupTabs.find(t => t.id === activePickupTabId);
-                    document.getElementById('renamePickupTabInput').value = activeTab.name;
+                    const nameInp = document.getElementById('renamePickupTabInput');
+                    if (nameInp && activeTab && document.activeElement !== nameInp) {
+                        nameInp.value = activeTab.name || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -2370,15 +2412,15 @@
             }
         
             function savePickupTabName() {
-                const newName = document.getElementById('renamePickupTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = pickupTabs.find(t => t.id === activePickupTabId);
+                const nameInp = document.getElementById('renamePickupTabInput');
+                if (!nameInp) return;
+                const newName = nameInp.value;
+                const tab = pickupTabs.find(t => t.id === activePickupTabId);
+                if (tab) {
                     tab.name = newName;
                     saveAllGroupData();
-                    isPickupTabMenuOpen = false;
                     renderPickupTabs();
                     calculatePickup();
-                    updatePickupTabMenuState();
                 }
             }
         
@@ -2580,10 +2622,16 @@
                 const panel = document.getElementById('sumSetOptionsPanel');
                 if (isSumSetMenuOpen) {
                     const activeSet = sumSets.find(s => s.id === activeSumSetId);
-                    document.getElementById('renameSumSetInput').value = activeSet.name;
-                    document.getElementById('unitSumSetInput').value = activeSet.unit || '';
-                    document.getElementById('setMinRange').value = activeSet.minRange || '';
-                    document.getElementById('setMaxRange').value = activeSet.maxRange || '';
+                    if (activeSet) {
+                        const nameInp = document.getElementById('renameSumSetInput');
+                        const unitInp = document.getElementById('unitSumSetInput');
+                        const minInp = document.getElementById('setMinRange');
+                        const maxInp = document.getElementById('setMaxRange');
+                        if (nameInp && document.activeElement !== nameInp) nameInp.value = activeSet.name || '';
+                        if (unitInp && document.activeElement !== unitInp) unitInp.value = activeSet.unit || '';
+                        if (minInp && document.activeElement !== minInp) minInp.value = activeSet.minRange || '';
+                        if (maxInp && document.activeElement !== maxInp) maxInp.value = activeSet.maxRange || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -2591,19 +2639,17 @@
             }
             
             function saveSumSetName() {
-                const newName = document.getElementById('renameSumSetInput').value.trim();
-                const newUnit = document.getElementById('unitSumSetInput').value.trim();
+                const nameInp = document.getElementById('renameSumSetInput');
+                const unitInp = document.getElementById('unitSumSetInput');
                 const set = sumSets.find(s => s.id === activeSumSetId);
-                
-                if (newName !== '') set.name = newName;
-                set.unit = newUnit;
-                
-                saveAllGroupData();
-                isSumSetMenuOpen = false;
-                renderSumSets();
-                updateSumSetMenuState();
-                updateStats(); 
-                renderList();  
+                if (set) {
+                    if (nameInp) set.name = nameInp.value;
+                    if (unitInp) set.unit = unitInp.value;
+                    saveAllGroupData();
+                    renderSumSets();
+                    updateStats(); 
+                    renderList();  
+                }
             }
 
             function saveSumSetRange() {
@@ -2784,9 +2830,14 @@
                 const panel = document.getElementById('tabOptionsPanel');
                 if (isTabMenuOpen) {
                     const activeTab = appTabs.find(t => t.id === activeTabId);
-                    document.getElementById('renameTabInput').value = activeTab.name;
-                    document.getElementById('tabMinRange').value = activeTab.minRange || '';
-                    document.getElementById('tabMaxRange').value = activeTab.maxRange || '';
+                    if (activeTab) {
+                        const nameInp = document.getElementById('renameTabInput');
+                        const minInp = document.getElementById('tabMinRange');
+                        const maxInp = document.getElementById('tabMaxRange');
+                        if (nameInp && document.activeElement !== nameInp) nameInp.value = activeTab.name || '';
+                        if (minInp && document.activeElement !== minInp) minInp.value = activeTab.minRange || '';
+                        if (maxInp && document.activeElement !== maxInp) maxInp.value = activeTab.maxRange || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -2794,15 +2845,14 @@
             }
         
             function saveTabName() {
-                const newName = document.getElementById('renameTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = appTabs.find(t => t.id === activeTabId);
-                    tab.name = newName;
+                const nameInp = document.getElementById('renameTabInput');
+                if (!nameInp) return;
+                const tab = appTabs.find(t => t.id === activeTabId);
+                if (tab) {
+                    tab.name = nameInp.value;
                     saveAllGroupData();
-                    isTabMenuOpen = false;
                     renderTabs();
                     renderList();
-                    updateTabMenuState();
                 }
             }
         
@@ -2937,7 +2987,10 @@
                 const panel = document.getElementById('salinityTabOptionsPanel');
                 if (isSalinityTabMenuOpen) {
                     const activeTab = getActiveSalinityTab();
-                    document.getElementById('renameSalinityTabInput').value = activeTab.name;
+                    const nameInp = document.getElementById('renameSalinityTabInput');
+                    if (nameInp && activeTab && document.activeElement !== nameInp) {
+                        nameInp.value = activeTab.name || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -2945,14 +2998,13 @@
             }
         
             function saveSalinityTabName() {
-                const newName = document.getElementById('renameSalinityTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = getActiveSalinityTab();
-                    tab.name = newName;
+                const nameInp = document.getElementById('renameSalinityTabInput');
+                if (!nameInp) return;
+                const tab = getActiveSalinityTab();
+                if (tab) {
+                    tab.name = nameInp.value;
                     saveAllGroupData();
-                    isSalinityTabMenuOpen = false;
                     renderSalinityTabs();
-                    updateSalinityTabMenuState();
                 }
             }
         
@@ -4275,7 +4327,10 @@
                 if (p.tallyTabsMenuOpen) {
                     panel.style.display = 'block';
                     const tab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
-                    document.getElementById('renameTallyTabInput').value = tab ? tab.name : '';
+                    const nameInp = document.getElementById('renameTallyTabInput');
+                    if (nameInp && tab && document.activeElement !== nameInp) {
+                        nameInp.value = tab.name || '';
+                    }
                 } else {
                     panel.style.display = 'none';
                 }
@@ -4285,8 +4340,9 @@
                 const p = parentGroups.find(g => g.id === activeParentId);
                 if (!p || !p.tallyTabs) return;
                 const tab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
-                if (tab) {
-                    tab.name = document.getElementById('renameTallyTabInput').value || 'Unnamed';
+                const nameInp = document.getElementById('renameTallyTabInput');
+                if (tab && nameInp) {
+                    tab.name = nameInp.value;
                     saveAllGroupData();
                     renderTallyTabs();
                 }

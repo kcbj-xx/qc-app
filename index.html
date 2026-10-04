@@ -961,7 +961,7 @@
                         <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
                             <div class="input-group" style="flex: 1; margin-bottom: 0;">
                                 <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
-                                <input type="date" id="groupDateInput" oninput="saveParentGroupSettings()" style="min-height: 40px;">
+                                <input type="date" id="groupDateInput" oninput="saveParentGroupSettings()" onchange="saveParentGroupSettings()" style="min-height: 40px;">
                             </div>
                             <div class="input-group" style="flex: 1; margin-bottom: 0;">
                                 <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Product Code</label>
@@ -1606,7 +1606,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v110</div>
+            <div class="footer-version">v111</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1744,10 +1744,27 @@
                 }
             }
             
+            function getJulianDayFromDateString(dateStr) {
+                if (!dateStr || typeof dateStr !== 'string') return '';
+                const parts = dateStr.split('-');
+                if (parts.length !== 3) return '';
+                const y = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10);
+                const day = parseInt(parts[2], 10);
+                if (isNaN(y) || isNaN(m) || isNaN(day)) return '';
+                const d = new Date(y, m - 1, day);
+                const start = new Date(d.getFullYear(), 0, 0);
+                const diff = d - start + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60 * 1000;
+                const oneDay = 1000 * 60 * 60 * 24;
+                return Math.floor(diff / oneDay).toString().padStart(3, '0');
+            }
+            
             function updateBatchTitle() {
                 let d = new Date();
                 const activeGroup = (typeof parentGroups !== 'undefined') ? parentGroups.find(g => g.id === activeParentId) : null;
+                let julian = '';
                 if (activeGroup && activeGroup.date && activeGroup.date.trim() !== '') {
+                    julian = getJulianDayFromDateString(activeGroup.date);
                     const parts = activeGroup.date.split('-');
                     if (parts.length === 3) {
                         const y = parseInt(parts[0], 10);
@@ -1758,10 +1775,12 @@
                         }
                     }
                 }
-                const start = new Date(d.getFullYear(), 0, 0);
-                const diff = d - start + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60 * 1000;
-                const oneDay = 1000 * 60 * 60 * 24;
-                const julian = Math.floor(diff / oneDay).toString().padStart(3, '0');
+                if (!julian) {
+                    const start = new Date(d.getFullYear(), 0, 0);
+                    const diff = d - start + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60 * 1000;
+                    const oneDay = 1000 * 60 * 60 * 24;
+                    julian = Math.floor(diff / oneDay).toString().padStart(3, '0');
+                }
 
                 const dd = String(d.getDate()).padStart(2, '0');
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -2795,11 +2814,18 @@
                 const panel = document.getElementById('parentTabOptionsPanel');
                 if (isParentTabMenuOpen) {
                     const p = parentGroups.find(t => t.id === activeParentId);
-                    document.getElementById('renameParentTabInput').value = p.name || '';
-                    document.getElementById('groupProductCodeInput').value = p.productCode || '';
-                    document.getElementById('groupDateInput').value = p.date || '';
-                    document.getElementById('groupStartTimeInput').value = p.startTime || '';
-                    document.getElementById('groupEndTimeInput').value = p.endTime || '';
+                    if (p) {
+                        const nameInp = document.getElementById('renameParentTabInput');
+                        const prodInp = document.getElementById('groupProductCodeInput');
+                        const dateInp = document.getElementById('groupDateInput');
+                        const startInp = document.getElementById('groupStartTimeInput');
+                        const endInp = document.getElementById('groupEndTimeInput');
+                        if (nameInp && document.activeElement !== nameInp) nameInp.value = p.name || '';
+                        if (prodInp && document.activeElement !== prodInp) prodInp.value = p.productCode || '';
+                        if (dateInp && document.activeElement !== dateInp) dateInp.value = p.date || '';
+                        if (startInp && document.activeElement !== startInp) startInp.value = p.startTime || '';
+                        if (endInp && document.activeElement !== endInp) endInp.value = p.endTime || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -2809,12 +2835,13 @@
             function saveParentGroupSettings() {
 			    // Note: Removed .trim() so you can type spaces naturally without the cursor jumping
 			    const newName = document.getElementById('renameParentTabInput').value;
-			    const newProductCode = document.getElementById('groupProductCodeInput').value;
+			    let newProductCode = document.getElementById('groupProductCodeInput').value;
 			    const date = document.getElementById('groupDateInput').value;
 			    const startTime = document.getElementById('groupStartTimeInput').value;
 			    const endTime = document.getElementById('groupEndTimeInput').value;
 			    
 			    const p = parentGroups.find(t => t.id === activeParentId);
+			    if (!p) return;
 			    
 			    let requiresUIRefresh = false;
 			    
@@ -2823,12 +2850,30 @@
 			        requiresUIRefresh = true;
 			    }
 			    
+			    // Auto-fill product code with Julian day when date changes
+			    if (p.date !== date) {
+			        const oldJulian = getJulianDayFromDateString(p.date);
+			        p.date = date;
+			        requiresUIRefresh = true;
+			        if (date) {
+			            const julian = getJulianDayFromDateString(date);
+			            if (julian) {
+			                newProductCode = julian;
+			                const prodInp = document.getElementById('groupProductCodeInput');
+			                if (prodInp) prodInp.value = julian;
+			            }
+			        } else if (oldJulian && p.productCode === oldJulian) {
+			            newProductCode = '';
+			            const prodInp = document.getElementById('groupProductCodeInput');
+			            if (prodInp) prodInp.value = '';
+			        }
+			    }
+			    
 			    if (p.productCode !== newProductCode) {
 			        p.productCode = newProductCode;
 			        requiresUIRefresh = true;
 			    }
 			    
-			    p.date = date;
 			    p.startTime = startTime;
 			    p.endTime = endTime;
 			    
@@ -3841,7 +3886,7 @@
                 estimatorTabs.forEach((tab) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn ${tab.id === activeEstimatorTabId ? 'active' : ''}`;
-                    btn.innerText = tab.name;
+                    btn.innerText = tab.name || 'Unnamed';
                     btn.dataset.id = tab.id; 
                     
                     if (tab.id === activeEstimatorTabId) activeBtnElement = btn;
@@ -3886,7 +3931,10 @@
                 const panel = document.getElementById('estimatorTabOptionsPanel');
                 if (isEstimatorTabMenuOpen) {
                     const activeTab = getActiveEstimator();
-                    document.getElementById('renameEstimatorTabInput').value = activeTab.name;
+                    const nameInp = document.getElementById('renameEstimatorTabInput');
+                    if (nameInp && activeTab && document.activeElement !== nameInp) {
+                        nameInp.value = activeTab.name || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -3894,14 +3942,14 @@
             }
         
             function saveEstimatorTabName() {
-                const newName = document.getElementById('renameEstimatorTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = getActiveEstimator();
+                const nameInp = document.getElementById('renameEstimatorTabInput');
+                if (!nameInp) return;
+                const newName = nameInp.value;
+                const tab = getActiveEstimator();
+                if (tab) {
                     tab.name = newName;
                     saveAllGroupData();
-                    isEstimatorTabMenuOpen = false;
                     renderEstimatorTabs();
-                    updateEstimatorTabMenuState();
                 }
             }
         
@@ -4231,7 +4279,7 @@
                 pickupSets.forEach((set) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn set-tab-btn ${set.id === activePickupSetId ? 'active' : ''}`;
-                    btn.innerText = set.name;
+                    btn.innerText = set.name || 'Unnamed';
                     btn.dataset.id = set.id; 
         
                     if (set.id === activePickupSetId) activeBtnElement = btn;
@@ -4283,8 +4331,12 @@
                 const panel = document.getElementById('pickupSetOptionsPanel');
                 if (isPickupSetMenuOpen) {
                     const activeSet = pickupSets.find(s => s.id === activePickupSetId);
-                    document.getElementById('renamePickupSetInput').value = activeSet.name;
-                    document.getElementById('unitPickupSetInput').value = activeSet.unit || ''; 
+                    if (activeSet) {
+                        const nameInp = document.getElementById('renamePickupSetInput');
+                        const unitInp = document.getElementById('unitPickupSetInput');
+                        if (nameInp && document.activeElement !== nameInp) nameInp.value = activeSet.name || '';
+                        if (unitInp && document.activeElement !== unitInp) unitInp.value = activeSet.unit || '';
+                    }
                     updatePickupSetAverage(); 
                     panel.style.display = 'flex';
                 } else {
@@ -4293,18 +4345,16 @@
             }
         
             function savePickupSetName() {
-                const newName = document.getElementById('renamePickupSetInput').value.trim();
-                const newUnit = document.getElementById('unitPickupSetInput').value.trim(); 
+                const nameInp = document.getElementById('renamePickupSetInput');
+                const unitInp = document.getElementById('unitPickupSetInput');
                 const set = pickupSets.find(s => s.id === activePickupSetId);
-                
-                if (newName !== '') set.name = newName;
-                set.unit = newUnit; 
-                
-                saveAllGroupData();
-                isPickupSetMenuOpen = false;
-                renderPickupSets();
-                updatePickupSetMenuState();
-                loadPickupInputs(); 
+                if (set) {
+                    if (nameInp) set.name = nameInp.value;
+                    if (unitInp) set.unit = unitInp.value;
+                    saveAllGroupData();
+                    renderPickupSets();
+                    loadPickupInputs(); 
+                }
             }
         
             function confirmDeletePickupSet() {
@@ -4370,7 +4420,7 @@
                 pickupTabs.forEach((tab) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn ${tab.id === activePickupTabId ? 'active' : ''}`;
-                    btn.innerText = tab.name;
+                    btn.innerText = tab.name || 'Unnamed';
                     btn.dataset.id = tab.id; 
                     
                     if (tab.id === activePickupTabId) activeBtnElement = btn;
@@ -4417,7 +4467,10 @@
                 const panel = document.getElementById('pickupTabOptionsPanel');
                 if (isPickupTabMenuOpen) {
                     const activeTab = pickupTabs.find(t => t.id === activePickupTabId);
-                    document.getElementById('renamePickupTabInput').value = activeTab.name;
+                    const nameInp = document.getElementById('renamePickupTabInput');
+                    if (nameInp && activeTab && document.activeElement !== nameInp) {
+                        nameInp.value = activeTab.name || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -4425,15 +4478,15 @@
             }
         
             function savePickupTabName() {
-                const newName = document.getElementById('renamePickupTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = pickupTabs.find(t => t.id === activePickupTabId);
+                const nameInp = document.getElementById('renamePickupTabInput');
+                if (!nameInp) return;
+                const newName = nameInp.value;
+                const tab = pickupTabs.find(t => t.id === activePickupTabId);
+                if (tab) {
                     tab.name = newName;
                     saveAllGroupData();
-                    isPickupTabMenuOpen = false;
                     renderPickupTabs();
                     calculatePickup();
-                    updatePickupTabMenuState();
                 }
             }
         
@@ -4583,7 +4636,7 @@
                 sumSets.forEach((set) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn set-tab-btn ${set.id === activeSumSetId ? 'active' : ''}`;
-                    btn.innerText = set.name;
+                    btn.innerText = set.name || 'Unnamed';
                     btn.dataset.id = set.id; 
         
                     if (set.id === activeSumSetId) activeBtnElement = btn;
@@ -4635,10 +4688,16 @@
                 const panel = document.getElementById('sumSetOptionsPanel');
                 if (isSumSetMenuOpen) {
                     const activeSet = sumSets.find(s => s.id === activeSumSetId);
-                    document.getElementById('renameSumSetInput').value = activeSet.name;
-                    document.getElementById('unitSumSetInput').value = activeSet.unit || '';
-                    document.getElementById('setMinRange').value = activeSet.minRange || '';
-                    document.getElementById('setMaxRange').value = activeSet.maxRange || '';
+                    if (activeSet) {
+                        const nameInp = document.getElementById('renameSumSetInput');
+                        const unitInp = document.getElementById('unitSumSetInput');
+                        const minInp = document.getElementById('setMinRange');
+                        const maxInp = document.getElementById('setMaxRange');
+                        if (nameInp && document.activeElement !== nameInp) nameInp.value = activeSet.name || '';
+                        if (unitInp && document.activeElement !== unitInp) unitInp.value = activeSet.unit || '';
+                        if (minInp && document.activeElement !== minInp) minInp.value = activeSet.minRange || '';
+                        if (maxInp && document.activeElement !== maxInp) maxInp.value = activeSet.maxRange || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -4646,19 +4705,17 @@
             }
             
             function saveSumSetName() {
-                const newName = document.getElementById('renameSumSetInput').value.trim();
-                const newUnit = document.getElementById('unitSumSetInput').value.trim();
+                const nameInp = document.getElementById('renameSumSetInput');
+                const unitInp = document.getElementById('unitSumSetInput');
                 const set = sumSets.find(s => s.id === activeSumSetId);
-                
-                if (newName !== '') set.name = newName;
-                set.unit = newUnit;
-                
-                saveAllGroupData();
-                isSumSetMenuOpen = false;
-                renderSumSets();
-                updateSumSetMenuState();
-                updateStats(); 
-                renderList();  
+                if (set) {
+                    if (nameInp) set.name = nameInp.value;
+                    if (unitInp) set.unit = unitInp.value;
+                    saveAllGroupData();
+                    renderSumSets();
+                    updateStats(); 
+                    renderList();  
+                }
             }
 
             function saveSumSetRange() {
@@ -4790,7 +4847,7 @@
                 appTabs.forEach((tab) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
-                    btn.innerText = tab.name;
+                    btn.innerText = tab.name || 'Unnamed';
                     btn.dataset.id = tab.id; 
                     
                     if (tab.id === activeTabId) activeBtnElement = btn;
@@ -4838,9 +4895,14 @@
                 const panel = document.getElementById('tabOptionsPanel');
                 if (isTabMenuOpen) {
                     const activeTab = appTabs.find(t => t.id === activeTabId);
-                    document.getElementById('renameTabInput').value = activeTab.name;
-                    document.getElementById('tabMinRange').value = activeTab.minRange || '';
-                    document.getElementById('tabMaxRange').value = activeTab.maxRange || '';
+                    if (activeTab) {
+                        const nameInp = document.getElementById('renameTabInput');
+                        const minInp = document.getElementById('tabMinRange');
+                        const maxInp = document.getElementById('tabMaxRange');
+                        if (nameInp && document.activeElement !== nameInp) nameInp.value = activeTab.name || '';
+                        if (minInp && document.activeElement !== minInp) minInp.value = activeTab.minRange || '';
+                        if (maxInp && document.activeElement !== maxInp) maxInp.value = activeTab.maxRange || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -4848,15 +4910,14 @@
             }
         
             function saveTabName() {
-                const newName = document.getElementById('renameTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = appTabs.find(t => t.id === activeTabId);
-                    tab.name = newName;
+                const nameInp = document.getElementById('renameTabInput');
+                if (!nameInp) return;
+                const tab = appTabs.find(t => t.id === activeTabId);
+                if (tab) {
+                    tab.name = nameInp.value;
                     saveAllGroupData();
-                    isTabMenuOpen = false;
                     renderTabs();
                     renderList();
-                    updateTabMenuState();
                 }
             }
         
@@ -4946,7 +5007,7 @@
                 salinityTabs.forEach((tab) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn ${tab.id === activeSalinityTabId ? 'active' : ''}`;
-                    btn.innerText = tab.name;
+                    btn.innerText = tab.name || 'Unnamed';
                     btn.dataset.id = tab.id; 
                     
                     if (tab.id === activeSalinityTabId) activeBtnElement = btn;
@@ -4994,7 +5055,10 @@
                 const panel = document.getElementById('salinityTabOptionsPanel');
                 if (isSalinityTabMenuOpen) {
                     const activeTab = getActiveSalinityTab();
-                    document.getElementById('renameSalinityTabInput').value = activeTab.name;
+                    const nameInp = document.getElementById('renameSalinityTabInput');
+                    if (nameInp && activeTab && document.activeElement !== nameInp) {
+                        nameInp.value = activeTab.name || '';
+                    }
                     panel.style.display = 'flex';
                 } else {
                     panel.style.display = 'none';
@@ -5002,14 +5066,13 @@
             }
         
             function saveSalinityTabName() {
-                const newName = document.getElementById('renameSalinityTabInput').value.trim();
-                if (newName !== '') {
-                    const tab = getActiveSalinityTab();
-                    tab.name = newName;
+                const nameInp = document.getElementById('renameSalinityTabInput');
+                if (!nameInp) return;
+                const tab = getActiveSalinityTab();
+                if (tab) {
+                    tab.name = nameInp.value;
                     saveAllGroupData();
-                    isSalinityTabMenuOpen = false;
                     renderSalinityTabs();
-                    updateSalinityTabMenuState();
                 }
             }
         
@@ -6255,7 +6318,7 @@
                 p.tallyTabs.forEach((tab, index) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn ${p.activeTallyTabId === tab.id ? 'active' : ''}`;
-                    btn.innerText = tab.name;
+                    btn.innerText = tab.name || 'Unnamed';
                     btn.dataset.id = tab.id;
                     btn.onclick = (e) => {
                         const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
@@ -6361,7 +6424,10 @@
                 if (p.tallyTabsMenuOpen) {
                     panel.style.display = 'block';
                     const tab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
-                    document.getElementById('renameTallyTabInput').value = tab ? tab.name : '';
+                    const nameInp = document.getElementById('renameTallyTabInput');
+                    if (nameInp && tab && document.activeElement !== nameInp) {
+                        nameInp.value = tab.name || '';
+                    }
                 } else {
                     panel.style.display = 'none';
                 }
@@ -6371,8 +6437,9 @@
                 const p = getActiveParentGroup();
                 if (!p || !p.tallyTabs) return;
                 const tab = p.tallyTabs.find(t => t.id === p.activeTallyTabId);
-                if (tab) {
-                    tab.name = document.getElementById('renameTallyTabInput').value || 'Unnamed';
+                const nameInp = document.getElementById('renameTallyTabInput');
+                if (tab && nameInp) {
+                    tab.name = nameInp.value;
                     saveAllGroupData();
                     renderTallyTabs();
                 }
