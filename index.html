@@ -5954,6 +5954,7 @@
                 }
             }
         
+            let lastRenderedListKey = null;
             function renderList() {
                 const container = document.getElementById('numberList');
                 const clearBtn = document.getElementById('clearAllBtn');
@@ -5962,6 +5963,11 @@
                 const activeSet = sumSets.find(s => s.id === activeSumSetId); 
                         
                 container.innerHTML = '';
+                const listKey = activeSumSetId + '|' + activeTabId;
+                if (listKey !== lastRenderedListKey) {
+                    lastRenderedListKey = listKey;
+                    container.scrollTop = 0;
+                }
                 container.style.display = arr.length ? "flex" : "none";
                 clearBtn.style.display = arr.length ? "block" : "none";
                 
