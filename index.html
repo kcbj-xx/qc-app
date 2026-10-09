@@ -962,7 +962,7 @@
                         <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
                             <div class="input-group" style="flex: 1; margin-bottom: 0;">
                                 <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Date</label>
-                                <input type="date" id="groupDateInput" oninput="saveParentGroupSettings()" onchange="saveParentGroupSettings()" style="min-height: 40px;">
+                                <input type="date" id="groupDateInput" oninput="saveParentGroupSettings(true)" onchange="saveParentGroupSettings(true)" onblur="saveParentGroupSettings(true)" style="min-height: 40px;">
                             </div>
                             <div class="input-group" style="flex: 1; margin-bottom: 0;">
                                 <label style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Product Code</label>
@@ -2844,7 +2844,7 @@
                 }
             }
         
-            function saveParentGroupSettings() {
+            function saveParentGroupSettings(fromDateInput = false) {
 			    // Note: Removed .trim() so you can type spaces naturally without the cursor jumping
 			    const newName = document.getElementById('renameParentTabInput').value;
 			    let newProductCode = document.getElementById('groupProductCodeInput').value;
@@ -2863,6 +2863,15 @@
 			    }
 			    
 			    // Auto-fill product code with Julian day when date changes
+			    // (or when the date is re-selected while the product code is empty)
+			    if (fromDateInput === true && date && p.date === date && !newProductCode.trim()) {
+			        const julian = getJulianDayFromDateString(date);
+			        if (julian) {
+			            newProductCode = julian;
+			            const prodInp = document.getElementById('groupProductCodeInput');
+			            if (prodInp) prodInp.value = julian;
+			        }
+			    }
 			    if (p.date !== date) {
 			        const oldJulian = getJulianDayFromDateString(p.date);
 			        p.date = date;
