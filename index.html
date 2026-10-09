@@ -900,6 +900,16 @@
             display: none; /* Chrome, Safari and Opera */
         }
     </style>
+<script>
+    // Apply simple mode class before first paint to avoid a flash of hidden elements
+    try { if (localStorage.getItem('qc_simple_mode') === 'true') document.documentElement.classList.add('simple-mode-preload'); } catch (e) {}
+</script>
+<style>
+    html.simple-mode-preload #prevFileBtn,
+    html.simple-mode-preload #nextFileBtn,
+    html.simple-mode-preload #sidebarToggleBtn,
+    html.simple-mode-preload #fileHeaderRow { display: none !important; }
+</style>
 </head>
 <body>
     <div class="app-wrapper">
@@ -1840,6 +1850,8 @@
                 const clearSelRow = document.getElementById('exportClearSelectionRow');
                 const offBtn = document.getElementById('simpleModeOffBtn');
                 const onBtn = document.getElementById('simpleModeOnBtn');
+
+                document.documentElement.classList.toggle('simple-mode-preload', !!isSimpleMode);
 
                 if (isSimpleMode) {
                     if (prevBtn) prevBtn.style.display = 'none';
