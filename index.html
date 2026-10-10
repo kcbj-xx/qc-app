@@ -3121,7 +3121,7 @@
                     };
                 });
         
-                let newNameBase = p.name ? p.name : (appFolders.find(f=>f.id===p.folderId)?.name || "File");
+                let newNameBase = p.name || '';
                 const _now = new Date();
                 const _dateStr = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
 
