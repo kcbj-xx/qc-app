@@ -1782,27 +1782,9 @@
             }
             
             function updateBatchTitle() {
-                let d = new Date();
-                const activeGroup = (typeof parentGroups !== 'undefined') ? parentGroups.find(g => g.id === activeParentId) : null;
-                let julian = '';
-                if (activeGroup && activeGroup.date && activeGroup.date.trim() !== '') {
-                    julian = getJulianDayFromDateString(activeGroup.date);
-                    const parts = activeGroup.date.split('-');
-                    if (parts.length === 3) {
-                        const y = parseInt(parts[0], 10);
-                        const m = parseInt(parts[1], 10);
-                        const day = parseInt(parts[2], 10);
-                        if (!isNaN(y) && !isNaN(m) && !isNaN(day)) {
-                            d = new Date(y, m - 1, day);
-                        }
-                    }
-                }
-                if (!julian) {
-                    const start = new Date(d.getFullYear(), 0, 0);
-                    const diff = d - start + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60 * 1000;
-                    const oneDay = 1000 * 60 * 60 * 24;
-                    julian = Math.floor(diff / oneDay).toString().padStart(3, '0');
-                }
+                // Header always reflects the current date, independent of the open file
+                const d = new Date();
+                const julian = getJulianDayFromDateString(`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`);
 
                 const dd = String(d.getDate()).padStart(2, '0');
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -2588,15 +2570,21 @@
 			        const subtitleEl = document.getElementById('activeGroupHeaderSubtitle');
 			        if (subtitleEl) {
 			            const parts = [];
+			            let subDayName = '';
 			            if (activeGroup.date && activeGroup.date.trim() !== '') {
 			                // Format date as MM/DD/YYYY for display
 			                const [y, m, d] = activeGroup.date.split('-');
-			                if (y && m && d) parts.push(`${m}/${d}/${y}`);
+			                if (y && m && d) {
+			                    parts.push(`${m}/${d}/${y}`);
+			                    const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+			                    if (!isNaN(dt)) subDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dt.getDay()];
+			                }
 			                else parts.push(activeGroup.date);
 			            }
 			            if (activeGroup.productCode && activeGroup.productCode.trim() !== '') {
 			                parts.push(activeGroup.productCode.trim());
 			            }
+			            if (subDayName) parts.push(subDayName);
 			            if (parts.length > 0) {
 			                subtitleEl.innerText = parts.join(' · ');
 			                subtitleEl.style.display = 'block';
