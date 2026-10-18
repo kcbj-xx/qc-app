@@ -2581,10 +2581,10 @@
 			                }
 			                else parts.push(activeGroup.date);
 			            }
+			            if (subDayName) parts.push(subDayName);
 			            if (activeGroup.productCode && activeGroup.productCode.trim() !== '') {
 			                parts.push(activeGroup.productCode.trim());
 			            }
-			            if (subDayName) parts.push(subDayName);
 			            if (parts.length > 0) {
 			                subtitleEl.innerText = parts.join(' · ');
 			                subtitleEl.style.display = 'block';
@@ -3144,7 +3144,7 @@
                     temp: { c: '', f: '' },
                     stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
                     sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
-                    notes: { text: '' },
+                    notes: { text: (p.notes && p.notes.text) || '' },
                     timestamps: [],
                     tallyTabs: (p.tallyTabs || []).map((tab, tabIdx) => {
                         const newTabId = 'ttab_' + Date.now() + '_' + tabIdx;
