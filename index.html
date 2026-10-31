@@ -1224,6 +1224,19 @@
                     </h2>
                     <div class="card-body">
                         
+                        <div class="tabs-container" id="sumGroupsContainer" style="border-bottom: 1px dashed var(--border); margin-bottom: 5px; padding-top: 5px; min-height: 40px; align-items: center;">
+                            <div id="sumGroupsList" class="tabs-list" style="gap: 6px;"></div>
+                        </div>
+
+                        <div id="sumGroupOptionsPanel" class="tab-options-panel" style="margin-top: 5px;">
+                            <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
+                            <div class="panel-row">
+                                <input type="text" id="renameSumGroupInput" placeholder="Group Name" class="panel-input" oninput="saveSumGroupName()">
+                                <button onclick="saveSumGroupNameAndClose()" class="panel-btn">Save</button>
+                            </div>
+                            <button onclick="confirmDeleteSumGroup()" class="secondary" style="margin:0; min-height:40px;">Delete Group</button>
+                        </div>
+
                         <div class="tabs-container" id="sumSetsContainer" style="border-bottom: 1px dashed var(--border); margin-bottom: 5px; padding-top: 5px; min-height: 40px; align-items: center;">
                             <div id="sumSetsList" class="tabs-list" style="gap: 6px;"></div>
                         </div>
@@ -1617,7 +1630,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v114</div>
+            <div class="footer-version">v115</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1702,6 +1715,7 @@
             let isPickupSetMenuOpen = false;
             let isPickupTabMenuOpen = false;
             let isSumSetMenuOpen = false;
+            let isSumGroupMenuOpen = false;
             let isTabMenuOpen = false;
             let isEstimatorTabMenuOpen = false;
             let isSalinityTabMenuOpen = false;
@@ -2170,6 +2184,7 @@
             // ==========================================
             let appFolders = JSON.parse(localStorage.getItem('qc_folders')) || [{id: 'root', name: 'Main'}];
             let parentGroups = JSON.parse(localStorage.getItem('qc_parent_groups'));
+            appFolders.forEach(f => { if (f.id !== 'root' && !f.parentId) f.parentId = 'root'; });
             
             if (!parentGroups) {
                 let oldPickup = JSON.parse(localStorage.getItem('qc_pickup_tabs_data')) || [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }];
@@ -2298,6 +2313,59 @@
         
             let currentFolderId = localStorage.getItem('qc_current_folder') || 'root';
             let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
+
+            // ---- File history (remember previously opened files) ----
+            let fileHistory = JSON.parse(localStorage.getItem('qc_file_history') || '[]');
+            let _lastTrackedActiveId = activeParentId;
+
+            function trackActiveFile() {
+                if (_lastTrackedActiveId && _lastTrackedActiveId !== activeParentId) {
+                    fileHistory = fileHistory.filter(id => id !== _lastTrackedActiveId);
+                    fileHistory.push(_lastTrackedActiveId);
+                    if (fileHistory.length > 50) fileHistory.shift();
+                }
+                _lastTrackedActiveId = activeParentId;
+                localStorage.setItem('qc_file_history', JSON.stringify(fileHistory));
+            }
+
+            // Opens the previously visited file; if none, opens the very first file and expands the sidebar.
+            function pickFallbackAfterDelete() {
+                let target = null;
+                while (fileHistory.length && !target) {
+                    const id = fileHistory.pop();
+                    target = parentGroups.find(g => g.id === id) || null;
+                }
+                let showSidebar = false;
+                if (!target) {
+                    target = parentGroups[0];
+                    showSidebar = true;
+                }
+                activeParentId = target.id;
+                currentFolderId = showSidebar ? 'root' : target.folderId;
+                _lastTrackedActiveId = target.id;
+                localStorage.setItem('qc_file_history', JSON.stringify(fileHistory));
+                if (showSidebar && typeof isSidebarOpen !== 'undefined' && !isSidebarOpen) toggleSidebar();
+                return target;
+            }
+
+            // Folder depth: Main = 0, level 1 = 1, level 2 = 2
+            function getFolderDepth(folderId) {
+                let depth = 0, guard = 0;
+                let f = appFolders.find(x => x.id === folderId);
+                while (f && f.id !== 'root' && guard++ < 10) {
+                    depth++;
+                    f = appFolders.find(x => x.id === (f.parentId || 'root'));
+                }
+                return depth;
+            }
+
+            function getFolderDescendantIds(folderId) {
+                const ids = [folderId];
+                appFolders.forEach(f => {
+                    if (f.id !== 'root' && (f.parentId || 'root') === folderId) ids.push(...getFolderDescendantIds(f.id));
+                });
+                return ids;
+            }
         
             let pickupSets, sumSets, estimatorTabs, salinityTabs;
             let pickupTabs, appTabs; 
@@ -2429,6 +2497,8 @@
                     p.sumSets[0].activeTabId = p.sumSets[0].tabs[0].id;
                     p.activeSumSetId = p.sumSets[0].id;
                 }
+                if (!Array.isArray(p.sumGroups) || p.sumGroups.length === 0) p.sumGroups = [{ id: 'sgrp_' + Date.now(), name: 'Group 1' }];
+                p.sumSets.forEach(s => { if (!s.groupId || !p.sumGroups.some(g => g.id === s.groupId)) s.groupId = p.sumGroups[0].id; });
                 if (!p.estimatorTabs || p.estimatorTabs.length === 0) {
                     p.estimatorTabs = [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }];
                     p.activeEstimatorTabId = p.estimatorTabs[0].id;
@@ -2538,6 +2608,7 @@
                 localStorage.setItem('qc_parent_groups', JSON.stringify(parentGroups));
                 localStorage.setItem('qc_active_parent_id', activeParentId);
                 localStorage.setItem('qc_current_folder', currentFolderId);
+                trackActiveFile();
                 
                 clearTimeout(_graphsDebounce);
                 _graphsDebounce = setTimeout(() => {
@@ -2597,9 +2668,11 @@
 			
 			    if (currentFolderId !== 'root') {
 			        const backBtn = document.createElement('button');
+			        const _curF = appFolders.find(f => f.id === currentFolderId);
+			        const _parentId = (_curF && _curF.parentId) || 'root';
 			        // Added 'directory-up-btn' class and data-id
 			        backBtn.className = 'tab-btn parent-tab-btn no-drag directory-up-btn';
-			        backBtn.dataset.id = 'root';
+			        backBtn.dataset.id = _parentId;
 			        backBtn.innerHTML = '📁 [ . . ]';
 			        
 			        if (isSidebarEditMode) {
@@ -2608,16 +2681,17 @@
 			            backBtn.style.cursor = 'default';
 			        } else {
 			            backBtn.onclick = () => {
-			                currentFolderId = 'root';
-			                localStorage.setItem('qc_current_folder', 'root');
+			                currentFolderId = _parentId;
+			                localStorage.setItem('qc_current_folder', _parentId);
 			                renderSidebarList();
 			            };
 			        }
 			        fileList.appendChild(backBtn);
-			    } else {
+			    }
+			    {
 			        // Render Folders
 			        appFolders.forEach(folder => {
-			            if (folder.id === 'root') return;
+			            if (folder.id === 'root' || (folder.parentId || 'root') !== currentFolderId) return;
 			            
 			            const fBtn = document.createElement('button');
 			            fBtn.className = `tab-btn parent-tab-btn draggable-folder-btn ${selectedSidebarItems.has(folder.id) ? 'sidebar-selected' : ''}`;
@@ -2709,10 +2783,10 @@
 			            if (navigator.vibrate) navigator.vibrate(50);
 			            
 			            preventTabClick = true;
-			            if (currentFolderId === 'root') {
+			            if (getFolderDepth(currentFolderId) < 2) {
 			                addNewFolder();
 			            } else {
-			                alert("Folders can only be added in the Main directory.");
+			                alert("Folders can only be nested up to 2 levels deep.");
 			            }
 			            setTimeout(() => preventTabClick = false, 400); 
 			        }, 800);
@@ -2792,6 +2866,7 @@
 
             function addNewFolder() {
 			    // 1. Scan existing folders to find the highest "Folder X" number
+			    if (getFolderDepth(currentFolderId) >= 2) { alert("Folders can only be nested up to 2 levels deep."); return; }
 			    let maxNum = 0;
 			    appFolders.forEach(folder => {
 			        // Regex looks specifically for names matching "Folder " followed by numbers
@@ -2814,7 +2889,8 @@
 			        const newFolderId = 'fold_' + Date.now();
 			        appFolders.push({ 
 			            id: newFolderId, 
-			            name: folderName.trim() 
+			            name: folderName.trim(),
+			            parentId: currentFolderId 
 			        });
 			        
 			        localStorage.setItem('qc_folders', JSON.stringify(appFolders));
@@ -2922,11 +2998,11 @@
                     const deletedId = activeParentId;
                     const siblings = parentGroups.filter(t => t.folderId === p.folderId);
                     const sibIndex = siblings.findIndex(t => t.id === deletedId);
-                    let target = siblings[sibIndex - 1] || siblings[sibIndex + 1];
+                    let target = null;
                     parentGroups = parentGroups.filter(t => t.id !== deletedId);
                     if (!target) {
                         let currentIndex = 0;
-                        target = parentGroups[currentIndex];
+                        target = pickFallbackAfterDelete();
                     }
                     
                     activeParentId = target.id; 
@@ -3022,12 +3098,14 @@
             function addNewParentGroup() {
                 const filesInFolder = parentGroups.filter(f => f.folderId === currentFolderId);
                 const newName = ""; 
+                const _nd = new Date();
+                const _todayStr = `${_nd.getFullYear()}-${String(_nd.getMonth()+1).padStart(2,'0')}-${String(_nd.getDate()).padStart(2,'0')}`;
 			    const newGroup = {
 			        id: 'pg_' + Date.now(),
 			        folderId: currentFolderId,
 			        name: newName,
-			        productCode: '',
-                    date: '',
+			        productCode: getJulianDayFromDateString(_todayStr) || '',
+                    date: _todayStr,
                     startTime: '',
                     endTime: '',
                     pickupSets: [{ id: 'pset_'+Date.now(), name: 'Set 1', unit: '', tabs: [{ id: 'ptab_'+Date.now(), name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
@@ -3100,6 +3178,12 @@
                     };
                 });
         
+                const _gidMap = {};
+                const clonedSumGroups = (p.sumGroups && p.sumGroups.length ? p.sumGroups : [{ id: '__default', name: 'Group 1' }]).map((g, gi) => {
+                    const ng = { id: 'sgrp_' + Date.now() + '_' + gi, name: g.name };
+                    _gidMap[g.id] = ng.id;
+                    return ng;
+                });
                 const clonedSumSets = p.sumSets.map((set, setIdx) => {
                     const newSetId = 'sset_' + Date.now() + '_' + setIdx;
                     const clonedTabs = set.tabs.map((tab, tabIdx) => ({
@@ -3114,6 +3198,7 @@
                         id: newSetId,
                         name: set.name,
                         unit: set.unit || '',
+                        groupId: _gidMap[set.groupId] || (clonedSumGroups[0] && clonedSumGroups[0].id),
                         minRange: set.minRange || '',
                         maxRange: set.maxRange || '',
                         tabs: clonedTabs,
@@ -3136,6 +3221,7 @@
                     pickupSets: clonedPickupSets,
                     activePickupSetId: clonedPickupSets[0] ? clonedPickupSets[0].id : null,
                     sumSets: clonedSumSets,
+                    sumGroups: clonedSumGroups,
                     activeSumSetId: clonedSumSets[0] ? clonedSumSets[0].id : null,
                     estimatorTabs: [{ id: 'etab_' + Date.now(), name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
                     salinityTabs: [{ id: 'stab_' + Date.now(), name: 'Sample 1', brix: '' }],
@@ -3385,12 +3471,13 @@
 		        
 		        // 2. Setup Drag for Folders
 		        setupTabDragManager('parentTabsContainer', 'parentTabsList', 
-		            () => appFolders.filter(f => f.id !== 'root'), 
+		            () => appFolders.filter(f => f.id !== 'root' && (f.parentId || 'root') === currentFolderId), 
 		            () => localStorage.setItem('qc_folders', JSON.stringify(appFolders)), 
 		            renderSidebarList, 'y',
 		            (newVisibleOrder) => {
-		                const rootFolder = appFolders.find(f => f.id === 'root');
-		                appFolders = [rootFolder, ...newVisibleOrder];
+		                const _pos = [];
+		                appFolders.forEach((f, i) => { if (f.id !== 'root' && (f.parentId || 'root') === currentFolderId) _pos.push(i); });
+		                _pos.forEach((pos, i) => { appFolders[pos] = newVisibleOrder[i]; });
 		            }, 'draggable-folder-btn'
 		        );
                 
@@ -3398,7 +3485,12 @@
                 setupTabDragManager('salinityTabsContainer', 'salinityTabsList', () => salinityTabs, saveAllGroupData, renderSalinityTabs);
                 
                 setupTabDragManager('pickupSetsContainer', 'pickupSetsList', () => pickupSets, saveAllGroupData, renderPickupSets);
-                setupTabDragManager('sumSetsContainer', 'sumSetsList', () => sumSets, saveAllGroupData, renderSumSets);
+                setupTabDragManager('sumSetsContainer', 'sumSetsList', () => getSetsInActiveSumGroup(), saveAllGroupData, renderSumSets, 'x', (newOrder) => {
+                    const gid = getActiveSumGroupId();
+                    const pos = [];
+                    sumSets.forEach((s, i) => { if (s.groupId === gid) pos.push(i); });
+                    pos.forEach((pp, i) => { sumSets[pp] = newOrder[i]; });
+                });
                 
                 setupTabDragManager('pickupTabsContainer', 'pickupTabsList', () => pickupTabs, saveAllGroupData, renderPickupTabs);
                 setupTabDragManager('tabsContainer', 'tabsList', () => appTabs, saveAllGroupData, renderTabs);
@@ -3452,6 +3544,8 @@
                     });
                     sumSets[0].activeTabId = sumSets[0].tabs[0].id;
                     activeSumSetId = sumSets[0].id;
+                    const _pp = getActiveParentGroup();
+                    if (_pp) _pp.sumGroups = null;
                     
                     const p = getActiveParentGroup();
                     if (p) p.activeSumSetId = activeSumSetId;
@@ -3801,7 +3895,8 @@
 			                    // Format the name nicely for the prompt
 			                    let targetFolderName = currentHoverFolder.innerText.replace('📁 ', '').trim();
 			                    if (currentHoverFolder.classList.contains('directory-up-btn')) {
-			                        targetFolderName = 'Main Directory';
+			                        const _pf = appFolders.find(f => f.id === targetFolderId);
+			                        targetFolderName = (_pf && _pf.id !== 'root') ? _pf.name : 'Main Directory';
 			                    }
 			                    
 			                    currentHoverFolder.classList.remove('folder-drop-target');
@@ -4690,13 +4785,202 @@
                     display.style.color = "var(--primary)";
                 }
             }
-        
+            // ---- SUM & AVERAGING GROUP TABS (sit above the Set tabs) ----
+
+            function getActiveSumGroupId() {
+                const s = sumSets.find(x => x.id === activeSumSetId);
+                return s ? s.groupId : null;
+            }
+
+            function getSumGroupName(p, set) {
+                const g = (p.sumGroups || []).find(x => x.id === set.groupId);
+                return g ? (g.name || 'Unnamed') : 'Group 1';
+            }
+
+            // Sets ordered by their group's tab order (keeps each group's sets together)
+            function getSumSetsOrderedByGroup(p) {
+                const groups = p.sumGroups || [];
+                const idx = s => { const i = groups.findIndex(g => g.id === s.groupId); return i < 0 ? 0 : i; };
+                return p.sumSets.map((s, i) => ({ s, i })).sort((a, b) => (idx(a.s) - idx(b.s)) || (a.i - b.i)).map(o => o.s);
+            }
+
+            function getSetsInActiveSumGroup() {
+                const gid = getActiveSumGroupId();
+                return sumSets.filter(s => s.groupId === gid);
+            }
+
+            function renderSumGroups() {
+                const list = document.getElementById('sumGroupsList');
+                if (!list) return;
+                list.innerHTML = '';
+                const p = getActiveParentGroup();
+                if (!p || !p.sumGroups) return;
+                const activeGid = getActiveSumGroupId();
+                let activeBtnElement = null;
+
+                p.sumGroups.forEach(group => {
+                    const btn = document.createElement('button');
+                    btn.className = `tab-btn set-tab-btn ${group.id === activeGid ? 'active' : ''}`;
+                    btn.style.fontWeight = '700';
+                    btn.innerText = group.name || 'Unnamed';
+                    btn.dataset.id = group.id;
+                    if (group.id === activeGid) activeBtnElement = btn;
+
+                    btn.onclick = (e) => {
+                        const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                        const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                        const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                        if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
+
+                        if (group.id === activeGid) {
+                            isSumGroupMenuOpen = !isSumGroupMenuOpen;
+                            updateSumGroupMenuState();
+                        } else {
+                            // Remember the set we were on in the group we're leaving
+                            const leaving = p.sumGroups.find(g => g.id === activeGid);
+                            if (leaving) leaving.activeSetId = activeSumSetId;
+                            const remembered = sumSets.find(s => s.id === group.activeSetId && s.groupId === group.id);
+                            const target = remembered || sumSets.find(s => s.groupId === group.id);
+                            if (!target) return;
+                            activeSumSetId = target.id;
+                            p.activeSumSetId = activeSumSetId;
+                            isSumGroupMenuOpen = false;
+                            isSumSetMenuOpen = false;
+                            refreshGroupDataReferences();
+                            saveAllGroupData();
+                            renderSumSets();
+                            updateSumGroupMenuState();
+                            updateSumSetMenuState();
+                            renderTabs();
+                            renderList();
+                            updateTabMenuState();
+                        }
+                    };
+                    list.appendChild(btn);
+                });
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-tab-btn set-tab-btn';
+                addBtn.innerText = '+';
+                addBtn.onclick = () => addNewSumGroup();
+                list.appendChild(addBtn);
+
+                setTimeout(() => {
+                    if (activeBtnElement) {
+                        const container = list.parentElement;
+                        const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
+                        container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+                    }
+                }, 50);
+            }
+
+            function updateSumGroupMenuState() {
+                const panel = document.getElementById('sumGroupOptionsPanel');
+                if (!panel) return;
+                if (isSumGroupMenuOpen) {
+                    const p = getActiveParentGroup();
+                    const group = p && p.sumGroups ? p.sumGroups.find(g => g.id === getActiveSumGroupId()) : null;
+                    const nameInp = document.getElementById('renameSumGroupInput');
+                    if (group && nameInp && document.activeElement !== nameInp) nameInp.value = group.name || '';
+                    panel.style.display = 'flex';
+                } else {
+                    panel.style.display = 'none';
+                }
+            }
+
+            function saveSumGroupName() {
+                const p = getActiveParentGroup();
+                const group = p && p.sumGroups ? p.sumGroups.find(g => g.id === getActiveSumGroupId()) : null;
+                const nameInp = document.getElementById('renameSumGroupInput');
+                if (group && nameInp) {
+                    group.name = nameInp.value;
+                    saveAllGroupData();
+                    renderSumGroups();
+                }
+            }
+
+            function saveSumGroupNameAndClose() {
+                saveSumGroupName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
+                isSumGroupMenuOpen = false;
+                updateSumGroupMenuState();
+            }
+
+            function addNewSumGroup() {
+                const p = getActiveParentGroup();
+                if (!p) return;
+                if (!p.sumGroups) p.sumGroups = [];
+                const leaving = p.sumGroups.find(g => g.id === getActiveSumGroupId());
+                if (leaving) leaving.activeSetId = activeSumSetId;
+
+                const group = { id: 'sgrp_' + Date.now(), name: getNextTabName(p.sumGroups, "Group") };
+                p.sumGroups.push(group);
+                const newSet = {
+                    id: 'sset_' + Date.now(),
+                    name: 'Set 1',
+                    unit: '',
+                    groupId: group.id,
+                    tabs: [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }],
+                    activeTabId: null
+                };
+                newSet.activeTabId = newSet.tabs[0].id;
+                sumSets.push(newSet);
+                activeSumSetId = newSet.id;
+                p.activeSumSetId = activeSumSetId;
+                isSumGroupMenuOpen = false;
+                isSumSetMenuOpen = false;
+
+                saveAllGroupData();
+                refreshGroupDataReferences();
+                renderSumSets();
+                updateSumGroupMenuState();
+                updateSumSetMenuState();
+                renderTabs();
+                renderList();
+                updateTabMenuState();
+            }
+
+            function confirmDeleteSumGroup() {
+                const p = getActiveParentGroup();
+                if (!p || !p.sumGroups) return;
+                if (p.sumGroups.length === 1) {
+                    alert("You must have at least one Group.");
+                    return;
+                }
+                const gid = getActiveSumGroupId();
+                const idx = p.sumGroups.findIndex(g => g.id === gid);
+                const group = p.sumGroups[idx];
+                if (!group) return;
+                if (confirm(`Are you sure you want to delete Group "${group.name}"? All Sets and samples inside will be lost.`)) {
+                    for (let i = sumSets.length - 1; i >= 0; i--) {
+                        if (sumSets[i].groupId === gid) sumSets.splice(i, 1);
+                    }
+                    p.sumGroups.splice(idx, 1);
+                    const nextGroup = p.sumGroups[Math.max(0, idx - 1)];
+                    const nextSet = sumSets.find(s => s.groupId === nextGroup.id) || sumSets[0];
+                    activeSumSetId = nextSet.id;
+                    p.activeSumSetId = activeSumSetId;
+                    isSumGroupMenuOpen = false;
+                    isSumSetMenuOpen = false;
+
+                    saveAllGroupData();
+                    refreshGroupDataReferences();
+                    renderSumSets();
+                    updateSumGroupMenuState();
+                    updateSumSetMenuState();
+                    renderTabs();
+                    renderList();
+                    updateTabMenuState();
+                }
+            }
+
             function renderSumSets() {
+                renderSumGroups();
                 const list = document.getElementById('sumSetsList');
                 list.innerHTML = '';
                 let activeBtnElement = null;
         
-                sumSets.forEach((set) => {
+                getSetsInActiveSumGroup().forEach((set) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn set-tab-btn ${set.id === activeSumSetId ? 'active' : ''}`;
                     btn.innerText = set.name || 'Unnamed';
@@ -4816,6 +5100,7 @@
                     id: newSetId,
                     name: generateDuplicateTabName(activeSet.name, sumSets),
                     unit: activeSet.unit || '',
+                    groupId: activeSet.groupId,
                     minRange: activeSet.minRange || '',
                     maxRange: activeSet.maxRange || '',
                     tabs: clonedTabs,
@@ -4839,17 +5124,19 @@
         
             function confirmDeleteSumSet() {
                 const set = sumSets.find(s => s.id === activeSumSetId);
-                if (sumSets.length === 1) {
+                const _grpSets = getSetsInActiveSumGroup();
+                if (_grpSets.length === 1) {
                     alert("You must have at least one Set.");
                     return;
                 }
                 if (confirm(`Are you sure you want to delete Set "${set.name}"? All samples inside will be lost.`)) {
                     let currentIndex = sumSets.findIndex(s => s.id === activeSumSetId);
+                    const grpIndex = _grpSets.findIndex(s => s.id === activeSumSetId);
                     sumSets.splice(currentIndex, 1);
-                    let newIndex = currentIndex - 1;
+                    let newIndex = grpIndex - 1;
                     if (newIndex < 0) newIndex = 0;
                     
-                    activeSumSetId = sumSets[newIndex].id;
+                    activeSumSetId = _grpSets.filter(s => s.id !== set.id)[newIndex].id;
                     
                     const p = getActiveParentGroup();
                     if (p) p.activeSumSetId = activeSumSetId;
@@ -4880,7 +5167,7 @@
             }
             
             function addNewSumSet() {
-                const newName = getNextTabName(sumSets, "Set");
+                const newName = getNextTabName(getSetsInActiveSumGroup(), "Set");
                 const newSet = { 
                     id: 'sset_' + Date.now(), 
                     name: newName, 
@@ -4889,6 +5176,7 @@
                     activeTabId: null
                 };
                 newSet.activeTabId = newSet.tabs[0].id;
+                newSet.groupId = getActiveSumGroupId();
                 sumSets.push(newSet);
         
                 activeSumSetId = newSet.id;
@@ -8360,7 +8648,8 @@
         
                 if (selectedExportCards.has('card-averaging')) {
                     csv += "--- SUM & AVERAGING ---\n";
-                    p.sumSets.forEach(set => {
+                    getSumSetsOrderedByGroup(p).forEach(set => {
+                        csv += `Group,"${getSumGroupName(p, set)}"\n`;
                         csv += `Set,"${set.name}"\n`;
                         if (set.unit) csv += `Unit,"${set.unit}"\n`; 
                         
@@ -8715,7 +9004,7 @@
                     sectionRow(sheet, '📊  SUM & AVERAGING');
                     sheet.addRow([]);
 
-                    p.sumSets.forEach(set => {
+                    getSumSetsOrderedByGroup(p).forEach(set => {
                         let sNames = [], rLimits = [], counts = [], sums = [], avgs = [];
                         let underR = [], overR = [], withinR = [], outOfRangePctVals = [];
                         let maxDataLength = 0, allData = [];
@@ -8748,6 +9037,7 @@
                             allData.push(tab.data);
                         });
 
+                        applyRowData(sheet, [hdr('Group', ACCENT), cell(getSumGroupName(p, set), true)]);
                         applyRowData(sheet, [hdr('Set', ACCENT), cell(set.name, true)]);
                         if (set.unit) applyRowData(sheet, [hdr('Unit', ACCENT), cell(set.unit)]);
 
@@ -9272,7 +9562,9 @@
 			    if (confirm(`Delete ${selectedSidebarItems.size} selected item(s)?\nNote: Deleting a folder deletes all files inside it.`)) {
 			        selectedSidebarItems.forEach(id => {
 			            if (id.startsWith('fold_')) {
-			                appFolders = appFolders.filter(f => f.id !== id);
+			                const _doomed = getFolderDescendantIds(id);
+			                appFolders = appFolders.filter(f => !_doomed.includes(f.id));
+			                parentGroups = parentGroups.filter(g => !_doomed.includes(g.folderId));
 			                parentGroups = parentGroups.filter(g => g.folderId !== id);
 			            } else if (id.startsWith('pg_')) {
 			                parentGroups = parentGroups.filter(g => g.id !== id);
@@ -9302,7 +9594,8 @@
 			        
 			        // Fallback if active file was deleted
 			        if (!parentGroups.find(g => g.id === activeParentId)) {
-			            const nextFiles = parentGroups.filter(f => f.folderId === currentFolderId);
+			            pickFallbackAfterDelete();
+			            const nextFiles = parentGroups.filter(f => f.id === activeParentId);
 			            if (nextFiles.length > 0) {
 			                activeParentId = nextFiles[0].id;
 			            } else { 
