@@ -3560,6 +3560,24 @@
                     renderTabs(); renderList(); updateTabMenuState();
                 }, "Delete ALL Sets and Samples from Sum & Averaging? This cannot be undone.");
                 
+                setupAddButtonHold('sumGroupsList', addNewSumGroup, () => {
+                    sumSets.splice(0, sumSets.length, { 
+                        id: 'sset_' + Date.now(), name: 'Set 1', unit: '',
+                        tabs: [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }],
+                        activeTabId: null
+                    });
+                    sumSets[0].activeTabId = sumSets[0].tabs[0].id;
+                    activeSumSetId = sumSets[0].id;
+                    const _pp = getActiveParentGroup();
+                    if (_pp) { _pp.sumGroups = null; _pp.activeSumSetId = activeSumSetId; }
+                    isSumGroupMenuOpen = false;
+                    isSumSetMenuOpen = false;
+                    saveAllGroupData();
+                    refreshGroupDataReferences();
+                    renderSumSets(); updateSumGroupMenuState(); updateSumSetMenuState();
+                    renderTabs(); renderList(); updateTabMenuState();
+                }, "Delete ALL Groups, Sets and Samples from Sum & Averaging? This cannot be undone.");
+
                 setupAddButtonHold('pickupTabsList', addNewPickupTab, () => {
                     pickupTabs.splice(0, pickupTabs.length, { id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' });
                     activePickupTabId = pickupTabs[0].id;
@@ -4865,7 +4883,7 @@
                 const addBtn = document.createElement('button');
                 addBtn.className = 'add-tab-btn set-tab-btn';
                 addBtn.innerText = '+';
-                addBtn.onclick = () => addNewSumGroup();
+                
                 list.appendChild(addBtn);
 
                 setTimeout(() => {
