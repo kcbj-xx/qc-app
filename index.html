@@ -537,6 +537,8 @@
         button { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 8px; }
         button:hover { background-color: var(--primary-hover); }
         button.secondary { background-color: var(--error); width: 100%; margin-top: 10px; }
+        button.reset-code-cancel { background-color: #e2e8f0; border-color: #cbd5e1; color: #334155; font-weight: 600; }
+        @media (prefers-color-scheme: dark) { button.reset-code-cancel { background-color: #475569; border-color: #64748b; color: #f1f5f9; } }
         button.action-btn { background-color: #475569; width: 100%; margin-top: 10px; }
         button.action-btn:hover { background-color: #334155; }
 
@@ -1154,6 +1156,19 @@
                     </h2>
                     <div class="card-body">
         
+                        <div class="tabs-container" id="pickupGroupsContainer" style="border-bottom: 1px dashed var(--border); margin-bottom: 5px; padding-top: 5px; min-height: 40px; align-items: center;">
+                            <div id="pickupGroupsList" class="tabs-list" style="gap: 6px;"></div>
+                        </div>
+
+                        <div id="pickupGroupOptionsPanel" class="tab-options-panel" style="margin-top: 5px;">
+                            <label style="margin-bottom: 5px; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manage Group</label>
+                            <div class="panel-row">
+                                <input type="text" id="renamePickupGroupInput" placeholder="Group Name" class="panel-input" oninput="savePickupGroupName()">
+                                <button onclick="savePickupGroupNameAndClose()" class="panel-btn">Save</button>
+                            </div>
+                            <button onclick="confirmDeletePickupGroup()" class="secondary" style="margin:0; min-height:40px;">Delete Group</button>
+                        </div>
+
                         <div class="tabs-container" id="pickupSetsContainer" style="border-bottom: 1px dashed var(--border); margin-bottom: 5px; padding-top: 5px; min-height: 40px; align-items: center;">
                             <div id="pickupSetsList" class="tabs-list" style="gap: 6px;"></div>
                         </div>
@@ -1713,6 +1728,7 @@
             
             let isParentTabMenuOpen = false;
             let isPickupSetMenuOpen = false;
+            let isPickupGroupMenuOpen = false;
             let isPickupTabMenuOpen = false;
             let isSumSetMenuOpen = false;
             let isSumGroupMenuOpen = false;
@@ -1854,7 +1870,7 @@
                     if (nextBtn) nextBtn.style.display = 'none';
                     if (sidebarBtn) sidebarBtn.style.display = 'none';
                     if (fileHeaderRow) fileHeaderRow.style.display = 'none';
-                    if (clearSelRow) clearSelRow.style.display = 'block';
+                    if (clearSelRow) clearSelRow.style.display = (typeof selectedExportCards !== 'undefined' && selectedExportCards.size === 1 && selectedExportCards.has('card-graphs')) ? 'none' : 'block';
                     
                     if (onBtn) {
                         onBtn.style.background = 'var(--primary, #2563eb)';
@@ -1957,18 +1973,74 @@
                 setSimpleMode();
             }
 
-            function clearSelectedCardsContent() {
+            let _resetCodeModalOpen = false;
+            function showResetCodeModal(code) {
+                return new Promise(resolve => {
+                    if (_resetCodeModalOpen) { resolve(false); return; }
+                    _resetCodeModalOpen = true;
+
+                    const overlay = document.createElement('div');
+                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+                    const box = document.createElement('div');
+                    box.style.cssText = 'background:var(--card-bg, #fff);color:var(--text, #0f172a);border:1px solid var(--border, #cbd5e1);border-radius:12px;padding:20px;width:100%;max-width:340px;box-sizing:border-box;box-shadow:0 10px 30px rgba(0,0,0,0.3);';
+                    box.innerHTML =
+                        '<div style="font-weight:700;margin-bottom:8px;">Confirm reset</div>' +
+                        '<div style="font-size:0.9rem;margin-bottom:12px;">To confirm the reset of the selected cards, enter this 4-digit code: <b style="font-size:1.1rem;letter-spacing:2px;">' + code + '</b></div>' +
+                        '<input type="text" inputmode="numeric" maxlength="4" autocomplete="off" style="width:100%;box-sizing:border-box;min-height:40px;margin:0;font-size:1rem;text-align:center;letter-spacing:4px;">' +
+                        '<div class="reset-code-error" style="color:#dc2626;font-size:0.85rem;font-weight:600;margin-top:6px;min-height:1.2em;"></div>' +
+                        '<div style="display:flex;gap:8px;margin-top:12px;">' +
+                        '<button type="button" class="reset-code-cancel" style="flex:1;margin:0;min-height:40px;">Cancel</button>' +
+                        '<button type="button" class="reset-code-ok" style="flex:1;margin:0;min-height:40px;background:#dc2626;border-color:#b91c1c;color:#fff;font-weight:700;">Confirm</button>' +
+                        '</div>';
+                    overlay.appendChild(box);
+                    document.body.appendChild(overlay);
+
+                    const input = box.querySelector('input');
+                    const err = box.querySelector('.reset-code-error');
+                    const close = (result) => {
+                        overlay.remove();
+                        setTimeout(() => { _resetCodeModalOpen = false; }, 300);
+                        resolve(result);
+                    };
+                    const submit = () => {
+                        if (input.value.trim() === code) {
+                            close(true);
+                        } else {
+                            err.innerText = 'Incorrect code';
+                            input.value = '';
+                            input.focus();
+                        }
+                    };
+                    box.querySelector('.reset-code-ok').onclick = submit;
+                    box.querySelector('.reset-code-cancel').onclick = () => close(false);
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') submit();
+                        else if (e.key === 'Escape') close(false);
+                    });
+                    setTimeout(() => input.focus(), 50);
+                });
+            }
+
+            async function clearSelectedCardsContent() {
                 let targetCardIds = [];
                 if (typeof selectedExportCards !== 'undefined' && selectedExportCards.size > 0) {
                     targetCardIds = Array.from(selectedExportCards);
-                } else {
-                    targetCardIds = Array.from(document.querySelectorAll('.card')).map(c => c.id);
                 }
 
-                if (targetCardIds.length === 0) return;
+                if (targetCardIds.length === 0) {
+                    alert("No cards selected to reset.");
+                    return;
+                }
 
-                if (!confirm("Are you sure you want to reset the content of the selected cards?")) return;
+                // Extra verification: user must type a random 4-digit code
+                const verifyCode = String(Math.floor(1000 + Math.random() * 9000));
+                const codeOk = await showResetCodeModal(verifyCode);
+                if (!codeOk) return;
 
+                // Code already verified: suppress the per-tool confirmation prompts
+                const _origConfirm = window.confirm;
+                window.confirm = () => true;
+                try {
                 targetCardIds.forEach(cardId => {
                     if (cardId === 'card-pickup') {
                         if (typeof resetPickup === 'function') resetPickup();
@@ -2002,6 +2074,9 @@
                         }
                     }
                 });
+                } finally {
+                    window.confirm = _origConfirm;
+                }
 
                 saveAllGroupData();
                 if (typeof renderGraphs === 'function') renderGraphs();
@@ -2492,6 +2567,8 @@
                     p.pickupSets[0].activeTabId = p.pickupSets[0].tabs[0].id;
                     p.activePickupSetId = p.pickupSets[0].id;
                 }
+                if (!Array.isArray(p.pickupGroups) || p.pickupGroups.length === 0) p.pickupGroups = [{ id: 'pgrp_' + Date.now(), name: 'Group 1' }];
+                p.pickupSets.forEach(s => { if (!s.groupId || !p.pickupGroups.some(g => g.id === s.groupId)) s.groupId = p.pickupGroups[0].id; });
                 if (!p.sumSets || p.sumSets.length === 0) {
                     p.sumSets = [{ id: 'sset_' + Date.now(), name: 'Set 1', tabs: [{ id: 'tab_' + Date.now(), name: 'Sample 1', data: [] }], activeTabId: '' }];
                     p.sumSets[0].activeTabId = p.sumSets[0].tabs[0].id;
@@ -3161,6 +3238,12 @@
             function duplicateParentGroup() {
                 const p = parentGroups.find(t => t.id === activeParentId);
                 
+                const _pgidMap = {};
+                const clonedPickupGroups = (p.pickupGroups && p.pickupGroups.length ? p.pickupGroups : [{ id: '__default', name: 'Group 1' }]).map((g, gi) => {
+                    const ng = { id: 'pgrp_' + Date.now() + '_' + gi, name: g.name };
+                    _pgidMap[g.id] = ng.id;
+                    return ng;
+                });
                 const clonedPickupSets = p.pickupSets.map((set, setIdx) => {
                     const newSetId = 'pset_' + Date.now() + '_' + setIdx;
                     const clonedTabs = set.tabs.map((tab, tabIdx) => ({
@@ -3173,6 +3256,7 @@
                         id: newSetId,
                         name: set.name,
                         unit: set.unit || '',
+                        groupId: _pgidMap[set.groupId] || (clonedPickupGroups[0] && clonedPickupGroups[0].id),
                         tabs: clonedTabs,
                         activeTabId: clonedTabs[0] ? clonedTabs[0].id : null
                     };
@@ -3219,6 +3303,7 @@
                     startTime: '',
                     endTime: '',
                     pickupSets: clonedPickupSets,
+                    pickupGroups: clonedPickupGroups,
                     activePickupSetId: clonedPickupSets[0] ? clonedPickupSets[0].id : null,
                     sumSets: clonedSumSets,
                     sumGroups: clonedSumGroups,
@@ -3484,7 +3569,13 @@
                 setupTabDragManager('estimatorTabsContainer', 'estimatorTabsList', () => estimatorTabs, saveAllGroupData, renderEstimatorTabs);
                 setupTabDragManager('salinityTabsContainer', 'salinityTabsList', () => salinityTabs, saveAllGroupData, renderSalinityTabs);
                 
-                setupTabDragManager('pickupSetsContainer', 'pickupSetsList', () => pickupSets, saveAllGroupData, renderPickupSets);
+                setupTabDragManager('pickupSetsContainer', 'pickupSetsList', () => getSetsInActivePickupGroup(), saveAllGroupData, renderPickupSets, 'x', (newOrder) => {
+                    const gid = getActivePickupGroupId();
+                    const pos = [];
+                    pickupSets.forEach((s, i) => { if (s.groupId === gid) pos.push(i); });
+                    pos.forEach((pp, i) => { pickupSets[pp] = newOrder[i]; });
+                });
+                setupTabDragManager('pickupGroupsContainer', 'pickupGroupsList', () => (getActiveParentGroup()?.pickupGroups || []), saveAllGroupData, renderPickupSets);
                 setupTabDragManager('sumSetsContainer', 'sumSetsList', () => getSetsInActiveSumGroup(), saveAllGroupData, renderSumSets, 'x', (newOrder) => {
                     const gid = getActiveSumGroupId();
                     const pos = [];
@@ -3527,7 +3618,7 @@
                         activeTabId: null
                     });
                     pickupSets[0].activeTabId = pickupSets[0].tabs[0].id;
-                    activePickupSetId = pickupSets[0].id;
+                    activePickupSetId = pickupSets[0].id; { const _ppg = getActiveParentGroup(); if (_ppg) _ppg.pickupGroups = null; }
                     
                     const p = getActiveParentGroup();
                     if (p) p.activePickupSetId = activePickupSetId;
@@ -3577,6 +3668,24 @@
                     renderSumSets(); updateSumGroupMenuState(); updateSumSetMenuState();
                     renderTabs(); renderList(); updateTabMenuState();
                 }, "Delete ALL Groups, Sets and Samples from Sum & Averaging? This cannot be undone.");
+
+                setupAddButtonHold('pickupGroupsList', addNewPickupGroup, () => {
+                    pickupSets.splice(0, pickupSets.length, {
+                        id: 'pset_' + Date.now(), name: 'Set 1', unit: '',
+                        tabs: [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }],
+                        activeTabId: null
+                    });
+                    pickupSets[0].activeTabId = pickupSets[0].tabs[0].id;
+                    activePickupSetId = pickupSets[0].id;
+                    const _pp = getActiveParentGroup();
+                    if (_pp) { _pp.pickupGroups = null; _pp.activePickupSetId = activePickupSetId; }
+                    isPickupGroupMenuOpen = false;
+                    isPickupSetMenuOpen = false;
+                    saveAllGroupData();
+                    refreshGroupDataReferences();
+                    renderPickupSets(); updatePickupGroupMenuState(); updatePickupSetMenuState();
+                    renderPickupTabs(); loadPickupInputs(); updatePickupTabMenuState();
+                }, "Delete ALL Groups, Sets and Samples from the Pickup Calculator? This cannot be undone.");
 
                 setupAddButtonHold('pickupTabsList', addNewPickupTab, () => {
                     pickupTabs.splice(0, pickupTabs.length, { id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' });
@@ -4432,12 +4541,186 @@
                 saveAllGroupData();
             }
         
+            // ---- PICKUP CALCULATOR GROUP TABS (sit above the Set tabs) ----
+            function getActivePickupGroupId() {
+                const s = pickupSets.find(x => x.id === activePickupSetId);
+                return s ? s.groupId : null;
+            }
+
+            function getPickupGroupName(p, set) {
+                const g = (p.pickupGroups || []).find(x => x.id === set.groupId);
+                return g ? (g.name || 'Unnamed') : 'Group 1';
+            }
+
+            function getPickupSetsOrderedByGroup(p) {
+                const groups = p.pickupGroups || [];
+                const idx = s => { const i = groups.findIndex(g => g.id === s.groupId); return i < 0 ? 0 : i; };
+                return p.pickupSets.map((s, i) => ({ s, i })).sort((a, b) => (idx(a.s) - idx(b.s)) || (a.i - b.i)).map(o => o.s);
+            }
+
+            function getSetsInActivePickupGroup() {
+                const gid = getActivePickupGroupId();
+                return pickupSets.filter(s => s.groupId === gid);
+            }
+
+            function pickupGroupRefreshAll() {
+                refreshGroupDataReferences();
+                saveAllGroupData();
+                renderPickupSets();
+                updatePickupGroupMenuState();
+                updatePickupSetMenuState();
+                renderPickupTabs();
+                loadPickupInputs();
+                updatePickupTabMenuState();
+            }
+
+            function renderPickupGroups() {
+                const list = document.getElementById('pickupGroupsList');
+                if (!list) return;
+                list.innerHTML = '';
+                const p = getActiveParentGroup();
+                if (!p || !p.pickupGroups) return;
+                const activeGid = getActivePickupGroupId();
+                let activeBtnElement = null;
+
+                p.pickupGroups.forEach(group => {
+                    const btn = document.createElement('button');
+                    btn.className = `tab-btn set-tab-btn ${group.id === activeGid ? 'active' : ''}`;
+                    btn.style.fontWeight = '700';
+                    btn.innerText = group.name || 'Unnamed';
+                    btn.dataset.id = group.id;
+                    if (group.id === activeGid) activeBtnElement = btn;
+
+                    btn.onclick = (e) => {
+                        const currentX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                        const currentY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+                        const moved = Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10;
+                        if (preventTabClick || moved) { e.preventDefault(); e.stopPropagation(); return; }
+
+                        if (group.id === activeGid) {
+                            isPickupGroupMenuOpen = !isPickupGroupMenuOpen;
+                            updatePickupGroupMenuState();
+                        } else {
+                            const leaving = p.pickupGroups.find(g => g.id === activeGid);
+                            if (leaving) leaving.activeSetId = activePickupSetId;
+                            const remembered = pickupSets.find(s => s.id === group.activeSetId && s.groupId === group.id);
+                            const target = remembered || pickupSets.find(s => s.groupId === group.id);
+                            if (!target) return;
+                            activePickupSetId = target.id;
+                            p.activePickupSetId = activePickupSetId;
+                            isPickupGroupMenuOpen = false;
+                            isPickupSetMenuOpen = false;
+                            pickupGroupRefreshAll();
+                        }
+                    };
+                    list.appendChild(btn);
+                });
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-tab-btn set-tab-btn';
+                addBtn.innerText = '+';
+                list.appendChild(addBtn);
+
+                setTimeout(() => {
+                    if (activeBtnElement && !isTabDraggingGlobal) {
+                        const container = list.parentElement;
+                        const scrollPos = activeBtnElement.offsetLeft - (container.clientWidth / 2) + (activeBtnElement.clientWidth / 2);
+                        container.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+                    }
+                }, 50);
+            }
+
+            function updatePickupGroupMenuState() {
+                const panel = document.getElementById('pickupGroupOptionsPanel');
+                if (!panel) return;
+                if (isPickupGroupMenuOpen) {
+                    const p = getActiveParentGroup();
+                    const group = p && p.pickupGroups ? p.pickupGroups.find(g => g.id === getActivePickupGroupId()) : null;
+                    const nameInp = document.getElementById('renamePickupGroupInput');
+                    if (group && nameInp && document.activeElement !== nameInp) nameInp.value = group.name || '';
+                    panel.style.display = 'flex';
+                } else {
+                    panel.style.display = 'none';
+                }
+            }
+
+            function savePickupGroupName() {
+                const p = getActiveParentGroup();
+                const group = p && p.pickupGroups ? p.pickupGroups.find(g => g.id === getActivePickupGroupId()) : null;
+                const nameInp = document.getElementById('renamePickupGroupInput');
+                if (group && nameInp) {
+                    group.name = nameInp.value;
+                    saveAllGroupData();
+                    renderPickupGroups();
+                }
+            }
+
+            function savePickupGroupNameAndClose() {
+                savePickupGroupName();
+                if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
+                isPickupGroupMenuOpen = false;
+                updatePickupGroupMenuState();
+            }
+
+            function addNewPickupGroup() {
+                const p = getActiveParentGroup();
+                if (!p) return;
+                if (!p.pickupGroups) p.pickupGroups = [];
+                const leaving = p.pickupGroups.find(g => g.id === getActivePickupGroupId());
+                if (leaving) leaving.activeSetId = activePickupSetId;
+
+                const group = { id: 'pgrp_' + Date.now(), name: getNextTabName(p.pickupGroups, "Group") };
+                p.pickupGroups.push(group);
+                const newSet = {
+                    id: 'pset_' + Date.now(),
+                    name: 'Set 1',
+                    unit: '',
+                    groupId: group.id,
+                    tabs: [{ id: 'ptab_' + Date.now(), name: 'Sample 1', pre: '', post: '' }],
+                    activeTabId: null
+                };
+                newSet.activeTabId = newSet.tabs[0].id;
+                pickupSets.push(newSet);
+                activePickupSetId = newSet.id;
+                p.activePickupSetId = activePickupSetId;
+                isPickupGroupMenuOpen = false;
+                isPickupSetMenuOpen = false;
+                pickupGroupRefreshAll();
+            }
+
+            function confirmDeletePickupGroup() {
+                const p = getActiveParentGroup();
+                if (!p || !p.pickupGroups) return;
+                if (p.pickupGroups.length === 1) {
+                    alert("You must have at least one Group.");
+                    return;
+                }
+                const gid = getActivePickupGroupId();
+                const idx = p.pickupGroups.findIndex(g => g.id === gid);
+                const group = p.pickupGroups[idx];
+                if (!group) return;
+                if (confirm(`Are you sure you want to delete Group "${group.name}"? All Sets and samples inside will be lost.`)) {
+                    for (let i = pickupSets.length - 1; i >= 0; i--) {
+                        if (pickupSets[i].groupId === gid) pickupSets.splice(i, 1);
+                    }
+                    p.pickupGroups.splice(idx, 1);
+                    const nextGroup = p.pickupGroups[Math.max(0, idx - 1)];
+                    const nextSet = pickupSets.find(s => s.groupId === nextGroup.id) || pickupSets[0];
+                    activePickupSetId = nextSet.id;
+                    p.activePickupSetId = activePickupSetId;
+                    isPickupGroupMenuOpen = false;
+                    isPickupSetMenuOpen = false;
+                    pickupGroupRefreshAll();
+                }
+            }
+
             function renderPickupSets() {
+                renderPickupGroups();
                 const list = document.getElementById('pickupSetsList');
                 list.innerHTML = '';
                 let activeBtnElement = null;
         
-                pickupSets.forEach((set) => {
+                getSetsInActivePickupGroup().forEach((set) => {
                     const btn = document.createElement('button');
                     btn.className = `tab-btn set-tab-btn ${set.id === activePickupSetId ? 'active' : ''}`;
                     btn.innerText = set.name || 'Unnamed';
@@ -4529,21 +4812,23 @@
         
             function confirmDeletePickupSet() {
                 const set = pickupSets.find(s => s.id === activePickupSetId);
-                if (pickupSets.length === 1) {
+                const _grpSets = getSetsInActivePickupGroup();
+                if (_grpSets.length === 1) {
                     alert("You must have at least one Set.");
                     return;
                 }
                 if (confirm(`Are you sure you want to delete Set "${set.name}"? All samples inside will be lost.`)) {
-                    let currentIndex = pickupSets.findIndex(s => s.id === activePickupSetId);
+                    const currentIndex = pickupSets.findIndex(s => s.id === activePickupSetId);
+                    const grpIndex = _grpSets.findIndex(s => s.id === activePickupSetId);
                     pickupSets.splice(currentIndex, 1);
-                    let newIndex = currentIndex - 1;
+                    let newIndex = grpIndex - 1;
                     if (newIndex < 0) newIndex = 0;
-                    
-                    activePickupSetId = pickupSets[newIndex].id;
-                    
+
+                    activePickupSetId = _grpSets.filter(s => s.id !== set.id)[newIndex].id;
+
                     const p = getActiveParentGroup();
                     if (p) p.activePickupSetId = activePickupSetId;
-                    
+
                     isPickupSetMenuOpen = false;
                     saveAllGroupData();
                     refreshGroupDataReferences();
@@ -4556,7 +4841,7 @@
             }
         
             function addNewPickupSet() {
-                const newName = getNextTabName(pickupSets, "Set");
+                const newName = getNextTabName(getSetsInActivePickupGroup(), "Set");
                 const newSet = { 
                     id: 'pset_' + Date.now(), 
                     name: newName, 
@@ -4565,6 +4850,7 @@
                     activeTabId: null
                 };
                 newSet.activeTabId = newSet.tabs[0].id;
+                newSet.groupId = getActivePickupGroupId();
                 pickupSets.push(newSet);
                 
                 activePickupSetId = newSet.id;
@@ -7467,6 +7753,14 @@
             // ==========================================
             // ---- EXPORT TO CSV ENGINE ----------------
             // ==========================================
+            // Hide the Reset button when the Graphs card is the only selected tool (nothing to reset there)
+            function updateResetButtonVisibility() {
+                const row = document.getElementById('exportClearSelectionRow');
+                if (!row) return;
+                const graphsOnly = selectedExportCards.size === 1 && selectedExportCards.has('card-graphs');
+                row.style.display = (isSimpleMode && !graphsOnly) ? 'block' : 'none';
+            }
+
             function toggleExportSelection(cardId) {
                 const card = document.getElementById(cardId);
                 if (selectedExportCards.has(cardId)) {
@@ -7476,6 +7770,7 @@
                     selectedExportCards.add(cardId);
                     card.classList.add('export-selected');
                 }
+                updateResetButtonVisibility();
             }
 
             function selectAllExport() {
@@ -7483,11 +7778,13 @@
                     selectedExportCards.add(card.id);
                     card.classList.add('export-selected');
                 });
+                updateResetButtonVisibility();
             }
 
             function deselectAllExport() {
                 selectedExportCards.clear();
                 document.querySelectorAll('.card').forEach(c => c.classList.remove('export-selected'));
+                updateResetButtonVisibility();
             }
         
             function enterExportMode(startCardId) {
@@ -7507,6 +7804,7 @@
                 document.getElementById('exportModeBar').style.display = 'none';
                 selectedExportCards.clear();
                 document.querySelectorAll('.card').forEach(c => c.classList.remove('export-selected'));
+                updateResetButtonVisibility();
             }
 
             let chartInstances = {};
@@ -8623,7 +8921,7 @@
                 
                 if (selectedExportCards.has('card-pickup')) {
                     csv += "--- PICKUP CALCULATOR ---\n";
-                    p.pickupSets.forEach(set => {
+                    getPickupSetsOrderedByGroup(p).forEach(set => {
                         
                         let sumPct = 0;
                         let validCount = 0;
@@ -8638,6 +8936,7 @@
                         });
                         let setAvgStr = validCount === 0 ? "N/A" : safeRound(sumPct / validCount, 2).toFixed(2) + "%";
 
+                        csv += `Group,"${getPickupGroupName(p, set)}"\n`;
                         csv += `Set,"${set.name}"\n`;
                         if (set.unit) csv += `Unit,"${set.unit}"\n`; 
                         csv += `Set Average,"${setAvgStr}"\n`;
@@ -8971,7 +9270,7 @@
                     sectionRow(sheet, '📦  PICKUP CALCULATOR');
                     sheet.addRow([]);
 
-                    p.pickupSets.forEach(set => {
+                    getPickupSetsOrderedByGroup(p).forEach(set => {
                         let sumPct = 0, validCount = 0;
                         set.tabs.forEach(tab => {
                             let pre = parseFloat(tab.pre), post = parseFloat(tab.post);
@@ -8982,8 +9281,7 @@
                         });
                         const setAvgStr = validCount === 0 ? 'N/A' : safeRound(sumPct / validCount, 2).toFixed(2) + '%';
 
-                        // Set info rows
-                        // Set info rows
+                        applyRowData(sheet, [hdr('Group', ACCENT), cell(getPickupGroupName(p, set), true)]);
                         applyRowData(sheet, [hdr('Set', ACCENT), cell(set.name, true)]);
 
                         if (set.unit) applyRowData(sheet, [hdr('Unit', ACCENT), cell(set.unit)]);
