@@ -117,11 +117,10 @@
         .sidebar.open { left: 0; }
 
         .sidebar-header {
-            padding: 20px;
+            padding: 20px 20px 10px 20px;
             font-weight: 800;
             font-size: 1.2rem;
-            color: var(--text); 
-            border-bottom: 1px solid var(--border);
+            color: var(--text);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -922,13 +921,13 @@
                 Main
                 <button onclick="toggleSidebar()" class="sidebar-close-btn" style="background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; padding: 0; margin: 0; width: auto; outline: none;">&times;</button>
             </div>
+            <div id="backupRestoreRow" style="display: flex; gap: 8px; padding: 0 20px 14px 20px; border-bottom: 1px solid var(--border); box-sizing: border-box;">
+                <button type="button" onclick="backupAllData()" style="margin: 0; flex: 1; min-height: 36px; font-size: 0.8rem; background: #334155;">Backup Data</button>
+                <button type="button" onclick="document.getElementById('restoreBackupInput').click()" style="margin: 0; flex: 1; min-height: 36px; font-size: 0.8rem; background: #334155;">Restore Data</button>
+                <input type="file" id="restoreBackupInput" accept=".json,application/json" style="display: none;" onchange="restoreBackupFromFile(this)">
+            </div>
             <div class="tabs-container" id="parentTabsContainer">
                 <div id="parentTabsList" class="tabs-list"></div>
-            </div>
-            <div id="backupRestoreRow" style="display: flex; gap: 8px; padding: 12px 10px; margin-top: auto; border-top: 1px dashed var(--border); box-sizing: border-box;">
-                <button type="button" onclick="backupAllData()" style="margin: 0; flex: 1; min-height: 38px; font-size: 0.8rem; background: #334155;">Backup Data</button>
-                <button type="button" onclick="document.getElementById('restoreBackupInput').click()" style="margin: 0; flex: 1; min-height: 38px; font-size: 0.8rem; background: #334155;">Restore Data</button>
-                <input type="file" id="restoreBackupInput" accept=".json,application/json" style="display: none;" onchange="restoreBackupFromFile(this)">
             </div>
         </div>
     
