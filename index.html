@@ -117,7 +117,7 @@
         .sidebar.open { left: 0; }
 
         .sidebar-header {
-            padding: 20px 20px 10px 20px;
+            padding: 20px 20px 14px 20px;
             font-weight: 800;
             font-size: 1.2rem;
             color: var(--text);
@@ -127,6 +127,33 @@
 			-webkit-user-select: none;
 		    user-select: none;
 		    -webkit-touch-callout: none;
+        }
+
+        .sidebar-tools-drawer {
+            display: grid;
+            grid-template-rows: 0fr;
+            opacity: 0;
+            padding: 0 20px 0 20px;
+            border-bottom: 1px solid var(--border);
+            box-sizing: border-box;
+            pointer-events: none;
+            transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.22s ease,
+                        padding-bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-tools-drawer.open {
+            grid-template-rows: 1fr;
+            opacity: 1;
+            padding: 0 20px 14px 20px;
+            pointer-events: auto;
+        }
+
+        .sidebar-tools-inner {
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
         }
 
         .main-content {
@@ -919,11 +946,14 @@
         <div class="sidebar" id="appSidebar">
             <div class="sidebar-header" id="sidebarHeaderTitle">
                 Main
+                <button type="button" id="mainToolsToggleBtn" onclick="toggleMainFolderTools(event)" title="Show/Hide Tools" style="background: transparent; border: none; color: #94a3b8; font-size: 0.75rem; padding: 4px 6px; margin: 0 auto 0 6px; width: auto; min-height: auto; outline: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease; -webkit-tap-highlight-color: transparent;">&#9660;</button>
                 <button onclick="toggleSidebar()" class="sidebar-close-btn" style="background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; padding: 0; margin: 0; width: auto; outline: none;">&times;</button>
             </div>
-            <div id="backupRestoreRow" style="display: flex; gap: 8px; padding: 0 20px 14px 20px; border-bottom: 1px solid var(--border); box-sizing: border-box;">
-                <button type="button" onclick="backupAllData()" style="margin: 0; flex: 1; min-height: 36px; font-size: 0.8rem; background: #334155;">Backup Data</button>
-                <button type="button" onclick="document.getElementById('restoreBackupInput').click()" style="margin: 0; flex: 1; min-height: 36px; font-size: 0.8rem; background: #334155;">Restore Data</button>
+            <div id="backupRestoreRow" class="sidebar-tools-drawer">
+                <div class="sidebar-tools-inner">
+                    <button type="button" onclick="backupAllData()" style="margin: 0; width: 100%; min-height: 36px; font-size: 0.8rem; background: #334155;">Backup Data</button>
+                    <button type="button" onclick="document.getElementById('restoreBackupInput').click()" style="margin: 0; width: 100%; min-height: 36px; font-size: 0.8rem; background: #334155;">Restore Data</button>
+                </div>
                 <input type="file" id="restoreBackupInput" accept=".json,application/json" style="display: none;" onchange="restoreBackupFromFile(this)">
             </div>
             <div class="tabs-container" id="parentTabsContainer">
@@ -1686,6 +1716,16 @@
             }
 
             // ---- Backup & restore of all app data ----
+            let isMainFolderToolsOpen = false;
+            function toggleMainFolderTools(e) {
+                if (e) e.stopPropagation();
+                if (currentFolderId !== 'root') return;
+                isMainFolderToolsOpen = !isMainFolderToolsOpen;
+                const row = document.getElementById('backupRestoreRow');
+                const btn = document.getElementById('mainToolsToggleBtn');
+                if (row) row.classList.toggle('open', isMainFolderToolsOpen);
+                if (btn) btn.style.transform = isMainFolderToolsOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
             function backupAllData() {
                 try {
                     const data = {};
@@ -2819,6 +2859,17 @@
 			    
 			    const currentFolder = appFolders.find(f => f.id === currentFolderId);
 			    document.getElementById('sidebarHeaderTitle').childNodes[0].nodeValue = currentFolder ? currentFolder.name + " " : "Main ";
+			    const _isMainFolder = (currentFolderId === 'root');
+			    if (!_isMainFolder) isMainFolderToolsOpen = false;
+			    const _toolsBtn = document.getElementById('mainToolsToggleBtn');
+			    const _backupRow = document.getElementById('backupRestoreRow');
+			    if (_toolsBtn) {
+			        _toolsBtn.style.display = _isMainFolder ? 'inline-flex' : 'none';
+			        _toolsBtn.style.transform = (_isMainFolder && isMainFolderToolsOpen) ? 'rotate(180deg)' : 'rotate(0deg)';
+			    }
+			    if (_backupRow) {
+			        _backupRow.classList.toggle('open', _isMainFolder && isMainFolderToolsOpen);
+			    }
 			    
 			    const activeGroup = parentGroups.find(g => g.id === activeParentId);
 			    if (activeGroup) {
@@ -3914,7 +3965,7 @@
 			    let headerStartX = 0, headerStartY = 0;
 			    
 			    const startHeaderHold = (e) => {
-			        if (e.target.closest('.sidebar-close-btn')) return; // Ignore close button
+			        if (e.target.closest('.sidebar-close-btn') || e.target.closest('#mainToolsToggleBtn')) return; // Ignore close and expand buttons
 			        headerStartX = e.touches ? e.touches[0].clientX : e.clientX;
 			        headerStartY = e.touches ? e.touches[0].clientY : e.clientY;
 			        headerHoldTimer = setTimeout(() => {
