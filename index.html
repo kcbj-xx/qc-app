@@ -925,6 +925,11 @@
             <div class="tabs-container" id="parentTabsContainer">
                 <div id="parentTabsList" class="tabs-list"></div>
             </div>
+            <div id="backupRestoreRow" style="display: flex; gap: 8px; padding: 12px 10px; margin-top: auto; border-top: 1px dashed var(--border); box-sizing: border-box;">
+                <button type="button" onclick="backupAllData()" style="margin: 0; flex: 1; min-height: 38px; font-size: 0.8rem; background: #334155;">Backup Data</button>
+                <button type="button" onclick="document.getElementById('restoreBackupInput').click()" style="margin: 0; flex: 1; min-height: 38px; font-size: 0.8rem; background: #334155;">Restore Data</button>
+                <input type="file" id="restoreBackupInput" accept=".json,application/json" style="display: none;" onchange="restoreBackupFromFile(this)">
+            </div>
         </div>
     
         <div class="main-content" id="mainContent">
@@ -1645,7 +1650,7 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-version">v118</div>
+            <div class="footer-version">v119</div>
         </div>
         
         <div id="exportModeBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 12px 20px 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-top-left-radius: 20px; border-top-right-radius: 20px;">
@@ -1674,6 +1679,67 @@
                 });
             }
             
+            // ---- Persistent storage: ask the browser/OS not to evict app data during cleanups ----
+            if (navigator.storage && navigator.storage.persist) {
+                navigator.storage.persisted().then(already => {
+                    if (!already) return navigator.storage.persist();
+                }).catch(() => {});
+            }
+
+            // ---- Backup & restore of all app data ----
+            function backupAllData() {
+                try {
+                    const data = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        data[k] = localStorage.getItem(k);
+                    }
+                    const payload = { app: 'qc-toolset', version: 1, exportedAt: new Date().toISOString(), data: data };
+                    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+                    const d = new Date();
+                    const stamp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'qc-backup-' + stamp + '.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                } catch (e) {
+                    alert('Backup failed: ' + e.message);
+                }
+            }
+
+            function restoreBackupFromFile(input) {
+                const file = input.files && input.files[0];
+                input.value = '';
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    let payload;
+                    try {
+                        payload = JSON.parse(reader.result);
+                    } catch (e) {
+                        alert('This file is not a valid backup.');
+                        return;
+                    }
+                    if (!payload || payload.app !== 'qc-toolset' || !payload.data || typeof payload.data !== 'object' || !payload.data.qc_parent_groups) {
+                        alert('This file is not a valid QC Toolset backup.');
+                        return;
+                    }
+                    if (!confirm('Restore this backup? This will REPLACE all current files and settings on this device.')) return;
+                    try {
+                        localStorage.clear();
+                        Object.keys(payload.data).forEach(k => localStorage.setItem(k, payload.data[k]));
+                        alert('Backup restored. The app will now reload.');
+                        location.reload();
+                    } catch (e) {
+                        alert('Restore failed: ' + e.message);
+                    }
+                };
+                reader.onerror = () => alert('Could not read the backup file.');
+                reader.readAsText(file);
+            }
+
             function generateDuplicateTabName(oldName, existingItems) {
                 if (/^Sample(?:\s+\d+)?$/i.test(oldName)) {
                     return `Sample ${existingItems.length + 1}`;
@@ -2390,20 +2456,69 @@
             let activeParentId = localStorage.getItem('qc_active_parent_id') || parentGroups[0].id;
 
             // ---- File history (remember previously opened files) ----
-            let fileHistory = JSON.parse(localStorage.getItem('qc_file_history') || '[]');
+            let fileHistory = JSON.parse(localStorage.getItem('qc_file_history') || '[]').slice(-1);
             let _lastTrackedActiveId = activeParentId;
 
             function trackActiveFile() {
                 if (_lastTrackedActiveId && _lastTrackedActiveId !== activeParentId) {
                     fileHistory = fileHistory.filter(id => id !== _lastTrackedActiveId);
                     fileHistory.push(_lastTrackedActiveId);
-                    if (fileHistory.length > 50) fileHistory.shift();
+                    while (fileHistory.length > 1) fileHistory.shift(); // only the previous file is remembered
                 }
                 _lastTrackedActiveId = activeParentId;
                 localStorage.setItem('qc_file_history', JSON.stringify(fileHistory));
             }
 
-            // Opens the previously visited file; if none, opens the very first file and expands the sidebar.
+            // Topmost file in sidebar order: sub-folders (in order) come before a folder's own files
+            function findTopmostFile(folderId) {
+                const subs = appFolders.filter(f => f.id !== 'root' && (f.parentId || 'root') === folderId);
+                for (const sf of subs) {
+                    const r = findTopmostFile(sf.id);
+                    if (r) return r;
+                }
+                return parentGroups.find(g => g.folderId === folderId) || null;
+            }
+
+            // Creates an empty file in the given folder and returns it (used as a last-resort fallback)
+            function createBlankFileInFolder(folderId) {
+                const _nd = new Date();
+                const _todayStr = _nd.getFullYear() + '-' + String(_nd.getMonth() + 1).padStart(2, '0') + '-' + String(_nd.getDate()).padStart(2, '0');
+                const ts = Date.now();
+                const g = {
+                    id: 'pg_' + ts,
+                    folderId: folderId,
+                    name: '',
+                    productCode: (typeof getJulianDayFromDateString === 'function' ? getJulianDayFromDateString(_todayStr) : '') || '',
+                    date: _todayStr,
+                    startTime: '',
+                    endTime: '',
+                    pickupSets: [{ id: 'pset_' + ts, name: 'Set 1', unit: '', tabs: [{ id: 'ptab_' + ts, name: 'Sample 1', pre: '', post: '' }], activeTabId: null }],
+                    sumSets: [{ id: 'sset_' + ts, name: 'Set 1', unit: '', tabs: [{ id: 'tab_' + ts, name: 'Sample 1', data: [], lastAddedStr: '', minRange: '', maxRange: '' }], activeTabId: null }],
+                    estimatorTabs: [{ id: 'etab_' + ts, name: 'Line 1', unit: '', startTime: '', remaining: '', data: [] }],
+                    salinityTabs: [{ id: 'stab_' + ts, name: 'Sample 1', brix: '' }],
+                    pinnedCards: [],
+                    collapsedCards: {},
+                    temp: { c: '', f: '' },
+                    stopwatch: { elapsed: 0, startTime: 0, isRunning: false, mode: null },
+                    sampling: { min: '', max: '', start: '', resultHtml: '', targetTime: null, lastGenStr: '', timerRunning: false, timeUp: false },
+                    notes: { text: '' },
+                    timestamps: [],
+                    tallyTabs: [{ id: 'ttab_' + ts, name: 'Sample 1', tallies: [] }],
+                    activeTallyTabId: 'ttab_' + ts,
+                    percentage: { total: '', part: '', pct: '' }
+                };
+                g.pickupSets[0].activeTabId = g.pickupSets[0].tabs[0].id;
+                g.activePickupSetId = g.pickupSets[0].id;
+                g.sumSets[0].activeTabId = g.sumSets[0].tabs[0].id;
+                g.activeSumSetId = g.sumSets[0].id;
+                g.activeEstimatorTabId = g.estimatorTabs[0].id;
+                g.activeSalinityTabId = g.salinityTabs[0].id;
+                parentGroups.push(g);
+                return g;
+            }
+
+            // Opens the previously visited file. If it no longer exists (e.g. deleted together with the current
+            // file), falls back to the Main directory: the sidebar shows Main while the topmost file opens behind it.
             function pickFallbackAfterDelete() {
                 let target = null;
                 while (fileHistory.length && !target) {
@@ -2412,7 +2527,13 @@
                 }
                 let showSidebar = false;
                 if (!target) {
-                    target = parentGroups[0];
+                    // Fallback: topmost folder's topmost file; if that folder has no file, create one in Main
+                    const topFolder = appFolders.find(f => f.id !== 'root' && (f.parentId || 'root') === 'root');
+                    if (topFolder) {
+                        target = findTopmostFile(topFolder.id) || createBlankFileInFolder('root');
+                    } else {
+                        target = parentGroups.find(g => g.folderId === 'root') || createBlankFileInFolder('root');
+                    }
                     showSidebar = true;
                 }
                 activeParentId = target.id;
@@ -3083,7 +3204,6 @@
                     }
                     
                     activeParentId = target.id; 
-                    currentFolderId = target.folderId;
                     isParentTabMenuOpen = false;
                     refreshGroupDataReferences();
                     saveAllGroupData();
